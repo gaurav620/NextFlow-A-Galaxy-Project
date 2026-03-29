@@ -1,7 +1,7 @@
 'use client';
 
 import { Handle, Position, NodeProps } from 'reactflow';
-import { BrainCircuit, Copy, Check, ChevronDown, Loader2 } from 'lucide-react';
+import { BrainCircuit, Copy, Check, Loader2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
 export default function LLMNode({ data }: NodeProps) {
@@ -10,7 +10,7 @@ export default function LLMNode({ data }: NodeProps) {
   const [userMessage, setUserMessage] = useState(data.userMessage || '');
   const [result, setResult] = useState(data.result || '');
   const [isExecuting, setIsExecuting] = useState(false);
-  const [isResultExpanded, setIsResultExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(true);
   const [copied, setCopied] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
   const [resultHeight, setResultHeight] = useState(0);
@@ -18,7 +18,7 @@ export default function LLMNode({ data }: NodeProps) {
   const systemConnected = data.systemConnected || false;
   const userConnected = data.userConnected || false;
 
-  // Estimate tokens (rough approximation: ~4 chars per token)
+  // Estimate tokens
   const estimatedTokens = result ? Math.ceil(result.length / 4) : 0;
 
   useEffect(() => {
@@ -29,9 +29,8 @@ export default function LLMNode({ data }: NodeProps) {
 
   const handleRun = async () => {
     setIsExecuting(true);
-    // Simulate LLM execution
     setTimeout(() => {
-      setResult('Model output would appear here. This is a placeholder for the LLM response. The response can be quite long and will animate when expanding or collapsing for a smooth user experience.');
+      setResult('Model output here. This is a placeholder response from the LLM node.');
       setIsExecuting(false);
     }, 2000);
   };
@@ -44,214 +43,195 @@ export default function LLMNode({ data }: NodeProps) {
 
   return (
     <div
-      className={`relative rounded-2xl border bg-gray-900 shadow-2xl min-w-[280px] max-w-[320px] transition-all ${
-        isExecuting ? 'ring-2 ring-purple-500 animate-pulse border-purple-500/50' : 'border-gray-700'
+      className={`relative rounded-2xl border bg-[#1c1c1c] shadow-2xl min-w-[220px] max-w-[260px] transition-all ${
+        isExecuting
+          ? 'border-purple-500/60 shadow-[0_0_20px_rgba(139,92,246,0.3)] animate-pulse'
+          : 'border-white/8 hover:border-white/15'
       }`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/6 cursor-grab active:cursor-grabbing">
         <div className="flex items-center gap-2">
-          <BrainCircuit className="w-5 h-5 text-purple-400" />
-          <span className="text-sm font-semibold text-white">Run LLM</span>
+          <div className="w-2 h-2 bg-purple-500 rounded-full" />
+          <span className="text-xs font-medium text-gray-200">Run LLM</span>
         </div>
-        {isExecuting && (
-          <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
-        )}
+        <div className="flex items-center gap-2">
+          {isExecuting && (
+            <Loader2 className="w-3.5 h-3.5 text-purple-400 animate-spin" />
+          )}
+          <BrainCircuit className="w-3.5 h-3.5 text-purple-400" />
+        </div>
       </div>
 
       {/* Body */}
-      <div className="px-4 py-3 space-y-3">
-        {/* Model Select */}
+      <div className="px-4 py-3 space-y-2">
+        {/* Model selector */}
         <select
           value={model}
           onChange={(e) => {
             setModel(e.target.value);
-            if (data.onChange) {
-              data.onChange({ model: e.target.value });
-            }
+            if (data.onChange) data.onChange({ model: e.target.value });
           }}
-          className="bg-gray-800 border border-gray-700 rounded-lg text-sm text-white px-3 py-2 w-full focus:border-purple-500 focus:outline-none"
+          className="bg-[#111] border border-white/8 rounded-xl text-xs text-white px-3 py-2 w-full focus:border-blue-500/50 focus:outline-none"
         >
-          <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-          <option value="gemini-1.5-flash">gemini-1.5-flash</option>
-          <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+          <option>gemini-2.0-flash</option>
+          <option>gemini-1.5-flash</option>
+          <option>gemini-1.5-pro</option>
         </select>
 
-        {/* System Prompt */}
-        <div>
-          <label className="text-xs text-gray-500">System Prompt</label>
+        {/* System prompt */}
+        {!systemConnected && (
           <textarea
             value={systemPrompt}
             onChange={(e) => {
               setSystemPrompt(e.target.value);
-              if (data.onChange) {
-                data.onChange({ systemPrompt: e.target.value });
-              }
+              if (data.onChange) data.onChange({ systemPrompt: e.target.value });
             }}
-            placeholder="Optional system instructions..."
-            disabled={systemConnected}
-            className={`bg-gray-800 border border-gray-700 rounded-xl text-white text-xs w-full p-3 resize-none h-16 placeholder-gray-600 focus:border-purple-500 focus:outline-none mt-1 ${
-              systemConnected ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
+            placeholder="System prompt (optional)..."
+            className="bg-[#111] border border-white/8 rounded-xl text-white text-xs w-full p-3 resize-none h-12 placeholder-gray-700 focus:border-blue-500/50 focus:outline-none"
           />
-          {systemConnected && (
-            <div className="text-xs text-purple-400 mt-1">Connected</div>
-          )}
-        </div>
+        )}
+        {systemConnected && (
+          <div className="bg-[#111] rounded-xl px-3 py-2 text-[11px] text-purple-400/70 border border-purple-500/20">
+            ⚡ Connected from node
+          </div>
+        )}
 
-        {/* User Message */}
-        <div>
-          <label className="text-xs text-gray-500">User Message</label>
+        {/* User message */}
+        {!userConnected && (
           <textarea
             value={userMessage}
             onChange={(e) => {
               setUserMessage(e.target.value);
-              if (data.onChange) {
-                data.onChange({ userMessage: e.target.value });
-              }
+              if (data.onChange) data.onChange({ userMessage: e.target.value });
             }}
-            placeholder="Enter your message..."
-            disabled={userConnected}
-            className={`bg-gray-800 border border-gray-700 rounded-xl text-white text-xs w-full p-3 resize-none h-20 placeholder-gray-600 focus:border-purple-500 focus:outline-none mt-1 ${
-              userConnected ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
+            placeholder="User message (required)..."
+            className="bg-[#111] border border-white/8 rounded-xl text-white text-xs w-full p-3 resize-none h-14 placeholder-gray-700 focus:border-blue-500/50 focus:outline-none"
           />
-          {userConnected && (
-            <div className="text-xs text-purple-400 mt-1">Connected</div>
-          )}
-        </div>
+        )}
+        {userConnected && (
+          <div className="bg-[#111] rounded-xl px-3 py-2 text-[11px] text-purple-400/70 border border-purple-500/20">
+            ⚡ Connected from node
+          </div>
+        )}
 
-        {/* Run Button */}
+        {/* Run button */}
         <button
           onClick={handleRun}
           disabled={isExecuting}
-          className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-700 disabled:opacity-75 rounded-xl py-2.5 text-sm font-medium w-full flex items-center justify-center gap-2 text-white transition-colors"
+          className="bg-[#2a1f3d] hover:bg-purple-900/60 border border-purple-500/30 text-purple-300 text-xs rounded-xl py-2.5 w-full flex items-center justify-center gap-2 font-medium transition-colors disabled:opacity-50"
         >
           {isExecuting ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Generating...
+              <Loader2 className="w-3 h-3 animate-spin" />
+              Running...
             </>
           ) : (
-            <>
-              <BrainCircuit className="w-4 h-4" />
-              Run
-            </>
+            <>▶ Run</>
           )}
         </button>
 
-        {/* Result Area with animated expansion */}
+        {/* Response area */}
         {result && (
-          <div className="bg-gray-800 rounded-xl overflow-hidden">
-            <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700">
-              <span className="text-xs font-medium text-gray-400">Result</span>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={copyResult}
-                  className="p-1.5 hover:bg-gray-700 rounded transition-colors"
-                  title="Copy to clipboard"
-                >
-                  {copied ? (
-                    <Check className="w-3.5 h-3.5 text-green-400" />
-                  ) : (
-                    <Copy className="w-3.5 h-3.5 text-gray-500 hover:text-gray-300" />
-                  )}
-                </button>
-                <button
-                  onClick={() => setIsResultExpanded(!isResultExpanded)}
-                  className="p-1.5 hover:bg-gray-700 rounded transition-colors"
-                >
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 text-gray-500 transition-transform duration-200 ${
-                      isResultExpanded ? '' : '-rotate-90'
-                    }`}
-                  />
-                </button>
-              </div>
+          <div className="bg-[#111] rounded-xl border border-white/8 overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-white/6">
+              <span className="text-[10px] text-gray-600">Response</span>
+              <button
+                onClick={copyResult}
+                className="p-1 hover:bg-white/5 rounded transition-colors"
+              >
+                {copied ? (
+                  <Check className="w-3 h-3 text-green-400" />
+                ) : (
+                  <Copy className="w-3 h-3 text-gray-600 hover:text-gray-400" />
+                )}
+              </button>
             </div>
-            {/* Animated content container */}
             <div
               className="transition-all duration-300 ease-in-out overflow-hidden"
               style={{
-                maxHeight: isResultExpanded ? `${Math.min(resultHeight + 48, 192)}px` : '0px',
-                opacity: isResultExpanded ? 1 : 0,
+                maxHeight: isExpanded ? `${resultHeight + 8}px` : '0px',
+                opacity: isExpanded ? 1 : 0,
               }}
             >
-              <div ref={resultRef} className="p-3 max-h-40 overflow-y-auto text-xs text-gray-300 whitespace-pre-wrap">
+              <div
+                ref={resultRef}
+                className="px-3 py-2 text-[11px] text-gray-300 leading-relaxed max-h-32 overflow-y-auto"
+              >
                 {result}
               </div>
-              {/* Token estimate */}
-              <div className="px-3 pb-2">
-                <span className="text-[10px] text-gray-600">~{estimatedTokens} tokens</span>
-              </div>
+            </div>
+            <div className="px-3 py-1 border-t border-white/6 text-[10px] text-gray-600">
+              ~{estimatedTokens} tokens
             </div>
           </div>
         )}
       </div>
 
-      {/* Handles with labels */}
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="system_prompt"
-        style={{
-          background: '#6d28d9',
-          width: 12,
-          height: 12,
-          border: '2px solid #4c1d95',
-          top: 80,
-        }}
-      />
-      <span className="absolute text-[10px] text-gray-500 left-4 top-[74px]">
-        System
-      </span>
+      {/* Target handles - left side */}
+      <div className="absolute left-[-10px] top-20">
+        <Handle
+          type="target"
+          position={Position.Left}
+          id="system_prompt"
+          style={{
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            border: '2px solid #0a0a0a',
+            background: '#6b7280',
+          }}
+        />
+      </div>
+      <span className="absolute text-[10px] text-gray-500 left-4 top-[76px]">System</span>
 
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="user_message"
-        style={{
-          background: '#6d28d9',
-          width: 12,
-          height: 12,
-          border: '2px solid #4c1d95',
-          top: 140,
-        }}
-      />
-      <span className="absolute text-[10px] text-gray-500 left-4 top-[134px]">
-        User
-      </span>
+      <div className="absolute left-[-10px] top-40">
+        <Handle
+          type="target"
+          position={Position.Left}
+          id="user_message"
+          style={{
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            border: '2px solid #0a0a0a',
+            background: '#3b82f6',
+          }}
+        />
+      </div>
+      <span className="absolute text-[10px] text-gray-500 left-4 top-[134px]">Message</span>
 
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="images"
-        style={{
-          background: '#6d28d9',
-          width: 12,
-          height: 12,
-          border: '2px solid #4c1d95',
-          top: 200,
-        }}
-      />
-      <span className="absolute text-[10px] text-gray-500 left-4 top-[194px]">
-        Images
-      </span>
+      <div className="absolute left-[-10px] top-60">
+        <Handle
+          type="target"
+          position={Position.Left}
+          id="images"
+          style={{
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            border: '2px solid #0a0a0a',
+            background: '#22c55e',
+          }}
+        />
+      </div>
+      <span className="absolute text-[10px] text-gray-500 left-4 top-[192px]">Images</span>
 
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="output"
-        style={{
-          background: '#6d28d9',
-          width: 12,
-          height: 12,
-          border: '2px solid #4c1d95',
-        }}
-      />
-      <span className="absolute text-[10px] text-gray-500 right-4 bottom-4">
-        Output
-      </span>
+      {/* Source handle - right side */}
+      <div className="absolute right-[-10px] bottom-4">
+        <Handle
+          type="source"
+          position={Position.Right}
+          id="output"
+          style={{
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            border: '2px solid #0a0a0a',
+            background: '#3b82f6',
+          }}
+        />
+      </div>
     </div>
   );
 }

@@ -7,28 +7,16 @@ import { useState, useRef } from 'react';
 export default function ImageUploadNode({ data }: NodeProps) {
   const [preview, setPreview] = useState<string | null>(data.preview || null);
   const [filename, setFilename] = useState(data.filename || '');
-  const [progress, setProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = async (file: File) => {
+  const handleFileChange = (file: File) => {
     if (!file.type.startsWith('image/')) return;
 
     setFilename(file.name);
 
-    // Simulate upload progress
-    setProgress(0);
-    const interval = setInterval(() => {
-      setProgress((p) => (p < 90 ? p + 10 : p));
-    }, 100);
-
-    // Create preview
     const reader = new FileReader();
     reader.onload = (e) => {
       setPreview(e.target?.result as string);
-      setProgress(100);
-      clearInterval(interval);
-      setTimeout(() => setProgress(0), 1000);
-
       if (data.onChange) {
         data.onChange({
           preview: e.target?.result,
@@ -40,72 +28,63 @@ export default function ImageUploadNode({ data }: NodeProps) {
   };
 
   return (
-    <div className="relative rounded-2xl border bg-gray-900 shadow-2xl min-w-[280px] max-w-[320px] transition-all border-gray-700">
+    <div className="relative rounded-2xl border bg-[#1c1c1c] shadow-2xl min-w-[220px] max-w-[260px] transition-all border-white/8 hover:border-white/15">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/6 cursor-grab active:cursor-grabbing">
         <div className="flex items-center gap-2">
-          <ImageIcon className="w-5 h-5 text-green-400" />
-          <span className="text-sm font-semibold text-white">Upload Image</span>
+          <div className="w-2 h-2 bg-green-500 rounded-full" />
+          <span className="text-xs font-medium text-gray-200">Upload Image</span>
         </div>
+        <ImageIcon className="w-3.5 h-3.5 text-green-400" />
       </div>
 
       {/* Body */}
-      <div className="px-4 py-3 space-y-3">
+      <div className="px-4 py-3">
         {!preview ? (
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-gray-700 hover:border-green-500/50 rounded-xl p-6 text-center cursor-pointer transition-colors"
+            className="border border-dashed border-white/10 hover:border-green-500/40 rounded-xl p-4 text-center cursor-pointer transition-colors"
           >
-            <Upload className="w-8 h-8 mx-auto text-gray-600 mb-2" />
-            <p className="text-xs text-gray-500">Drop image here or click</p>
-            <p className="text-xs text-gray-600">JPG, PNG, WEBP, GIF</p>
+            <Upload className="w-6 h-6 text-gray-700 mx-auto mb-1" />
+            <p className="text-[11px] text-gray-600">Drop image</p>
+            <p className="text-[10px] text-gray-700 mt-0.5">JPG PNG WEBP GIF</p>
           </div>
         ) : (
           <div>
             <img
               src={preview}
               alt="Preview"
-              className="rounded-xl max-h-32 w-full object-cover"
+              className="rounded-xl max-h-28 w-full object-cover"
             />
-            <p className="text-xs text-gray-500 mt-2">{filename}</p>
+            <p className="text-[10px] text-gray-600 mt-2 truncate">{filename}</p>
             <button
               onClick={() => {
                 setPreview(null);
                 setFilename('');
               }}
-              className="text-xs text-purple-400 hover:text-purple-300 mt-1"
+              className="text-[10px] text-blue-400 hover:text-blue-300 mt-1"
             >
               Clear
             </button>
           </div>
         )}
-
-        {/* Progress bar */}
-        {progress > 0 && progress < 100 && (
-          <div className="bg-gray-800 rounded-full h-1 overflow-hidden">
-            <div
-              className="bg-purple-600 h-full rounded-full transition-all"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        )}
       </div>
 
-      {/* Handle with label */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="image_url"
-        style={{
-          background: '#6d28d9',
-          width: 12,
-          height: 12,
-          border: '2px solid #4c1d95',
-        }}
-      />
-      <span className="absolute text-[10px] text-gray-500 right-4 top-1/2 -translate-y-1/2">
-        Image
-      </span>
+      {/* Handle - output on right */}
+      <div className="absolute right-[-8px] top-1/2 -translate-y-1/2">
+        <Handle
+          type="source"
+          position={Position.Right}
+          id="image_url"
+          style={{
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            border: '2px solid #0a0a0a',
+            background: '#3b82f6',
+          }}
+        />
+      </div>
 
       <input
         ref={fileInputRef}

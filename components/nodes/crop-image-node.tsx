@@ -1,7 +1,7 @@
 'use client';
 
 import { Handle, Position, NodeProps } from 'reactflow';
-import { Scissors } from 'lucide-react';
+import { Scissors, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 
 export default function CropImageNode({ data }: NodeProps) {
@@ -12,10 +12,6 @@ export default function CropImageNode({ data }: NodeProps) {
   const [isExecuting, setIsExecuting] = useState(false);
 
   const imageConnected = data.imageConnected || false;
-  const xConnected = data.xConnected || false;
-  const yConnected = data.yConnected || false;
-  const widthConnected = data.widthConnected || false;
-  const heightConnected = data.heightConnected || false;
 
   const handleRun = () => {
     setIsExecuting(true);
@@ -29,24 +25,30 @@ export default function CropImageNode({ data }: NodeProps) {
 
   return (
     <div
-      className={`relative rounded-2xl border bg-gray-900 shadow-2xl min-w-[280px] max-w-[320px] transition-all ${
-        isExecuting ? 'ring-2 ring-pink-500 animate-pulse border-pink-500/50' : 'border-gray-700'
+      className={`relative rounded-2xl border bg-[#1c1c1c] shadow-2xl min-w-[220px] max-w-[260px] transition-all ${
+        isExecuting
+          ? 'border-pink-500/60 shadow-[0_0_20px_rgba(236,72,153,0.3)] animate-pulse'
+          : 'border-white/8 hover:border-white/15'
       }`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/6 cursor-grab active:cursor-grabbing">
         <div className="flex items-center gap-2">
-          <Scissors className="w-5 h-5 text-pink-400" />
-          <span className="text-sm font-semibold text-white">Crop Image</span>
+          <div className="w-2 h-2 bg-pink-500 rounded-full" />
+          <span className="text-xs font-medium text-gray-200">Crop Image</span>
+        </div>
+        <div className="flex items-center gap-2">
+          {isExecuting && <Loader2 className="w-3.5 h-3.5 text-pink-400 animate-spin" />}
+          <Scissors className="w-3.5 h-3.5 text-pink-400" />
         </div>
       </div>
 
       {/* Body */}
-      <div className="px-4 py-3 space-y-3">
-        {/* 2x2 Grid of Inputs */}
-        <div className="grid grid-cols-2 gap-2">
+      <div className="px-4 py-3 space-y-2">
+        {/* 2x2 Grid */}
+        <div className="grid grid-cols-2 gap-1.5">
           <div>
-            <label className="text-xs text-gray-500 block mb-1">X (%)</label>
+            <label className="text-[10px] text-gray-600 block mb-1">X %</label>
             <input
               type="number"
               min={0}
@@ -54,18 +56,13 @@ export default function CropImageNode({ data }: NodeProps) {
               value={x}
               onChange={(e) => {
                 setX(Number(e.target.value));
-                if (data.onChange) {
-                  data.onChange({ x: Number(e.target.value), y, width, height });
-                }
+                if (data.onChange) data.onChange({ x: Number(e.target.value), y, width, height });
               }}
-              disabled={xConnected}
-              className={`bg-gray-800 border border-gray-700 rounded-lg text-white text-xs px-2 py-1.5 text-center w-full focus:border-purple-500 focus:outline-none ${
-                xConnected ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              className="bg-[#111] border border-white/8 rounded-lg text-white text-xs px-2 py-1.5 text-center w-full focus:border-blue-500/50 focus:outline-none"
             />
           </div>
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Y (%)</label>
+            <label className="text-[10px] text-gray-600 block mb-1">Y %</label>
             <input
               type="number"
               min={0}
@@ -73,18 +70,13 @@ export default function CropImageNode({ data }: NodeProps) {
               value={y}
               onChange={(e) => {
                 setY(Number(e.target.value));
-                if (data.onChange) {
-                  data.onChange({ x, y: Number(e.target.value), width, height });
-                }
+                if (data.onChange) data.onChange({ x, y: Number(e.target.value), width, height });
               }}
-              disabled={yConnected}
-              className={`bg-gray-800 border border-gray-700 rounded-lg text-white text-xs px-2 py-1.5 text-center w-full focus:border-purple-500 focus:outline-none ${
-                yConnected ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              className="bg-[#111] border border-white/8 rounded-lg text-white text-xs px-2 py-1.5 text-center w-full focus:border-blue-500/50 focus:outline-none"
             />
           </div>
           <div>
-            <label className="text-xs text-gray-500 block mb-1">W (%)</label>
+            <label className="text-[10px] text-gray-600 block mb-1">W %</label>
             <input
               type="number"
               min={0}
@@ -92,18 +84,13 @@ export default function CropImageNode({ data }: NodeProps) {
               value={width}
               onChange={(e) => {
                 setWidth(Number(e.target.value));
-                if (data.onChange) {
-                  data.onChange({ x, y, width: Number(e.target.value), height });
-                }
+                if (data.onChange) data.onChange({ x, y, width: Number(e.target.value), height });
               }}
-              disabled={widthConnected}
-              className={`bg-gray-800 border border-gray-700 rounded-lg text-white text-xs px-2 py-1.5 text-center w-full focus:border-purple-500 focus:outline-none ${
-                widthConnected ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              className="bg-[#111] border border-white/8 rounded-lg text-white text-xs px-2 py-1.5 text-center w-full focus:border-blue-500/50 focus:outline-none"
             />
           </div>
           <div>
-            <label className="text-xs text-gray-500 block mb-1">H (%)</label>
+            <label className="text-[10px] text-gray-600 block mb-1">H %</label>
             <input
               type="number"
               min={0}
@@ -111,123 +98,119 @@ export default function CropImageNode({ data }: NodeProps) {
               value={height}
               onChange={(e) => {
                 setHeight(Number(e.target.value));
-                if (data.onChange) {
-                  data.onChange({ x, y, width, height: Number(e.target.value) });
-                }
+                if (data.onChange) data.onChange({ x, y, width, height: Number(e.target.value) });
               }}
-              disabled={heightConnected}
-              className={`bg-gray-800 border border-gray-700 rounded-lg text-white text-xs px-2 py-1.5 text-center w-full focus:border-purple-500 focus:outline-none ${
-                heightConnected ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              className="bg-[#111] border border-white/8 rounded-lg text-white text-xs px-2 py-1.5 text-center w-full focus:border-blue-500/50 focus:outline-none"
             />
           </div>
         </div>
 
-        {/* Run Button */}
+        {/* Run button */}
         <button
           onClick={handleRun}
           disabled={isExecuting || !imageConnected}
-          className="bg-pink-600 hover:bg-pink-700 disabled:bg-pink-700 disabled:opacity-75 rounded-xl py-2 text-sm font-medium w-full text-white transition-colors"
+          className="bg-pink-600/20 hover:bg-pink-600/30 border border-pink-500/30 text-pink-300 text-xs rounded-xl py-2 w-full font-medium transition-colors disabled:opacity-50"
         >
           {isExecuting ? 'Cropping...' : 'Crop Image'}
         </button>
       </div>
 
-      {/* Handles with labels */}
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="image_url"
-        style={{
-          background: '#6d28d9',
-          width: 12,
-          height: 12,
-          border: '2px solid #4c1d95',
-          top: 50,
-        }}
-      />
-      <span className="absolute text-[10px] text-gray-500 left-4 top-[44px]">
-        Image
-      </span>
+      {/* Target handles - left */}
+      <div className="absolute left-[-10px] top-16">
+        <Handle
+          type="target"
+          position={Position.Left}
+          id="image_url"
+          style={{
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            border: '2px solid #0a0a0a',
+            background: '#3b82f6',
+          }}
+        />
+      </div>
+      <span className="absolute text-[10px] text-gray-500 left-4 top-[52px]">Image</span>
 
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="x_percent"
-        style={{
-          background: '#6d28d9',
-          width: 12,
-          height: 12,
-          border: '2px solid #4c1d95',
-          top: 100,
-        }}
-      />
-      <span className="absolute text-[10px] text-gray-500 left-4 top-[94px]">
-        X
-      </span>
+      <div className="absolute left-[-10px] top-[88px]">
+        <Handle
+          type="target"
+          position={Position.Left}
+          id="x_percent"
+          style={{
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            border: '2px solid #0a0a0a',
+            background: '#6b7280',
+          }}
+        />
+      </div>
+      <span className="absolute text-[10px] text-gray-500 left-4 top-[82px]">X</span>
 
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="y_percent"
-        style={{
-          background: '#6d28d9',
-          width: 12,
-          height: 12,
-          border: '2px solid #4c1d95',
-          top: 130,
-        }}
-      />
-      <span className="absolute text-[10px] text-gray-500 left-4 top-[124px]">
-        Y
-      </span>
+      <div className="absolute left-[-10px] top-[112px]">
+        <Handle
+          type="target"
+          position={Position.Left}
+          id="y_percent"
+          style={{
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            border: '2px solid #0a0a0a',
+            background: '#6b7280',
+          }}
+        />
+      </div>
+      <span className="absolute text-[10px] text-gray-500 left-4 top-[106px]">Y</span>
 
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="width_percent"
-        style={{
-          background: '#6d28d9',
-          width: 12,
-          height: 12,
-          border: '2px solid #4c1d95',
-          top: 160,
-        }}
-      />
-      <span className="absolute text-[10px] text-gray-500 left-4 top-[154px]">
-        W
-      </span>
+      <div className="absolute left-[-10px] top-[136px]">
+        <Handle
+          type="target"
+          position={Position.Left}
+          id="width_percent"
+          style={{
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            border: '2px solid #0a0a0a',
+            background: '#6b7280',
+          }}
+        />
+      </div>
+      <span className="absolute text-[10px] text-gray-500 left-4 top-[130px]">W</span>
 
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="height_percent"
-        style={{
-          background: '#6d28d9',
-          width: 12,
-          height: 12,
-          border: '2px solid #4c1d95',
-          top: 190,
-        }}
-      />
-      <span className="absolute text-[10px] text-gray-500 left-4 top-[184px]">
-        H
-      </span>
+      <div className="absolute left-[-10px] top-[160px]">
+        <Handle
+          type="target"
+          position={Position.Left}
+          id="height_percent"
+          style={{
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            border: '2px solid #0a0a0a',
+            background: '#6b7280',
+          }}
+        />
+      </div>
+      <span className="absolute text-[10px] text-gray-500 left-4 top-[154px]">H</span>
 
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="output"
-        style={{
-          background: '#6d28d9',
-          width: 12,
-          height: 12,
-          border: '2px solid #4c1d95',
-        }}
-      />
-      <span className="absolute text-[10px] text-gray-500 right-4 bottom-4">
-        Output
-      </span>
+      {/* Source handle - right */}
+      <div className="absolute right-[-10px] bottom-4">
+        <Handle
+          type="source"
+          position={Position.Right}
+          id="output"
+          style={{
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            border: '2px solid #0a0a0a',
+            background: '#3b82f6',
+          }}
+        />
+      </div>
     </div>
   );
 }

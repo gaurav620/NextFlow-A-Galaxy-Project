@@ -8,53 +8,49 @@ export default function TextNode({ data }: NodeProps) {
   const [content, setContent] = useState(data.content || '');
 
   return (
-    <div className="relative rounded-2xl border bg-gray-900 shadow-2xl min-w-[280px] max-w-[320px] transition-all border-gray-700">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+    <div className="relative rounded-2xl border bg-[#1c1c1c] shadow-2xl min-w-[220px] max-w-[260px] transition-all border-white/8 hover:border-white/15">
+      {/* Header - drag handle */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/6 cursor-grab active:cursor-grabbing">
         <div className="flex items-center gap-2">
-          <Type className="w-5 h-5 text-blue-400" />
-          <span className="text-sm font-semibold text-white">Text Node</span>
+          <div className="w-2 h-2 bg-blue-500 rounded-full" />
+          <span className="text-xs font-medium text-gray-200">Text</span>
         </div>
+        <Type className="w-3.5 h-3.5 text-blue-400" />
       </div>
 
       {/* Body */}
-      <div className="px-4 py-3 space-y-3">
-        <div>
-          <label className="text-xs text-gray-500">Content</label>
-          <textarea
-            value={content}
-            onChange={(e) => {
-              setContent(e.target.value);
-              if (data.onChange) {
-                data.onChange({ content: e.target.value });
-              }
-            }}
-            placeholder="Enter text or prompt..."
-            className="bg-gray-800 border border-gray-700 rounded-xl text-white text-sm w-full p-3 resize-none h-24 placeholder-gray-600 focus:border-purple-500 focus:outline-none mt-1"
-          />
-        </div>
-
-        {/* Character count */}
-        <div className="text-xs text-gray-600 text-right">
-          {content.length} characters
+      <div className="px-4 py-3">
+        <textarea
+          value={content}
+          onChange={(e) => {
+            setContent(e.target.value);
+            if (data.onChange) {
+              data.onChange({ content: e.target.value });
+            }
+          }}
+          placeholder="Enter text..."
+          className="bg-[#111] border border-white/8 rounded-xl text-white text-xs w-full p-3 resize-none h-20 placeholder-gray-700 focus:border-blue-500/50 focus:outline-none"
+        />
+        <div className="text-[10px] text-gray-700 text-right mt-1">
+          {content.length} chars
         </div>
       </div>
 
-      {/* Handle with label */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="output"
-        style={{
-          background: '#6d28d9',
-          width: 12,
-          height: 12,
-          border: '2px solid #4c1d95',
-        }}
-      />
-      <span className="absolute text-[10px] text-gray-500 right-4 top-1/2 -translate-y-1/2">
-        Output
-      </span>
+      {/* Handle - output on right */}
+      <div className="absolute right-[-8px] top-1/2 -translate-y-1/2">
+        <Handle
+          type="source"
+          position={Position.Right}
+          id="output"
+          style={{
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            border: '2px solid #0a0a0a',
+            background: '#3b82f6',
+          }}
+        />
+      </div>
     </div>
   );
 }
