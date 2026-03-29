@@ -6,7 +6,7 @@ export default function HomePage() {
   return (
     <main
       className="min-h-screen flex flex-col items-center font-sans"
-      style={{ backgroundColor: "#030712" }}
+      style={{ backgroundColor: "#0a0a0a" }}
     >
       <HeroSection />
       <FeatureGrid />

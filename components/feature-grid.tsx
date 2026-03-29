@@ -11,7 +11,6 @@ import {
 interface Feature {
   icon: LucideIcon;
   iconColor: string;
-  iconBg: string;
   title: string;
   description: string;
 }
@@ -19,48 +18,42 @@ interface Feature {
 const features: Feature[] = [
   {
     icon: Zap,
-    iconColor: "text-purple-400",
-    iconBg: "bg-purple-500/10",
+    iconColor: "#3b82f6",
     title: "Visual Canvas",
     description:
       "Drag, drop, and connect nodes on an infinite React Flow canvas",
   },
   {
     icon: Brain,
-    iconColor: "text-blue-400",
-    iconBg: "bg-blue-500/10",
+    iconColor: "#22c55e",
     title: "Gemini AI",
     description:
       "Run Google Gemini models with full vision support",
   },
   {
     icon: GitBranch,
-    iconColor: "text-emerald-400",
-    iconBg: "bg-emerald-500/10",
+    iconColor: "#f97316",
     title: "Parallel Execution",
     description:
       "Independent branches run concurrently with DAG ordering",
   },
   {
     icon: Upload,
-    iconColor: "text-purple-400",
-    iconBg: "bg-purple-500/10",
+    iconColor: "#3b82f6",
     title: "Media Processing",
     description:
       "Upload images/videos, crop frames, chain into workflow",
   },
   {
     icon: History,
-    iconColor: "text-blue-400",
-    iconBg: "bg-blue-500/10",
+    iconColor: "#22c55e",
     title: "Workflow History",
     description:
       "Every run tracked with node-level details and timing",
   },
   {
     icon: Shield,
-    iconColor: "text-emerald-400",
-    iconBg: "bg-emerald-500/10",
+    iconColor: "#f97316",
     title: "Secure & Fast",
     description:
       "Clerk auth, PostgreSQL persistence, deployed on Vercel",
@@ -69,26 +62,27 @@ const features: Feature[] = [
 
 export function FeatureGrid() {
   return (
-    <section className="px-6 pb-24 max-w-6xl mx-auto w-full">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+    <section className="px-6 pb-24 max-w-5xl mx-auto w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {features.map((feature) => {
           const Icon = feature.icon;
           return (
             <article
               key={feature.title}
-              className="group flex flex-col gap-4 bg-gray-900/50 border border-gray-800 hover:border-purple-500/50 rounded-2xl p-6 transition-colors duration-300"
+              className="flex flex-col gap-4 bg-[#1c1c1c] border border-white/5 hover:border-white/10 rounded-2xl p-5 transition-colors duration-200"
             >
               <div
-                className={`inline-flex items-center justify-center w-11 h-11 rounded-xl ${feature.iconBg}`}
+                className="inline-flex items-center justify-center w-10 h-10 rounded-xl"
+                style={{ backgroundColor: `${feature.iconColor}15` }}
                 aria-hidden="true"
               >
-                <Icon className={`w-5 h-5 ${feature.iconColor}`} />
+                <Icon className="w-5 h-5" style={{ color: feature.iconColor }} />
               </div>
               <div>
-                <h3 className="text-white font-semibold text-base mb-1">
+                <h3 className="text-white font-medium text-sm mb-1">
                   {feature.title}
                 </h3>
-                <p className="text-gray-400 text-sm leading-relaxed">
+                <p className="text-gray-500 text-xs leading-relaxed">
                   {feature.description}
                 </p>
               </div>
