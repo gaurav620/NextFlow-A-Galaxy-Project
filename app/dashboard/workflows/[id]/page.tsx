@@ -110,14 +110,13 @@ export default function WorkflowEditorPage({
 
   const onConnect = useCallback(
     (connection: Connection) => {
-      const edge: Edge = {
+      setEdges((eds) => addEdge({
         ...connection,
         id: `${connection.source}-${connection.target}`,
         animated: true,
         style: { stroke: '#a855f7', strokeWidth: 2 },
         markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' },
-      }
-      setEdges((eds) => addEdge(edge, eds))
+      }, eds))
     },
     [setEdges]
   )
