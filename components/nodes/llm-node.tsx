@@ -3,8 +3,9 @@
 import { Handle, Position, NodeProps } from 'reactflow';
 import { Copy, Check, Loader2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
+import { useWorkflowStore } from '@/store/workflowStore';
 
-export default function LLMNode({ data }: NodeProps) {
+export default function LLMNode({ id, data }: NodeProps) {
   const [model, setModel] = useState(data.model || 'gemini-2.0-flash');
   const [systemPrompt, setSystemPrompt] = useState(data.systemPrompt || '');
   const [userMessage, setUserMessage] = useState(data.userMessage || '');
@@ -26,11 +27,46 @@ export default function LLMNode({ data }: NodeProps) {
   }, [result]);
 
   const handleRun = async () => {
+    const store = useWorkflowStore.getState();
+    store.addExecutingNode(id);
     setIsExecuting(true);
-    setTimeout(() => {
-      setResult('Model output here. This is a placeholder response from the LLM node.');
+    try {
+      const edges = store.edges;
+      const sysSourceId = edges.find((e: any) => e.target === id && e.targetHandle === 'system_prompt')?.source;
+      const userSourceId = edges.find((e: any) => e.target === id && e.targetHandle === 'user_message')?.source;
+      const imgSourceIds = edges.filter((e: any) => e.target === id && e.targetHandle === 'images').map((e: any) => e.source);
+
+      const finalSystemPrompt = sysSourceId ? String(store.nodeOutputs[sysSourceId] || '') : systemPrompt;
+      const finalUserMessage = userSourceId ? String(store.nodeOutputs[userSourceId] || '') : (userMessage || data.value || 'Hello');
+      const images = imgSourceIds.map((id: string) => store.nodeOutputs[id]).filter(Boolean);
+
+      const res = await fetch('/api/execute/llm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: model || 'gemini-2.0-flash',
+          systemPrompt: finalSystemPrompt,
+          userMessage: finalUserMessage,
+          images: images.length ? images : undefined,
+          nodeId: id
+        })
+      });
+      const resultData = await res.json();
+      if (resultData.success) {
+        store.updateNodeData(id, { output: resultData.output, error: undefined });
+        store.setNodeOutput(id, resultData.output);
+        setResult(resultData.output);
+      } else {
+        store.updateNodeData(id, { error: resultData.error });
+        setResult(`Error: ${resultData.error}`);
+      }
+    } catch (err: any) {
+      store.updateNodeData(id, { error: err.message });
+      setResult(`Error: ${err.message}`);
+    } finally {
+      store.removeExecutingNode(id);
       setIsExecuting(false);
-    }, 2000);
+    }
   };
 
   const copyResult = () => {

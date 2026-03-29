@@ -16,6 +16,7 @@ import {
   Film,
 } from 'lucide-react'
 import { formatDistanceToNow, format, differenceInMilliseconds } from 'date-fns'
+import { useWorkflowStore } from '@/store/workflowStore'
 
 interface NodeRunEntry {
   id: string
@@ -37,7 +38,7 @@ interface WorkflowRunEntry {
 }
 
 interface HistorySidebarProps {
-  workflowId: string | null
+  className?: string
 }
 
 const getNodeIcon = (nodeType: string) => {
@@ -93,7 +94,8 @@ const getScopeLabel = (scope: string): string => {
   }
 }
 
-export default function HistorySidebar({ workflowId }: HistorySidebarProps) {
+export default function HistorySidebar({ className }: HistorySidebarProps) {
+  const { currentWorkflowId: workflowId } = useWorkflowStore()
   const [runs, setRuns] = useState<WorkflowRunEntry[]>([])
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -145,7 +147,7 @@ export default function HistorySidebar({ workflowId }: HistorySidebarProps) {
   }
 
   return (
-    <div className="h-full flex flex-col bg-gray-950 border-l border-gray-800">
+    <div className={`h-full flex flex-col bg-gray-950 border-l border-gray-800 ${className || ''}`}>
       {/* Header */}
       <div className="sticky top-0 p-4 border-b border-gray-800 flex items-center justify-between">
         <div className="flex items-center gap-2">

@@ -7,8 +7,8 @@ import ReactFlow, {
   BackgroundVariant,
   Controls,
   MiniMap,
-  useNodesState,
-  useEdgesState,
+  applyNodeChanges,
+  applyEdgeChanges,
   addEdge,
   MarkerType,
   ReactFlowInstance,
@@ -23,6 +23,7 @@ import {
   Settings,
   Search,
   Workflow,
+  Loader2,
 } from 'lucide-react'
 import {
   Tooltip,
@@ -36,6 +37,11 @@ import VideoUploadNode from '@/components/nodes/video-upload-node'
 import LLMNode from '@/components/nodes/llm-node'
 import CropImageNode from '@/components/nodes/crop-image-node'
 import ExtractFrameNode from '@/components/nodes/extract-frame-node'
+import HistorySidebar from '@/components/history-sidebar'
+
+import { useWorkflowStore } from '@/store/workflowStore'
+import { executeWorkflow } from '@/lib/workflowExecutor'
+import { sampleWorkflow } from '@/data/sampleWorkflow'
 
 const nodeTypes = {
   textNode: TextNode,
@@ -61,13 +67,84 @@ export default function WorkflowEditorPage({
   params: { id: string }
 }) {
   const router = useRouter()
-  const [nodes, setNodes, onNodesChange] = useNodesState([])
-  const [edges, setEdges, onEdgesChange] = useEdgesState([])
+  
+  const {
+    nodes, edges, setNodes, setEdges,
+    workflowName, setWorkflowName,
+    currentWorkflowId, setCurrentWorkflowId,
+    isRunning, setIsRunning,
+    resetOutputs, addExecutingNode,
+    removeExecutingNode, setNodeOutput, updateNodeData
+  } = useWorkflowStore()
+
+  const onNodesChange = useCallback(
+    (changes: any) => setNodes(applyNodeChanges(changes, nodes as any) as any),
+    [nodes, setNodes]
+  )
+  const onEdgesChange = useCallback(
+    (changes: any) => setEdges(applyEdgeChanges(changes, edges as any)),
+    [edges, setEdges]
+  )
+
   const [reactFlowInstance, setReactFlowInstance] =
     useState<ReactFlowInstance | null>(null)
-  const [workflowName, setWorkflowName] = useState('Untitled Workflow')
   const [searchQuery, setSearchQuery] = useState('')
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
+
+  async function handleRun() {
+    if (!nodes.length) { alert('Add some nodes first!'); return }
+    setIsRunning(true)
+    resetOutputs()
+    let workflowRunId = 'local-' + Date.now()
+    if (currentWorkflowId) {
+      try {
+        const res = await fetch(`/api/workflow/${currentWorkflowId}/runs`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scope: 'full' })
+        })
+        const data = await res.json()
+        if (data.success) workflowRunId = data.run.id
+      } catch {}
+    }
+    await executeWorkflow(nodes as any, edges as any, workflowRunId, {
+      onNodeStart: (nodeId) => addExecutingNode(nodeId),
+      onNodeComplete: (nodeId, output) => {
+        removeExecutingNode(nodeId)
+        setNodeOutput(nodeId, output)
+        updateNodeData(nodeId, { output: String(output || ''), error: undefined })
+      },
+      onNodeError: (nodeId, error) => {
+        removeExecutingNode(nodeId)
+        updateNodeData(nodeId, { error })
+      }
+    })
+    setIsRunning(false)
+  }
+
+  async function handleSave() {
+    if (!nodes.length) { alert('Nothing to save!'); return }
+    const res = await fetch('/api/workflow', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: workflowName || 'Untitled Workflow',
+        data: { nodes, edges },
+        workflowId: currentWorkflowId
+      })
+    })
+    const data = await res.json()
+    if (data.success) {
+      setCurrentWorkflowId(data.workflow.id)
+      alert('Workflow saved successfully!')
+    }
+  }
+
+  function handleLoadSample() {
+    setNodes(sampleWorkflow.nodes as any)
+    setEdges(sampleWorkflow.edges as any)
+    setWorkflowName('Product Marketing Kit Generator')
+  }
 
   const handleDragStart = (
     e: React.DragEvent<HTMLDivElement>,
@@ -91,16 +168,16 @@ export default function WorkflowEditorPage({
         y: event.clientY,
       })
 
-      const newNode: Node = {
+      const newNode: any = {
         id: crypto.randomUUID(),
         data: { label: nodeType },
         position,
         type: nodeType,
       }
 
-      setNodes((nds) => nds.concat(newNode))
+      setNodes([...nodes, newNode])
     },
-    [reactFlowInstance, setNodes]
+    [reactFlowInstance, setNodes, nodes]
   )
 
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
@@ -110,15 +187,15 @@ export default function WorkflowEditorPage({
 
   const onConnect = useCallback(
     (connection: Connection) => {
-      setEdges((eds) => addEdge({
+      setEdges(addEdge({
         ...connection,
         id: `${connection.source}-${connection.target}`,
         animated: true,
         style: { stroke: '#a855f7', strokeWidth: 2 },
         markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' },
-      }, eds))
+      }, edges as any[]) as any)
     },
-    [setEdges]
+    [setEdges, edges]
   )
 
   const filteredNodes = nodeDefinitions.filter((node) =>
@@ -148,17 +225,18 @@ export default function WorkflowEditorPage({
 
         {/* Center: Run Controls */}
         <div className="flex items-center gap-2">
-          <button className="text-xs text-gray-400 border border-white/10 rounded-full px-3 py-1 hover:bg-white/5 transition-colors">
-            Run selected
+          <button onClick={handleLoadSample} className="text-xs text-gray-400 border border-white/10 rounded-full px-3 py-1 hover:bg-white/5 transition-colors">
+            Load Sample
           </button>
-          <button className="bg-white text-black text-xs font-semibold rounded-full px-4 py-1.5 hover:bg-gray-100 transition-colors">
-            Run All
+          <button onClick={handleRun} disabled={isRunning} className="bg-white text-black text-xs font-semibold rounded-full px-4 py-1.5 hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center gap-2">
+            {isRunning && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            {isRunning ? 'Running...' : 'Run All'}
           </button>
         </div>
 
         {/* Right: Save & Settings */}
         <div className="flex items-center gap-3 ml-auto">
-          <button className="text-xs text-gray-400 border border-white/10 rounded-full px-3 py-1 hover:bg-white/5 transition-colors">
+          <button onClick={handleSave} className="text-xs text-gray-400 border border-white/10 rounded-full px-3 py-1 hover:bg-white/5 transition-colors">
             Save
           </button>
           <TooltipProvider delayDuration={0}>
@@ -223,41 +301,48 @@ export default function WorkflowEditorPage({
         </div>
       </div>
 
-      {/* React Flow Canvas */}
-      <div ref={reactFlowWrapper} className="h-full w-full pt-12">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          nodeTypes={nodeTypes}
-          onInit={setReactFlowInstance}
-          fitView
-          deleteKeyCode="Delete"
-        >
-          <Background
-            variant={BackgroundVariant.Dots}
-            color="#1a2332"
-            gap={24}
-            size={1.5}
-          />
-          <Controls
-            className="[&]:!bg-[#1c1c1c] [&]:!border-white/5 [&>button]:!bg-[#1c1c1c] [&>button]:!border-white/5 [&>button]:!text-gray-500 [&>button:hover]:!bg-white/5 [&>button:hover]:!text-white"
-            showInteractive={false}
-          />
-          <MiniMap
-            style={{
-              background: '#1c1c1c',
-              border: '1px solid rgba(255,255,255,0.05)',
-            }}
-            nodeColor="#a855f7"
-            maskColor="rgba(0,0,0,0.85)"
-            position="bottom-right"
-          />
-        </ReactFlow>
+      {/* React Flow Canvas and Sidebar */}
+      <div className="flex w-full h-full pt-12">
+        <div ref={reactFlowWrapper} className="flex-1 h-full relative">
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onDrop={onDrop}
+            onDragOver={onDragOver}
+            nodeTypes={nodeTypes}
+            onInit={setReactFlowInstance}
+            fitView
+            deleteKeyCode="Delete"
+          >
+            <Background
+              variant={BackgroundVariant.Dots}
+              color="#1a2332"
+              gap={24}
+              size={1.5}
+            />
+            <Controls
+              className="[&]:!bg-[#1c1c1c] [&]:!border-white/5 [&>button]:!bg-[#1c1c1c] [&>button]:!border-white/5 [&>button]:!text-gray-500 [&>button:hover]:!bg-white/5 [&>button:hover]:!text-white"
+              showInteractive={false}
+            />
+            <MiniMap
+              style={{
+                background: '#1c1c1c',
+                border: '1px solid rgba(255,255,255,0.05)',
+              }}
+              nodeColor="#a855f7"
+              maskColor="rgba(0,0,0,0.85)"
+              position="bottom-left"
+            />
+          </ReactFlow>
+        </div>
+        
+        {/* History Sidebar */}
+        <div className="w-80 flex-shrink-0 h-full border-l border-white/5 bg-[#0a0a0a]">
+          <HistorySidebar className="bg-transparent" />
+        </div>
       </div>
 
       {/* Empty Canvas State */}

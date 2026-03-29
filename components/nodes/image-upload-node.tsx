@@ -3,8 +3,9 @@
 import { Handle, Position, NodeProps } from 'reactflow';
 import { Upload } from 'lucide-react';
 import { useState, useRef } from 'react';
+import { useWorkflowStore } from '@/store/workflowStore';
 
-export default function ImageUploadNode({ data }: NodeProps) {
+export default function ImageUploadNode({ id, data }: NodeProps) {
   const [preview, setPreview] = useState<string | null>(data.preview || null);
   const [filename, setFilename] = useState(data.filename || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -13,10 +14,22 @@ export default function ImageUploadNode({ data }: NodeProps) {
     if (!file.type.startsWith('image/')) return;
     setFilename(file.name);
     const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreview(e.target?.result as string);
+    reader.onload = async (e) => {
+      const base64 = e.target?.result as string;
+      setPreview(base64);
       if (data.onChange) {
-        data.onChange({ preview: e.target?.result, filename: file.name });
+        data.onChange({ preview: base64, filename: file.name });
+      }
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file: base64, filename: file.name, type: 'image' })
+      });
+      const dataRes = await res.json();
+      if (dataRes.success) {
+        useWorkflowStore.getState().updateNodeData(id, { imageUrl: dataRes.url, value: dataRes.url });
+        useWorkflowStore.getState().setNodeOutput(id, dataRes.url);
       }
     };
     reader.readAsDataURL(file);
