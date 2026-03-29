@@ -29,7 +29,7 @@ export default function CropImageNode({ data }: NodeProps) {
 
   return (
     <div
-      className={`rounded-2xl border bg-gray-900 shadow-2xl min-w-[280px] max-w-[320px] transition-all ${
+      className={`relative rounded-2xl border bg-gray-900 shadow-2xl min-w-[280px] max-w-[320px] transition-all ${
         isExecuting ? 'ring-2 ring-pink-500 animate-pulse border-pink-500/50' : 'border-gray-700'
       }`}
     >
@@ -133,7 +133,7 @@ export default function CropImageNode({ data }: NodeProps) {
         </button>
       </div>
 
-      {/* Handles */}
+      {/* Handles with labels */}
       <Handle
         type="target"
         position={Position.Left}
@@ -143,9 +143,12 @@ export default function CropImageNode({ data }: NodeProps) {
           width: 12,
           height: 12,
           border: '2px solid #4c1d95',
-          top: 70,
+          top: 50,
         }}
       />
+      <span className="absolute text-[10px] text-gray-500 left-4 top-[44px]">
+        Image
+      </span>
 
       <Handle
         type="target"
@@ -156,9 +159,12 @@ export default function CropImageNode({ data }: NodeProps) {
           width: 12,
           height: 12,
           border: '2px solid #4c1d95',
-          top: 130,
+          top: 100,
         }}
       />
+      <span className="absolute text-[10px] text-gray-500 left-4 top-[94px]">
+        X
+      </span>
 
       <Handle
         type="target"
@@ -169,9 +175,12 @@ export default function CropImageNode({ data }: NodeProps) {
           width: 12,
           height: 12,
           border: '2px solid #4c1d95',
-          top: 160,
+          top: 130,
         }}
       />
+      <span className="absolute text-[10px] text-gray-500 left-4 top-[124px]">
+        Y
+      </span>
 
       <Handle
         type="target"
@@ -182,9 +191,12 @@ export default function CropImageNode({ data }: NodeProps) {
           width: 12,
           height: 12,
           border: '2px solid #4c1d95',
-          top: 190,
+          top: 160,
         }}
       />
+      <span className="absolute text-[10px] text-gray-500 left-4 top-[154px]">
+        W
+      </span>
 
       <Handle
         type="target"
@@ -195,9 +207,12 @@ export default function CropImageNode({ data }: NodeProps) {
           width: 12,
           height: 12,
           border: '2px solid #4c1d95',
-          top: 220,
+          top: 190,
         }}
       />
+      <span className="absolute text-[10px] text-gray-500 left-4 top-[184px]">
+        H
+      </span>
 
       <Handle
         type="source"
@@ -210,6 +225,9 @@ export default function CropImageNode({ data }: NodeProps) {
           border: '2px solid #4c1d95',
         }}
       />
+      <span className="absolute text-[10px] text-gray-500 right-4 bottom-4">
+        Output
+      </span>
     </div>
   );
 }

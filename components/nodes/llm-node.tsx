@@ -1,8 +1,8 @@
 'use client';
 
 import { Handle, Position, NodeProps } from 'reactflow';
-import { BrainCircuit, Copy, ChevronDown, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { BrainCircuit, Copy, Check, ChevronDown, Loader2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function LLMNode({ data }: NodeProps) {
   const [model, setModel] = useState(data.model || 'gemini-2.0-flash');
@@ -12,15 +12,26 @@ export default function LLMNode({ data }: NodeProps) {
   const [isExecuting, setIsExecuting] = useState(false);
   const [isResultExpanded, setIsResultExpanded] = useState(true);
   const [copied, setCopied] = useState(false);
+  const resultRef = useRef<HTMLDivElement>(null);
+  const [resultHeight, setResultHeight] = useState(0);
 
   const systemConnected = data.systemConnected || false;
   const userConnected = data.userConnected || false;
+
+  // Estimate tokens (rough approximation: ~4 chars per token)
+  const estimatedTokens = result ? Math.ceil(result.length / 4) : 0;
+
+  useEffect(() => {
+    if (resultRef.current) {
+      setResultHeight(resultRef.current.scrollHeight);
+    }
+  }, [result]);
 
   const handleRun = async () => {
     setIsExecuting(true);
     // Simulate LLM execution
     setTimeout(() => {
-      setResult('Model output would appear here. This is a placeholder for the LLM response.');
+      setResult('Model output would appear here. This is a placeholder for the LLM response. The response can be quite long and will animate when expanding or collapsing for a smooth user experience.');
       setIsExecuting(false);
     }, 2000);
   };
@@ -33,7 +44,7 @@ export default function LLMNode({ data }: NodeProps) {
 
   return (
     <div
-      className={`rounded-2xl border bg-gray-900 shadow-2xl min-w-[280px] max-w-[320px] transition-all ${
+      className={`relative rounded-2xl border bg-gray-900 shadow-2xl min-w-[280px] max-w-[320px] transition-all ${
         isExecuting ? 'ring-2 ring-purple-500 animate-pulse border-purple-500/50' : 'border-gray-700'
       }`}
     >
@@ -129,7 +140,7 @@ export default function LLMNode({ data }: NodeProps) {
           )}
         </button>
 
-        {/* Result Area */}
+        {/* Result Area with animated expansion */}
         {result && (
           <div className="bg-gray-800 rounded-xl overflow-hidden">
             <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700">
@@ -137,38 +148,48 @@ export default function LLMNode({ data }: NodeProps) {
               <div className="flex items-center gap-1">
                 <button
                   onClick={copyResult}
-                  className="p-1 hover:bg-gray-700 rounded transition-colors"
-                  title="Copy"
+                  className="p-1.5 hover:bg-gray-700 rounded transition-colors"
+                  title="Copy to clipboard"
                 >
-                  <Copy className="w-3 h-3 text-gray-500 hover:text-gray-300" />
+                  {copied ? (
+                    <Check className="w-3.5 h-3.5 text-green-400" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5 text-gray-500 hover:text-gray-300" />
+                  )}
                 </button>
                 <button
                   onClick={() => setIsResultExpanded(!isResultExpanded)}
-                  className="p-1 hover:bg-gray-700 rounded transition-colors"
+                  className="p-1.5 hover:bg-gray-700 rounded transition-colors"
                 >
                   <ChevronDown
-                    className={`w-3 h-3 text-gray-500 transition-transform ${
+                    className={`w-3.5 h-3.5 text-gray-500 transition-transform duration-200 ${
                       isResultExpanded ? '' : '-rotate-90'
                     }`}
                   />
                 </button>
               </div>
             </div>
-            {isResultExpanded && (
-              <div className="p-3 max-h-48 overflow-y-auto text-xs text-gray-300 whitespace-pre-wrap">
+            {/* Animated content container */}
+            <div
+              className="transition-all duration-300 ease-in-out overflow-hidden"
+              style={{
+                maxHeight: isResultExpanded ? `${Math.min(resultHeight + 48, 192)}px` : '0px',
+                opacity: isResultExpanded ? 1 : 0,
+              }}
+            >
+              <div ref={resultRef} className="p-3 max-h-40 overflow-y-auto text-xs text-gray-300 whitespace-pre-wrap">
                 {result}
               </div>
-            )}
-            {copied && (
-              <div className="px-3 py-1 bg-green-500/20 border-t border-gray-700 text-xs text-green-400">
-                Copied!
+              {/* Token estimate */}
+              <div className="px-3 pb-2">
+                <span className="text-[10px] text-gray-600">~{estimatedTokens} tokens</span>
               </div>
-            )}
+            </div>
           </div>
         )}
       </div>
 
-      {/* Handles */}
+      {/* Handles with labels */}
       <Handle
         type="target"
         position={Position.Left}
@@ -181,9 +202,9 @@ export default function LLMNode({ data }: NodeProps) {
           top: 80,
         }}
       />
-      <div className="absolute left-[-55px] top-[77px] text-xs text-gray-500">
+      <span className="absolute text-[10px] text-gray-500 left-4 top-[74px]">
         System
-      </div>
+      </span>
 
       <Handle
         type="target"
@@ -197,9 +218,9 @@ export default function LLMNode({ data }: NodeProps) {
           top: 140,
         }}
       />
-      <div className="absolute left-[-60px] top-[137px] text-xs text-gray-500">
-        User Msg
-      </div>
+      <span className="absolute text-[10px] text-gray-500 left-4 top-[134px]">
+        User
+      </span>
 
       <Handle
         type="target"
@@ -213,9 +234,9 @@ export default function LLMNode({ data }: NodeProps) {
           top: 200,
         }}
       />
-      <div className="absolute left-[-50px] top-[197px] text-xs text-gray-500">
+      <span className="absolute text-[10px] text-gray-500 left-4 top-[194px]">
         Images
-      </div>
+      </span>
 
       <Handle
         type="source"
@@ -228,6 +249,9 @@ export default function LLMNode({ data }: NodeProps) {
           border: '2px solid #4c1d95',
         }}
       />
+      <span className="absolute text-[10px] text-gray-500 right-4 bottom-4">
+        Output
+      </span>
     </div>
   );
 }

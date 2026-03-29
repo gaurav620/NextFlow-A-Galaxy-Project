@@ -40,7 +40,7 @@ export default function VideoUploadNode({ data }: NodeProps) {
   };
 
   return (
-    <div className="rounded-2xl border bg-gray-900 shadow-2xl min-w-[280px] max-w-[320px] transition-all border-gray-700">
+    <div className="relative rounded-2xl border bg-gray-900 shadow-2xl min-w-[280px] max-w-[320px] transition-all border-gray-700">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
         <div className="flex items-center gap-2">
@@ -91,7 +91,7 @@ export default function VideoUploadNode({ data }: NodeProps) {
         )}
       </div>
 
-      {/* Handle */}
+      {/* Handle with label */}
       <Handle
         type="source"
         position={Position.Right}
@@ -103,6 +103,9 @@ export default function VideoUploadNode({ data }: NodeProps) {
           border: '2px solid #4c1d95',
         }}
       />
+      <span className="absolute text-[10px] text-gray-500 right-4 top-1/2 -translate-y-1/2">
+        Video
+      </span>
 
       <input
         ref={fileInputRef}

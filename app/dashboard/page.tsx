@@ -14,8 +14,8 @@ import ReactFlow, {
   Node,
   Edge,
   Connection,
-} from 'react-flow-renderer'
-import 'react-flow-renderer/dist/style.css'
+} from 'reactflow'
+import 'reactflow/dist/style.css'
 import {
   Play,
   Save,
@@ -26,14 +26,20 @@ import {
   Workflow,
 } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
+import TextNode from '@/components/nodes/text-node'
+import ImageUploadNode from '@/components/nodes/image-upload-node'
+import VideoUploadNode from '@/components/nodes/video-upload-node'
+import LLMNode from '@/components/nodes/llm-node'
+import CropImageNode from '@/components/nodes/crop-image-node'
+import ExtractFrameNode from '@/components/nodes/extract-frame-node'
 
 const nodeTypes = {
-  textNode: () => <div>Text</div>,
-  imageUploadNode: () => <div>Image</div>,
-  videoUploadNode: () => <div>Video</div>,
-  llmNode: () => <div>LLM</div>,
-  cropImageNode: () => <div>Crop</div>,
-  extractFrameNode: () => <div>Frame</div>,
+  textNode: TextNode,
+  imageUploadNode: ImageUploadNode,
+  videoUploadNode: VideoUploadNode,
+  llmNode: LLMNode,
+  cropImageNode: CropImageNode,
+  extractFrameNode: ExtractFrameNode,
 }
 
 export default function WorkflowCanvas() {
@@ -80,6 +86,7 @@ export default function WorkflowCanvas() {
     (connection: Connection) => {
       const edge: Edge = {
         ...connection,
+        id: `${connection.source}-${connection.target}`,
         animated: true,
         style: { stroke: '#8b5cf6', strokeWidth: 2 },
         markerEnd: { type: MarkerType.ArrowClosed, color: '#8b5cf6' },
@@ -95,15 +102,15 @@ export default function WorkflowCanvas() {
   }
 
   return (
-    <div className="relative h-screen w-full bg-gray-950">
-      {/* Floating Toolbar */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-gray-900/90 backdrop-blur-sm border border-gray-700 rounded-2xl px-4 py-2 flex items-center gap-3 shadow-2xl">
+    <div className="relative h-screen w-full" style={{ backgroundColor: '#030712' }}>
+      {/* Floating Toolbar - absolute positioned above canvas */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-gray-900/80 backdrop-blur-sm border border-gray-700 rounded-2xl px-4 py-2 flex items-center gap-3 shadow-2xl">
         {/* Workflow Name Input */}
         <input
           type="text"
           value={workflowName}
           onChange={(e) => setWorkflowName(e.target.value)}
-          className="bg-transparent text-white text-sm font-medium border-0 outline-none min-w-[160px]"
+          className="bg-transparent text-foreground text-sm font-medium border-0 outline-none min-w-[160px]"
           placeholder="Untitled Workflow"
         />
 
@@ -168,25 +175,25 @@ export default function WorkflowCanvas() {
           onInit={setReactFlowInstance}
           fitView
           deleteKeyCode="Delete"
-          className="bg-gray-950"
+          style={{ backgroundColor: '#030712' }}
         >
           <Background
             variant={BackgroundVariant.Dots}
-            color="#1f2937"
-            gap={20}
-            size={1}
+            color="#1a2332"
+            gap={24}
+            size={1.5}
           />
           <Controls
-            className="!bg-gray-900 !border-gray-700"
+            className="!bg-gray-900 !border-gray-700 [&>button]:!bg-gray-900 [&>button]:!border-gray-700 [&>button]:!text-gray-400 [&>button:hover]:!bg-gray-800"
             showInteractive={false}
           />
           <MiniMap
             style={{
-              background: '#111827',
-              border: '1px solid #374151',
+              background: '#0a0f18',
+              border: '1px solid #1f2937',
             }}
             nodeColor="#6d28d9"
-            maskColor="rgb(0,0,0,0.7)"
+            maskColor="rgb(0,0,0,0.8)"
             position="bottom-right"
           />
         </ReactFlow>
