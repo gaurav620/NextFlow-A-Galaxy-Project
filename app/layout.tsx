@@ -36,13 +36,13 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <ClerkProvider>
-      <html lang="en">
-        <body className="font-sans antialiased">
+    <html lang="en" suppressHydrationWarning>
+      <body className="font-sans antialiased">
+        <ClerkProvider>
           {children}
           <Analytics />
-        </body>
-      </html>
-    </ClerkProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   )
 }
