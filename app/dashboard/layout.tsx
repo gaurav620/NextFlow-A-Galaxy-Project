@@ -3,17 +3,22 @@
 import { useState } from 'react';
 import { UserButton } from '@clerk/nextjs';
 import {
-  Zap,
-  ChevronLeft,
-  Search,
-  Type,
+  Home,
+  Gamepad2,
+  Grid3x3,
+  Folder,
   ImageIcon,
   Video,
-  BrainCircuit,
-  Scissors,
-  Film,
+  Sparkles,
+  Square,
+  Zap,
+  Edit2,
+  Wand2,
+  RotateCw,
+  Cube,
   Menu,
   X,
+  Plus,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -28,152 +33,35 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('editor');
 
-  const nodeTypes = [
-    {
-      type: 'textNode',
-      icon: Type,
-      label: 'Text Node',
-      color: 'text-blue-400',
-    },
-    {
-      type: 'imageUploadNode',
-      icon: ImageIcon,
-      label: 'Upload Image',
-      color: 'text-green-400',
-    },
-    {
-      type: 'videoUploadNode',
-      icon: Video,
-      label: 'Upload Video',
-      color: 'text-orange-400',
-    },
-    {
-      type: 'llmNode',
-      icon: BrainCircuit,
-      label: 'Run LLM',
-      color: 'text-purple-400',
-    },
-    {
-      type: 'cropImageNode',
-      icon: Scissors,
-      label: 'Crop Image',
-      color: 'text-pink-400',
-    },
-    {
-      type: 'extractFrameNode',
-      icon: Film,
-      label: 'Extract Frame',
-      color: 'text-yellow-400',
-    },
+  const mainItems = [
+    { id: 'home', label: 'Home', icon: Home },
+    { id: 'train', label: 'Train Lora', icon: Gamepad2 },
+    { id: 'editor', label: 'Node Editor', icon: Grid3x3 },
+    { id: 'assets', label: 'Assets', icon: Folder },
   ];
 
-  const handleDragStart = (
-    e: React.DragEvent<HTMLDivElement>,
-    nodeType: string
-  ) => {
-    e.dataTransfer.setData('nodeType', nodeType);
-  };
-
-  const SidebarContent = ({ collapsed }: { collapsed: boolean }) => (
-    <TooltipProvider delayDuration={0}>
-      <div className="flex flex-col h-full">
-        {/* Logo Row */}
-        <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} p-4`}>
-          <div className={`flex items-center gap-2 ${collapsed ? '' : ''}`}>
-            <Zap className="w-5 h-5 text-purple-500 flex-shrink-0" />
-            {!collapsed && <span className="text-foreground font-bold text-lg">NextFlow</span>}
-          </div>
-          {!collapsed && (
-            <button
-              onClick={() => setSidebarCollapsed(true)}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-          )}
-          {collapsed && (
-            <button
-              onClick={() => setSidebarCollapsed(false)}
-              className="absolute -right-3 top-5 bg-secondary border border-border rounded-full p-1 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ChevronLeft className="w-3 h-3 rotate-180" />
-            </button>
-          )}
-        </div>
-
-        {/* Search */}
-        {!collapsed && (
-          <div className="px-3 pb-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search nodes..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-input rounded-lg text-sm text-foreground placeholder-muted-foreground w-full px-3 py-2 pl-9 focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Quick Access Label */}
-        {!collapsed && (
-          <div className="text-xs text-muted-foreground uppercase tracking-widest px-4 py-2 mt-1">
-            Quick Access
-          </div>
-        )}
-
-        {/* Node Buttons */}
-        <div className="flex-1 overflow-y-auto">
-          {nodeTypes.map((node) => {
-            const Icon = node.icon;
-            const nodeButton = (
-              <div
-                key={node.type}
-                draggable
-                onDragStart={(e) => handleDragStart(e, node.type)}
-                className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'} ${collapsed ? 'px-2 py-3 mx-1' : 'px-4 py-3 mx-2'} rounded-xl hover:bg-secondary cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-all`}
-              >
-                <Icon className={`w-5 h-5 ${node.color} flex-shrink-0`} />
-                {!collapsed && <span className="text-sm">{node.label}</span>}
-              </div>
-            );
-
-            if (collapsed) {
-              return (
-                <Tooltip key={node.type}>
-                  <TooltipTrigger asChild>{nodeButton}</TooltipTrigger>
-                  <TooltipContent side="right" className="bg-popover text-popover-foreground border-border">
-                    {node.label}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            }
-
-            return nodeButton;
-          })}
-        </div>
-
-        {/* Bottom Account Section */}
-        <div className={`mt-auto border-t border-border p-4 flex items-center ${collapsed ? 'justify-center' : 'gap-3'}`}>
-          <UserButton />
-          {!collapsed && <span className="text-muted-foreground text-sm">Account</span>}
-        </div>
-      </div>
-    </TooltipProvider>
-  );
+  const toolItems = [
+    { label: 'Image', icon: ImageIcon, color: 'bg-blue-500' },
+    { label: 'Video', icon: Video, color: 'bg-orange-500' },
+    { label: 'Enhancer', icon: Sparkles, color: 'bg-gray-500' },
+    { label: 'Nano Banana', icon: Square, color: 'bg-yellow-500' },
+    { label: 'Realtime', icon: Zap, color: 'bg-purple-500' },
+    { label: 'Edit', icon: Edit2, color: 'bg-purple-500' },
+    { label: 'Video Lipsync', icon: Video, color: 'bg-cyan-500' },
+    { label: 'Motion Transfer', icon: RotateCw, color: 'bg-green-500' },
+    { label: '3D Objects', icon: Cube, color: 'bg-gray-700' },
+    { label: 'Video Restyle', icon: Wand2, color: 'bg-gradient-to-r from-pink-500 to-purple-500' },
+  ];
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background">
-      {/* Mobile Bottom Sheet Trigger */}
+    <div className="flex h-screen w-screen overflow-hidden bg-[#030712]">
+      {/* Mobile Menu Trigger */}
       <button
         onClick={() => setMobileMenuOpen(true)}
-        className="md:hidden fixed bottom-4 left-4 z-50 bg-primary text-primary-foreground p-3 rounded-full shadow-lg"
+        className="md:hidden fixed bottom-4 left-4 z-50 bg-blue-600 text-white p-3 rounded-full shadow-lg"
       >
         <Menu className="w-5 h-5" />
       </button>
@@ -181,64 +69,105 @@ export default function DashboardLayout({
       {/* Mobile Bottom Sheet */}
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-0 z-50">
-          {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setMobileMenuOpen(false)}
           />
-          {/* Sheet */}
-          <div className="absolute bottom-0 left-0 right-0 bg-card border-t border-border rounded-t-3xl max-h-[70vh] overflow-hidden animate-in slide-in-from-bottom duration-300">
-            <div className="flex items-center justify-between p-4 border-b border-border">
-              <div className="flex items-center gap-2">
-                <Zap className="w-5 h-5 text-purple-500" />
-                <span className="text-foreground font-bold">Nodes</span>
-              </div>
-              <button
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-4 grid grid-cols-3 gap-3 overflow-y-auto">
-              {nodeTypes.map((node) => {
-                const Icon = node.icon;
-                return (
-                  <div
-                    key={node.type}
-                    draggable
-                    onDragStart={(e) => {
-                      handleDragStart(e, node.type);
-                      setMobileMenuOpen(false);
-                    }}
-                    className="flex flex-col items-center gap-2 p-4 rounded-xl bg-secondary hover:bg-secondary/80 cursor-grab active:cursor-grabbing transition-all"
-                  >
-                    <Icon className={`w-6 h-6 ${node.color}`} />
-                    <span className="text-xs text-foreground text-center">{node.label}</span>
-                  </div>
-                );
-              })}
-            </div>
+          <div className="absolute bottom-0 left-0 right-0 bg-[#0f0f0f] border-t border-gray-800 rounded-t-3xl max-h-[80vh] overflow-hidden animate-in slide-in-from-bottom duration-300">
+            <SidebarMenu />
           </div>
         </div>
       )}
 
-      {/* LEFT SIDEBAR - Desktop */}
-      <div
-        className={`hidden md:flex flex-col h-full bg-card border-r border-border transition-all duration-300 ease-in-out relative ${
-          sidebarCollapsed ? 'w-16' : 'w-64'
-        }`}
-      >
-        <SidebarContent collapsed={sidebarCollapsed} />
+      {/* LEFT SIDEBAR - krea.ai style */}
+      <div className="hidden md:flex flex-col w-[160px] bg-[#0f0f0f] border-r border-gray-900 transition-all duration-300">
+        <SidebarMenu />
       </div>
 
-      {/* CENTER */}
+      {/* CENTER CANVAS */}
       <div className="flex-1 overflow-hidden w-full">{children}</div>
 
-      {/* RIGHT SIDEBAR - Hidden on mobile */}
-      <div className="hidden md:flex flex-col h-full w-72 bg-card border-l border-border">
+      {/* RIGHT SIDEBAR - History */}
+      <div className="hidden md:flex flex-col h-full w-72 bg-[#0f0f0f] border-l border-gray-900">
         <HistorySidebar />
       </div>
     </div>
   );
+
+  function SidebarMenu() {
+    return (
+      <TooltipProvider delayDuration={0}>
+        <div className="flex flex-col h-full overflow-y-auto">
+          {/* Main Items */}
+          <div className="flex flex-col">
+            {mainItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`px-3 py-2 mx-2 rounded-lg flex items-center gap-3 text-sm transition-colors ${
+                    activeTab === item.id
+                      ? 'bg-white/10 text-white'
+                      : 'text-gray-300 hover:bg-white/5'
+                  }`}
+                >
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  <span className="hidden md:inline">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Tools Section */}
+          <div className="mt-4 px-3">
+            <div className="text-xs text-gray-600 uppercase tracking-widest font-semibold mb-3">
+              Tools
+            </div>
+            <div className="flex flex-col gap-1">
+              {toolItems.map((tool, idx) => {
+                const Icon = tool.icon;
+                return (
+                  <Tooltip key={idx}>
+                    <TooltipTrigger asChild>
+                      <button className="px-3 py-2 rounded-lg flex items-center gap-3 text-sm text-gray-300 hover:bg-white/5 transition-colors group">
+                        <div className={`w-4 h-4 rounded flex-shrink-0 ${tool.color}`} />
+                        <span className="hidden md:inline text-sm">{tool.label}</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">{tool.label}</TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Sessions Section */}
+          <div className="mt-auto border-t border-gray-900 pt-4 px-3 pb-4">
+            <div className="text-xs text-gray-600 uppercase tracking-widest font-semibold mb-3">
+              Sessions
+            </div>
+            <button className="w-full px-3 py-2 rounded-lg flex items-center justify-center gap-2 bg-white/5 text-gray-300 hover:bg-white/10 transition-colors text-sm">
+              <Plus className="w-4 h-4" />
+              <span className="hidden md:inline">New Session</span>
+            </button>
+          </div>
+
+          {/* User Section */}
+          <div className="border-t border-gray-900 p-3 flex items-center gap-2">
+            <div className="flex-shrink-0">
+              <UserButton />
+            </div>
+            <div className="hidden md:flex flex-col flex-1 min-w-0">
+              <span className="text-sm text-gray-300 truncate">User</span>
+              <span className="text-xs text-gray-500">Free</span>
+            </div>
+            <button className="hidden md:inline text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 transition-colors whitespace-nowrap">
+              Upgrade
+            </button>
+          </div>
+        </div>
+      </TooltipProvider>
+    );
+
 }
