@@ -15,7 +15,7 @@ import {
   Edit2,
   Wand2,
   RotateCw,
-  Cube,
+  Box,
   Plus,
   ChevronDown,
 } from 'lucide-react';
@@ -45,7 +45,7 @@ export default function DashboardLayout({
     { label: 'Edit', icon: Edit2, color: '#A855F7' },
     { label: 'Video Lipsync', icon: Video, color: '#06B6D4' },
     { label: 'Motion Transfer', icon: RotateCw, color: '#22C55E' },
-    { label: '3D Objects', icon: Cube, color: '#4B5563' },
+    { label: '3D Objects', icon: Box, color: '#4B5563' },
     { label: 'Video Restyle', icon: Wand2, color: '#EC4899' },
   ];
 

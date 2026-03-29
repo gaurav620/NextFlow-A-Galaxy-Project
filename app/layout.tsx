@@ -38,7 +38,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="font-sans antialiased">
-        <ClerkProvider>
+        <ClerkProvider
+          signInUrl="/sign-in"
+          signUpUrl="/sign-up"
+          signInFallbackRedirectUrl="/dashboard"
+          signUpFallbackRedirectUrl="/dashboard"
+        >
           {children}
           <Analytics />
         </ClerkProvider>
