@@ -1,5 +1,3 @@
-'use client';
-
 import { SignUp } from '@clerk/nextjs';
 import { Zap } from 'lucide-react';
 import Link from 'next/link';
