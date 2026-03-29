@@ -7,9 +7,7 @@ const nextConfig = {
     unoptimized: true,
     qualities: [75, 90],
   },
-  experimental: {
-    serverComponentsExternalPackages: ['sharp']
-  }
+  serverExternalPackages: ['sharp'],
 }
 
 export default nextConfig
