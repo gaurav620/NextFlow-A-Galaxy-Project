@@ -183,15 +183,16 @@ export default function GenericToolPage() {
                 src={resultUrl} 
                 alt="Generated Graphic" 
                 className="w-full h-full object-cover rounded-2xl z-10 relative"
+                referrerPolicy="no-referrer"
                 onLoad={() => setIsGenerating(false)}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  // If the public AI hits a global rate limit (429), visually fallback immediately 
-                  // to a reliable placeholder to prevent infinite loading spinners.
+                  // If the public AI hits a global rate limit (429) or blocks the Vercel Referrer,
+                  // visually fallback immediately to a reliable error graphic.
                   if (target.src.includes('pollinations')) {
-                    const fallbackSeed = Math.floor(Math.random() * 1000);
-                    target.src = `https://picsum.photos/seed/${fallbackSeed}/1024/768`;
-                    // Wait for the fallback to trigger onLoad() again
+                    // Limit prompt length for the error graphic to avoid breaking the URL
+                    const truncated = prompt.length > 30 ? prompt.substring(0, 30) + '...' : prompt;
+                    target.src = `https://dummyjson.com/image/1024x768/18181b/ef4444?text=Free+API+Rate+Limited:%0A${encodeURIComponent(truncated)}`;
                   } else {
                     setIsGenerating(false);
                   }
