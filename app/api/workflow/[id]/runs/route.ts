@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const { userId } = await auth()
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const runs = await prisma.workflowRun.findMany({
-      where: { workflowId: params.id, userId },
+      where: { workflowId: id, userId },
       include: { nodeRuns: { orderBy: { startedAt: 'asc' } } },
       orderBy: { startedAt: 'desc' },
       take: 20,
@@ -18,13 +19,14 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const { userId } = await auth()
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const { scope = 'full' } = await req.json()
     const run = await prisma.workflowRun.create({
-      data: { workflowId: params.id, userId, status: 'running', scope },
+      data: { workflowId: id, userId, status: 'running', scope },
     })
     return NextResponse.json({ success: true, run })
   } catch (error: any) {
@@ -32,13 +34,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const { userId } = await auth()
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const { status } = await req.json()
     const run = await prisma.workflowRun.update({
-      where: { id: params.id },
+      where: { id },
       data: { status, endedAt: new Date() },
     })
     return NextResponse.json({ success: true, run })

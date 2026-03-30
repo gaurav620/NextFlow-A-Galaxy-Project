@@ -19,6 +19,7 @@ import {
   Download,
   Copy,
   Trash2,
+  Check,
 } from 'lucide-react';
 
 type FilterCategory = 'All' | 'Favorites';
