@@ -21,29 +21,27 @@ import {
 const quickActions = [
   {
     label: 'Generate Image',
-    href: '/dashboard/nodes',
+    href: '/dashboard/image',
     image: '/card-portrait.png',
     icon: '🖼️',
   },
   {
     label: 'Generate Video',
-    href: '/dashboard/video-restyle',
+    href: '/dashboard/video',
     image: '/v-kling.png',
     icon: '🎬',
-    iconSrc: '/v-ltx.png',
   },
   {
     label: 'Upscale & Enhance',
-    href: '/dashboard/assets',
+    href: '/dashboard/enhancer',
     image: '/m-flux2.png',
     icon: '✨',
   },
   {
     label: 'Realtime',
-    href: '/dashboard/nodes',
+    href: '/dashboard/realtime',
     image: '/bento-eye.png',
     icon: '⚡',
-    iconComponent: true,
   },
 ];
 
@@ -318,32 +316,47 @@ export default function DashboardHome() {
       <div className="max-w-[900px] mx-auto px-6 py-6 space-y-10">
 
         {/* ── HERO BANNER ──────────────────────────────────────── */}
-        <Link
-          href="/dashboard/nodes"
-          className="block rounded-2xl overflow-hidden relative cursor-pointer group"
+        <div
+          className="rounded-2xl overflow-hidden relative"
           style={{
-            background: 'linear-gradient(135deg, #f97316 0%, #fb923c 30%, #fdba74 60%, #f59e0b 100%)',
+            background: 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 50%, #222 100%)',
             height: 180,
           }}
         >
-          {/* subtle noise texture overlay */}
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(ellipse at 30% 50%, rgba(255,255,255,0.15) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(255,200,100,0.4) 0%, transparent 50%)',
+          {/* Subtle radial glow */}
+          <div className="absolute inset-0 pointer-events-none" style={{
+            backgroundImage: 'radial-gradient(ellipse at 50% 120%, rgba(120,120,140,0.18) 0%, transparent 70%)',
           }} />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <p className="text-white text-[22px] font-light tracking-wide drop-shadow-sm">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
+            <p className="text-white/90 text-[22px] font-light tracking-wide">
               Start by generating a free image
             </p>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/dashboard/image"
+                className="flex items-center gap-1.5 px-4 py-2 bg-white text-black text-[13px] font-semibold rounded-full hover:bg-zinc-100 transition-colors"
+              >
+                Generate Image
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </Link>
+              <Link
+                href="/dashboard/video"
+                className="flex items-center gap-1.5 px-4 py-2 bg-transparent text-white text-[13px] font-medium rounded-full border border-white/20 hover:bg-white/10 transition-colors"
+              >
+                Generate Video
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
           </div>
           <div className="absolute top-3 right-4 flex gap-1">
-            <button className="w-6 h-6 rounded-full bg-black/20 flex items-center justify-center text-white hover:bg-black/30">
+            <button className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors">
               <ChevronLeft className="w-3 h-3" />
             </button>
-            <button className="w-6 h-6 rounded-full bg-black/20 flex items-center justify-center text-white hover:bg-black/30">
+            <button className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors">
               <ChevronRight className="w-3 h-3" />
             </button>
           </div>
-        </Link>
+        </div>
 
         {/* ── QUICK ACTIONS ───────────────────────────────────── */}
         <div className="grid grid-cols-4 gap-3">
@@ -391,7 +404,7 @@ export default function DashboardHome() {
           <div className="flex items-center gap-6">
             <div className="text-center">
               <p className="text-white font-black text-[36px] leading-none tracking-tight">
-                Try <span className="text-blue-400">Max</span>
+                Try <span className="text-purple-400">Pro</span>
               </p>
             </div>
             {/* Icon cluster */}

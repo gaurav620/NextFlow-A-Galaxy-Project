@@ -251,22 +251,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                 {/* Main Links */}
                 <div className="px-1 flex flex-col gap-0.5">
-                  <button className="flex w-full items-center gap-3 px-2 py-2 rounded-md hover:bg-[#1f1f1f] transition-colors text-left group">
+                  <Link href="/dashboard/pricing" onClick={() => setShowProfileMenu(false)} className="flex w-full items-center gap-3 px-2 py-2 rounded-md hover:bg-[#1f1f1f] transition-colors text-left group">
                     <Sparkles className="w-3.5 h-3.5 text-zinc-400 shrink-0 group-hover:text-white transition-colors" />
                     <span className="text-[12px] font-medium tracking-wide text-zinc-300 group-hover:text-white transition-colors">Upgrade plan</span>
-                  </button>
-                  <button className="flex w-full items-center gap-3 px-2 py-2 rounded-md hover:bg-[#1f1f1f] transition-colors text-left group">
+                  </Link>
+                  <Link href="/dashboard/pricing#compute-packs" onClick={() => setShowProfileMenu(false)} className="flex w-full items-center gap-3 px-2 py-2 rounded-md hover:bg-[#1f1f1f] transition-colors text-left group">
                     <CreditCard className="w-3.5 h-3.5 text-zinc-400 shrink-0 group-hover:text-white transition-colors" />
                     <span className="text-[12px] font-medium tracking-wide text-zinc-300 group-hover:text-white transition-colors">Buy credits</span>
-                  </button>
-                  <button className="flex w-full items-center gap-3 px-2 py-2 rounded-md hover:bg-[#1f1f1f] transition-colors text-left group">
+                  </Link>
+                  <Link href="/dashboard/settings" onClick={() => setShowProfileMenu(false)} className="flex w-full items-center gap-3 px-2 py-2 rounded-md hover:bg-[#1f1f1f] transition-colors text-left group">
                     <Settings className="w-3.5 h-3.5 text-zinc-400 shrink-0 group-hover:text-white transition-colors" />
                     <span className="text-[12px] font-medium tracking-wide text-zinc-300 group-hover:text-white transition-colors">Settings</span>
-                  </button>
-                  <button className="flex w-full items-center gap-3 px-2 py-2 rounded-md hover:bg-[#1f1f1f] transition-colors text-left group">
+                  </Link>
+                  <Link href="/dashboard/usage-statistics" onClick={() => setShowProfileMenu(false)} className="flex w-full items-center gap-3 px-2 py-2 rounded-md hover:bg-[#1f1f1f] transition-colors text-left group">
                     <BarChart2 className="w-3.5 h-3.5 text-zinc-400 shrink-0 group-hover:text-white transition-colors" />
                     <span className="text-[12px] font-medium tracking-wide text-zinc-300 group-hover:text-white transition-colors">Usage Statistics</span>
-                  </button>
+                  </Link>
                 </div>
 
                 <div className="h-px w-full bg-[#2a2a2a] my-2" />
