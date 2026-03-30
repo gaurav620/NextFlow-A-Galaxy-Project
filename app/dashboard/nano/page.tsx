@@ -1,15 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Zap, Download, Heart, RotateCcw, ChevronDown } from 'lucide-react';
+import { Zap, Download, Heart, RotateCcw, AlertCircle } from 'lucide-react';
 
 const aspectRatios = ['1:1', '16:9', '9:16', '4:3', '3:2'];
 const speedModes = ['Turbo', 'Standard', 'Quality'];
-
-const sampleResults = [
-  '/m-nano1.png', '/m-nano2.png', '/card-portrait.png',
-  '/bento-warrior.png', '/card-truck.png', '/m-flux2.png',
-];
 
 export default function NanoPage() {
   const [prompt, setPrompt] = useState('');
@@ -17,13 +12,34 @@ export default function NanoPage() {
   const [speed, setSpeed] = useState('Turbo');
   const [count, setCount] = useState(4);
   const [generating, setGenerating] = useState(false);
-  const [results, setResults] = useState(sampleResults);
+  const [results, setResults] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     setGenerating(true);
-    await new Promise(r => setTimeout(r, 1200));
-    setGenerating(false);
+    setError(null);
+    try {
+      const res = await fetch('/api/generate/nano', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: prompt.trim(), aspectRatio: aspect, count, speed }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Generation failed');
+      setResults(prev => [...data.images, ...prev]);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleDownload = (src: string, i: number) => {
+    const a = document.createElement('a');
+    a.href = src;
+    a.download = `nano-${i + 1}.png`;
+    a.click();
   };
 
   return (
@@ -46,6 +62,7 @@ export default function NanoPage() {
             <textarea
               value={prompt}
               onChange={e => setPrompt(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleGenerate(); }}
               placeholder="Describe your image..."
               rows={4}
               className="w-full bg-[#111] border border-white/[0.07] hover:border-white/[0.12] focus:border-yellow-500/30 rounded-xl p-3 text-[12px] text-zinc-200 placeholder:text-zinc-600 resize-none outline-none transition-colors"
@@ -95,6 +112,7 @@ export default function NanoPage() {
             </div>
             <input
               type="range" min={1} max={8} value={count}
+              aria-label="Image count"
               onChange={e => setCount(Number(e.target.value))}
               className="w-full h-1 appearance-none bg-zinc-800 rounded-full outline-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
               style={{ background: `linear-gradient(to right, #eab308 0%, #eab308 ${((count - 1) / 7) * 100}%, #27272a ${((count - 1) / 7) * 100}%, #27272a 100%)` }}
@@ -114,7 +132,7 @@ export default function NanoPage() {
               <><Zap className="w-4 h-4" />Generate Fast</>
             )}
           </button>
-          <p className="text-[10px] text-zinc-600 text-center mt-2">~{speed === 'Turbo' ? '1-2s' : speed === 'Standard' ? '3-5s' : '8-12s'} per image · {count * 2}⚡ credits</p>
+          <p className="text-[10px] text-zinc-600 text-center mt-2">~{speed === 'Turbo' ? '5-10s' : speed === 'Standard' ? '10-20s' : '20-30s'} · {count * 2}⚡ credits</p>
         </div>
       </div>
 
@@ -122,26 +140,49 @@ export default function NanoPage() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="h-12 flex items-center justify-between px-5 border-b border-white/[0.05] flex-shrink-0">
           <span className="text-[12px] text-zinc-500">{results.length} results</span>
-          <button onClick={() => setResults([])} className="p-1.5 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-white transition-colors">
+          <button type="button" title="Clear results" onClick={() => { setResults([]); setError(null); }} className="p-1.5 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-white transition-colors">
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
         </div>
+
+        {error && (
+          <div className="mx-5 mt-4 flex items-start gap-2.5 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+            <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+            <p className="text-[12px] text-red-300">{error}</p>
+            <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-200 text-[11px]">×</button>
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto p-5 [&::-webkit-scrollbar]:hidden">
-          {results.length === 0 ? (
+          {generating && results.length === 0 && (
+            <div className="h-full flex flex-col items-center justify-center gap-4">
+              <div className="grid grid-cols-4 gap-2 w-64">
+                {Array.from({ length: count > 4 ? 8 : 4 }).map((_, i) => (
+                  <div key={i} className="aspect-square rounded-lg bg-yellow-400/5 animate-pulse" />
+                ))}
+              </div>
+              <p className="text-zinc-500 text-[12px]">Generating fast...</p>
+            </div>
+          )}
+          {!generating && results.length === 0 && !error && (
             <div className="h-full flex flex-col items-center justify-center gap-3">
               <Zap className="w-10 h-10 text-yellow-400/30" />
               <p className="text-zinc-500 text-[13px]">Enter a prompt to generate fast</p>
             </div>
-          ) : (
+          )}
+          {results.length > 0 && (
             <div className="grid grid-cols-4 gap-2">
+              {generating && Array.from({ length: 4 }).map((_, i) => (
+                <div key={`sk-${i}`} className="aspect-square rounded-xl bg-yellow-400/5 animate-pulse" />
+              ))}
               {results.map((src, i) => (
                 <div key={i} className="relative group rounded-xl overflow-hidden aspect-square cursor-pointer">
                   <img src={src} alt="" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-end p-2 gap-1.5">
-                    <button className="w-6 h-6 rounded-lg bg-black/60 flex items-center justify-center">
+                    <button type="button" title="Favorite" className="w-6 h-6 rounded-lg bg-black/60 flex items-center justify-center">
                       <Heart className="w-3 h-3 text-white" />
                     </button>
-                    <button className="w-6 h-6 rounded-lg bg-black/60 flex items-center justify-center">
+                    <button type="button" title="Download" onClick={() => handleDownload(src, i)} className="w-6 h-6 rounded-lg bg-black/60 flex items-center justify-center">
                       <Download className="w-3 h-3 text-white" />
                     </button>
                   </div>

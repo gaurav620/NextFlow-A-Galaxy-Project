@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, ChevronDown, Download, Heart, Share2, RotateCcw, Sliders } from 'lucide-react';
+import { Sparkles, ChevronDown, Download, Heart, Share2, RotateCcw, Sliders, AlertCircle } from 'lucide-react';
 
 const models = [
-  { id: 'nano-pro', name: 'Nano Banana Pro', tag: 'Featured', credits: -100 },
-  { id: 'nano2', name: 'Nano Banana 2', tag: 'New', credits: -50 },
+  { id: 'imagen3', name: 'Imagen 3', tag: 'Featured', credits: -100 },
+  { id: 'imagen3-fast', name: 'Imagen 3 Fast', tag: 'Fast', credits: -50 },
   { id: 'flux2', name: 'Flux 2', tag: 'Free', credits: 20 },
   { id: 'zimage', name: 'Z Image', tag: 'Free', credits: 2 },
 ];
@@ -17,15 +17,6 @@ const stylePresets = [
   'Watercolor', 'Anime', 'Cinematic', 'Sketch',
 ];
 
-const sampleResults = [
-  '/card-portrait.png',
-  '/bento-warrior.png',
-  '/card-truck.png',
-  '/card-capybara.png',
-  '/m-nano1.png',
-  '/m-nano2.png',
-];
-
 export default function ImagePage() {
   const [prompt, setPrompt] = useState('');
   const [negPrompt, setNegPrompt] = useState('');
@@ -34,15 +25,42 @@ export default function ImagePage() {
   const [style, setStyle] = useState('None');
   const [showNeg, setShowNeg] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [results, setResults] = useState(sampleResults);
+  const [results, setResults] = useState<string[]>([]);
   const [showModelDrop, setShowModelDrop] = useState(false);
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     setGenerating(true);
-    await new Promise(r => setTimeout(r, 2000));
-    setGenerating(false);
+    setError(null);
+    try {
+      const res = await fetch('/api/generate/image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: prompt.trim(),
+          negPrompt: negPrompt.trim() || undefined,
+          aspectRatio: aspect,
+          style,
+          count: 4,
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Generation failed');
+      setResults(prev => [...data.images, ...prev]);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleDownload = (src: string, i: number) => {
+    const a = document.createElement('a');
+    a.href = src;
+    a.download = `nextflow-image-${i + 1}.png`;
+    a.click();
   };
 
   return (
@@ -63,6 +81,7 @@ export default function ImagePage() {
             <textarea
               value={prompt}
               onChange={e => setPrompt(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleGenerate(); }}
               placeholder="Describe what you want to generate..."
               rows={4}
               className="w-full bg-[#111] border border-white/[0.07] hover:border-white/[0.12] focus:border-white/[0.18] rounded-xl p-3 text-[12px] text-zinc-200 placeholder:text-zinc-600 resize-none outline-none transition-colors"
@@ -180,6 +199,7 @@ export default function ImagePage() {
               </>
             )}
           </button>
+          <p className="text-[10px] text-zinc-700 text-center mt-1.5">⌘+Enter to generate</p>
         </div>
       </div>
 
@@ -203,15 +223,39 @@ export default function ImagePage() {
           </div>
         </div>
 
-        {/* Results grid or empty */}
+        {/* Error banner */}
+        {error && (
+          <div className="mx-5 mt-4 flex items-start gap-2.5 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+            <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+            <p className="text-[12px] text-red-300">{error}</p>
+            <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-200 text-[11px]">×</button>
+          </div>
+        )}
+
+        {/* Results grid */}
         <div className="flex-1 overflow-y-auto p-5 [&::-webkit-scrollbar]:hidden">
-          {results.length === 0 ? (
+          {generating && results.length === 0 && (
+            <div className="h-full flex flex-col items-center justify-center gap-4">
+              <div className="grid grid-cols-2 gap-3 w-48">
+                {[0, 1, 2, 3].map(i => (
+                  <div key={i} className="aspect-square rounded-xl bg-white/[0.04] animate-pulse" />
+                ))}
+              </div>
+              <p className="text-zinc-500 text-[12px]">Generating with Imagen 3...</p>
+            </div>
+          )}
+          {!generating && results.length === 0 && !error && (
             <div className="h-full flex flex-col items-center justify-center gap-3 text-center">
               <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-2xl">🖼️</div>
               <p className="text-zinc-500 text-[13px]">Enter a prompt and click Generate</p>
+              <p className="text-zinc-700 text-[11px]">Powered by Google Imagen 3</p>
             </div>
-          ) : (
+          )}
+          {results.length > 0 && (
             <div className="grid grid-cols-3 gap-3">
+              {generating && [0, 1, 2, 3].map(i => (
+                <div key={`skeleton-${i}`} className="aspect-square rounded-xl bg-white/[0.04] animate-pulse" />
+              ))}
               {results.map((src, i) => (
                 <div
                   key={i}
@@ -227,7 +271,7 @@ export default function ImagePage() {
                       <Heart className="w-3.5 h-3.5 text-white" />
                     </button>
                     <button
-                      onClick={e => { e.stopPropagation(); }}
+                      onClick={e => { e.stopPropagation(); handleDownload(src, i); }}
                       className="w-7 h-7 rounded-lg bg-black/60 backdrop-blur-sm flex items-center justify-center hover:bg-black/80 transition-colors"
                     >
                       <Download className="w-3.5 h-3.5 text-white" />
@@ -249,7 +293,10 @@ export default function ImagePage() {
           <div className="relative max-w-2xl w-full" onClick={e => e.stopPropagation()}>
             <img src={selectedImg} alt="" className="w-full rounded-2xl shadow-2xl" />
             <div className="absolute top-3 right-3 flex gap-2">
-              <button className="w-8 h-8 rounded-lg bg-black/60 backdrop-blur-sm flex items-center justify-center hover:bg-black/80 transition-colors">
+              <button
+                onClick={() => handleDownload(selectedImg, 0)}
+                className="w-8 h-8 rounded-lg bg-black/60 backdrop-blur-sm flex items-center justify-center hover:bg-black/80 transition-colors"
+              >
                 <Download className="w-4 h-4 text-white" />
               </button>
               <button className="w-8 h-8 rounded-lg bg-black/60 backdrop-blur-sm flex items-center justify-center hover:bg-black/80 transition-colors">
