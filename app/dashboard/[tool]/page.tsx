@@ -19,9 +19,12 @@ import {
   Focus,
   Square,
   Diamond,
-  Plus
+  Plus,
+  Check,
+  Upload,
+  Layers
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 const toolConfig: Record<string, { label: string, icon: any, color: string, description: string }> = {
   'image': { label: 'Image', icon: ImageIcon, color: 'text-blue-400', description: 'Generate high quality images from text prompts.' },
@@ -42,6 +45,34 @@ const emptyStateCards = [
   { img: "https://images.unsplash.com/photo-1503376713291-19741e15b533?w=500&q=80", title: "Dark Underexp...", rotation: "rotate-12", translation: "translate-x-44 translate-y-6", zIndex: "z-20" },
 ];
 
+const MODELS = [
+  { id: 'flux', name: 'Krea 1', sub: 'Most creative model with LoRAs.', icon: ImageIcon },
+  { id: 'turbo', name: 'Nano Banana', sub: 'Most versatile intelligent model.', icon: Zap },
+  { id: 'flux-pro', name: 'Nano Banana Pro', sub: "World's most intelligent model.", icon: Zap },
+  { id: 'flux-3d', name: 'Flux 2 Klein', sub: 'Fast lightweight Flux 2 model.', icon: Box },
+  { id: 'recraft', name: 'Recraft V4', sub: 'Sharp, detailed images from Recraft.', icon: Wand2 },
+];
+
+const RATIOS = [
+  { id: '1:1', w: 1024, h: 1024 },
+  { id: '4:3', w: 1024, h: 768 },
+  { id: '3:2', w: 1024, h: 683 },
+  { id: '16:9', w: 1024, h: 576 },
+  { id: '2.35:1', w: 1024, h: 436 },
+  { id: '3:4', w: 768, h: 1024 },
+  { id: '2:3', w: 683, h: 1024 },
+  { id: '9:16', w: 576, h: 1024 },
+];
+
+const PAST_ASSETS = [
+  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop",
+  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop",
+  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop",
+  "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=200&h=200&fit=crop",
+  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop",
+  "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&h=200&fit=crop",
+];
+
 export default function GenericToolPage() {
   const params = useParams();
   const toolId = params.tool as string;
@@ -57,10 +88,28 @@ export default function GenericToolPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
 
+  // Popover States
+  const [activePopover, setActivePopover] = useState<'model' | 'image' | 'ratio' | null>(null);
+  const [selectedModel, setSelectedModel] = useState(MODELS[0]);
+  const [selectedRatio, setSelectedRatio] = useState(RATIOS[0]);
+  
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+        setActivePopover(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     setIsGenerating(true);
     setResultUrl(null);
+    setActivePopover(null);
     
     // Easter egg intercept
     if (prompt.toLowerCase().includes('hanuman') || prompt.toLowerCase().includes('hnuman')) {
@@ -68,10 +117,10 @@ export default function GenericToolPage() {
       return;
     }
     
-    // Connect to Pollinations.ai API
+    // Connect to Pollinations.ai API combining Aspect Ratio & Custom Model configs!
     if (['image', 'nano', 'enhancer', 'edit', '3d'].includes(toolId)) {
       const seed = Math.floor(Math.random() * 100000);
-      setResultUrl(`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true&seed=${seed}`);
+      setResultUrl(`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${selectedRatio.w}&height=${selectedRatio.h}&nologo=true&seed=${seed}&model=${selectedModel.id}`);
     } else {
       setResultUrl(`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + ' cinematic video still frame')}?width=1024&height=576&nologo=true`);
     }
@@ -82,7 +131,7 @@ export default function GenericToolPage() {
       
       {/* Top Header Controls */}
       {resultUrl && !isGenerating && (
-        <div className="absolute top-4 right-6 flex items-center gap-2 z-50">
+        <div className="absolute top-4 right-6 flex items-center gap-2 z-40">
           <button className="p-2.5 text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors backdrop-blur-md">
             <Share className="w-4 h-4" />
           </button>
@@ -100,7 +149,7 @@ export default function GenericToolPage() {
         
         {/* State 1: Generating Spinner */}
         {isGenerating && (
-          <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-6 bg-[#0a0a0a]/60 backdrop-blur-lg transition-all duration-500">
+          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-6 bg-[#0a0a0a]/60 backdrop-blur-lg transition-all duration-500">
             <div className="relative">
               <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-xl shadow-2xl relative z-10">
                 <Icon className="w-8 h-8 text-white animate-pulse" />
@@ -113,7 +162,7 @@ export default function GenericToolPage() {
 
         {/* State 2: Result Image View */}
         {resultUrl && (
-          <div className="w-full h-full max-w-6xl max-h-[80vh] flex items-center justify-center relative z-20">
+          <div className="w-full h-full max-w-[90vw] max-h-[85vh] flex items-center justify-center relative z-20">
             <img 
               src={resultUrl} 
               alt="Generated Result" 
@@ -150,7 +199,7 @@ export default function GenericToolPage() {
                   key={idx}
                   className={`absolute w-[160px] sm:w-[200px] aspect-[3/4] rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl transition-all duration-700 ease-out 
                     ${card.translation} ${card.rotation} ${card.zIndex}
-                    border border-white/10 hover:border-white/30 hover:scale-105 cursor-pointer hover:z-50
+                    border border-white/10 hover:border-white/30 hover:scale-[1.03] cursor-pointer hover:z-50
                     group-hover:-translate-y-4`}
                   style={{ transformOrigin: 'bottom center' }}
                 >
@@ -166,9 +215,107 @@ export default function GenericToolPage() {
         )}
       </div>
 
-      {/* Floating Bottom Command Bar (Krea Style) */}
-      <div className="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 w-full max-w-[800px] z-50 px-4">
-        <div className="bg-[#1a1a1c]/90 border border-white/10 rounded-2xl p-2 sm:p-3 flex flex-col gap-3 shadow-[0_0_40px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-all duration-300 hover:border-white/20">
+      {/* Floating Bottom Command Bar (Krea Style) with Popovers */}
+      <div 
+        ref={popoverRef}
+        className="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 w-full max-w-[800px] z-[100] px-4 flex flex-col items-center"
+      >
+        
+        {/* POPOVER 1: MODEL SELECTOR */}
+        {activePopover === 'model' && (
+          <div className="w-[260px] bg-[#1a1a1c] border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] rounded-2xl p-1.5 mb-2 ml-[-480px] animate-in fade-in slide-in-from-bottom-2 duration-200">
+            {MODELS.map((m) => {
+              const ActionIcon = m.icon;
+              return (
+                <button 
+                  key={m.id}
+                  onClick={() => { setSelectedModel(m); setActivePopover(null); }}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors ${selectedModel.id === m.id ? 'bg-white/5' : ''}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <ActionIcon className={`w-4 h-4 ${selectedModel.id === m.id ? 'text-white' : 'text-zinc-500'}`} />
+                    <div className="flex flex-col items-start gap-0.5">
+                      <span className="text-[13px] font-medium text-white">{m.name}</span>
+                      <span className="text-[10px] text-zinc-500">{m.sub}</span>
+                    </div>
+                  </div>
+                  {selectedModel.id === m.id && <Check className="w-4 h-4 text-white" />}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        {/* POPOVER 2: IMAGE PROMPT / UPLOAD */}
+        {activePopover === 'image' && (
+          <div className="w-[320px] bg-[#1a1a1c] border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] rounded-2xl p-3 mb-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <p className="text-[12px] text-zinc-400 text-center leading-relaxed mb-4 px-2">
+              Image prompts apply the style and content of any picture to your generation. Upload images or select from your asset library.
+            </p>
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {PAST_ASSETS.map((asset, i) => (
+                <div key={i} className="aspect-square rounded-lg overflow-hidden border border-white/5 hover:border-white/20 cursor-pointer">
+                  <img src={asset} className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-col gap-2">
+              <button 
+                onClick={() => setActivePopover(null)}
+                className="w-full py-2.5 bg-white text-black font-semibold text-[13px] rounded-xl hover:scale-[1.02] transition-transform flex justify-center items-center gap-2"
+              >
+                <Upload className="w-4 h-4" /> Upload
+              </button>
+              <button 
+                onClick={() => setActivePopover(null)}
+                className="w-full py-2.5 bg-white/5 text-white font-medium text-[13px] rounded-xl hover:bg-white/10 transition-colors flex justify-center items-center gap-2"
+              >
+                <Layers className="w-4 h-4" /> Select asset
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* POPOVER 3: ASPECT RATIO */}
+        {activePopover === 'ratio' && (
+          <div className="w-[480px] bg-[#1a1a1c] border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] rounded-2xl p-4 mb-2 ml-[120px] animate-in fade-in slide-in-from-bottom-2 duration-200 flex gap-6">
+            <div className="flex-1 grid grid-cols-4 gap-2">
+              {RATIOS.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => { setSelectedRatio(r); setActivePopover(null); }}
+                  className={`py-2 rounded-lg text-[11px] font-medium transition-colors border ${
+                    selectedRatio.id === r.id 
+                      ? 'border-white text-white bg-white/5' 
+                      : 'border-white/10 text-zinc-400 hover:border-white/30 hover:text-white'
+                  }`}
+                >
+                  {r.id}
+                </button>
+              ))}
+            </div>
+            
+            <div className="w-[120px] flex items-center justify-center shrink-0 border-l border-white/10 pl-6">
+               <div className="relative flex items-center justify-center w-[80px] h-[80px] bg-[#222] rounded-lg border border-[#333]">
+                 {/* Visual Representation of aspect ratio */}
+                 <div 
+                   className="bg-white/20 border-2 border-white rounded-[4px] shadow-[0_0_15px_rgba(255,255,255,0.2)] transition-all duration-300"
+                   style={{
+                     width: selectedRatio.w >= selectedRatio.h ? '60px' : `${(selectedRatio.w / selectedRatio.h) * 60}px`,
+                     height: selectedRatio.h >= selectedRatio.w ? '60px' : `${(selectedRatio.h / selectedRatio.w) * 60}px`,
+                   }}
+                 />
+                 <div className="absolute top-1/2 left-0 w-2 h-0.5 bg-white/30 -translate-y-1/2 -translate-x-full" />
+                 <div className="absolute top-1/2 right-0 w-2 h-0.5 bg-white/30 -translate-y-1/2 translate-x-full" />
+                 <div className="absolute bottom-0 left-1/2 w-0.5 h-2 bg-white/30 -translate-x-1/2 translate-y-full" />
+                 <div className="absolute top-0 left-1/2 w-0.5 h-2 bg-white/30 -translate-x-1/2 -translate-y-full" />
+               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Base Command Pill */}
+        <div className="bg-[#1a1a1c] sm:bg-[#1a1a1c]/90 border border-white/10 rounded-2xl p-2 sm:p-3 flex flex-col gap-3 shadow-[0_0_40px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-all duration-300 w-full relative">
           
           {/* Text Input Row */}
           <div className="flex items-center gap-3 px-3 pt-1">
@@ -197,34 +344,47 @@ export default function GenericToolPage() {
           
           {/* Toolbar Switches Row */}
           <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden px-1 pb-1">
-            <button className="flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] sm:text-[12px] text-zinc-300 font-medium transition-colors">
-              <ImageIcon className="w-3.5 h-3.5 text-zinc-400" />
-              NextFlow 1 <ChevronDown className="w-3 h-3 opacity-50 ml-0.5" />
+            
+            {/* Model Toggle */}
+            <button 
+              onClick={() => setActivePopover(activePopover === 'model' ? null : 'model')}
+              className={`flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors border ${activePopover === 'model' ? 'border-white/20 bg-white/10 text-white' : 'border-transparent bg-white/5 hover:bg-white/10 text-zinc-300'} text-[11px] sm:text-[12px] font-medium`}
+            >
+              <selectedModel.icon className={`w-3.5 h-3.5 ${activePopover === 'model' ? 'text-white' : 'text-zinc-400'}`} />
+              {selectedModel.name} <ChevronDown className="w-3 h-3 opacity-50 ml-0.5" />
             </button>
             
-            <button className="flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] sm:text-[12px] text-zinc-300 font-medium transition-colors">
+            <button className="flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg border border-transparent bg-white/5 hover:bg-white/10 text-[11px] sm:text-[12px] text-zinc-300 font-medium transition-colors">
               <LinkIcon className="w-3.5 h-3.5 text-zinc-400" />
               Lora
             </button>
             
-            <button className="flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] sm:text-[12px] text-zinc-300 font-medium transition-colors">
-              <Focus className="w-3.5 h-3.5 text-zinc-400" />
+            {/* Image Prompt Toggle */}
+            <button 
+              onClick={() => setActivePopover(activePopover === 'image' ? null : 'image')}
+              className={`flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors border ${activePopover === 'image' ? 'border-white/20 bg-white/10 text-white' : 'border-transparent bg-white/5 hover:bg-white/10 text-zinc-300'} text-[11px] sm:text-[12px] font-medium`}
+            >
+              <Focus className={`w-3.5 h-3.5 ${activePopover === 'image' ? 'text-white' : 'text-zinc-400'}`} />
               Image prompt
             </button>
             
-            <button className="flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] sm:text-[12px] text-zinc-300 font-medium transition-colors">
+            <button className="flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg border border-transparent bg-white/5 hover:bg-white/10 text-[11px] sm:text-[12px] text-zinc-300 font-medium transition-colors">
               <Sparkles className="w-3.5 h-3.5 text-zinc-400" />
               Style transfer
             </button>
             
             <div className="w-px h-4 bg-white/10 mx-1 shrink-0" />
             
-            <button className="flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] sm:text-[12px] text-zinc-300 font-medium transition-colors">
-              <Square className="w-3 h-3 text-zinc-400" />
-              1:1
+            {/* Aspect Ratio Toggle */}
+            <button 
+              onClick={() => setActivePopover(activePopover === 'ratio' ? null : 'ratio')}
+              className={`flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors border ${activePopover === 'ratio' ? 'border-white/20 bg-white/10 text-white' : 'border-transparent bg-white/5 hover:bg-white/10 text-zinc-300'} text-[11px] sm:text-[12px] font-medium`}
+            >
+              <Square className={`w-3 h-3 ${activePopover === 'ratio' ? 'text-white' : 'text-zinc-400'}`} />
+              {selectedRatio.id}
             </button>
             
-            <button className="flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] sm:text-[12px] text-zinc-300 font-medium transition-colors">
+            <button className="flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg border border-transparent bg-white/5 hover:bg-white/10 text-[11px] sm:text-[12px] text-zinc-300 font-medium transition-colors">
               <Diamond className="w-3.5 h-3.5 text-zinc-400" />
               1K
             </button>
