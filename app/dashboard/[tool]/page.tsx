@@ -25,6 +25,7 @@ import {
   Layers
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
+import { useAssetStore } from '@/store/assets';
 
 const toolConfig: Record<string, { label: string, icon: any, color: string, description: string }> = {
   'image': { label: 'Image', icon: ImageIcon, color: 'text-blue-400', description: 'Generate high quality images from text prompts.' },
@@ -94,6 +95,8 @@ export default function GenericToolPage() {
   const [selectedRatio, setSelectedRatio] = useState(RATIOS[0]);
   
   const popoverRef = useRef<HTMLDivElement>(null);
+  const hasSavedAsset = useRef(false);
+  const addAsset = useAssetStore((state) => state.addAsset);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -110,6 +113,7 @@ export default function GenericToolPage() {
     setIsGenerating(true);
     setResultUrl(null);
     setActivePopover(null);
+    hasSavedAsset.current = false;
     
     // Easter egg intercept
     if (prompt.toLowerCase().includes('hanuman') || prompt.toLowerCase().includes('hnuman')) {
@@ -168,7 +172,19 @@ export default function GenericToolPage() {
               alt="Generated Result" 
               className={`w-full h-full object-contain drop-shadow-2xl transition-opacity duration-700 ${isGenerating ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
               referrerPolicy="no-referrer"
-              onLoad={() => setIsGenerating(false)}
+              onLoad={(e) => {
+                setIsGenerating(false);
+                const target = e.target as HTMLImageElement;
+                if (!hasSavedAsset.current && !target.src.includes('dummyjson') && !target.src.includes('hanuman.png')) {
+                  addAsset({
+                    url: target.src,
+                    prompt: prompt,
+                    tool: toolId,
+                    ratio: selectedRatio.id,
+                  });
+                  hasSavedAsset.current = true;
+                }
+              }}
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 if (target.src.includes('pollinations')) {
