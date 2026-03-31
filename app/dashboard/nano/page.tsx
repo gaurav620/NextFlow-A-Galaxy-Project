@@ -2,11 +2,13 @@
 
 import { useState } from 'react';
 import { Zap, Download, Heart, RotateCcw, AlertCircle } from 'lucide-react';
+import { useAssetStore } from '@/store/assets';
 
 const aspectRatios = ['1:1', '16:9', '9:16', '4:3', '3:2'];
 const speedModes = ['Turbo', 'Standard', 'Quality'];
 
 export default function NanoPage() {
+  const { addAsset } = useAssetStore();
   const [prompt, setPrompt] = useState('');
   const [aspect, setAspect] = useState('1:1');
   const [speed, setSpeed] = useState('Turbo');
@@ -28,6 +30,9 @@ export default function NanoPage() {
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Generation failed');
       setResults(prev => [...data.images, ...prev]);
+      for (const imgUrl of data.images) {
+        addAsset({ url: imgUrl, prompt: prompt.trim(), tool: 'nano', ratio: aspect });
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -76,6 +81,7 @@ export default function NanoPage() {
             <div className="grid grid-cols-3 gap-1.5">
               {speedModes.map(s => (
                 <button
+                  type="button"
                   key={s}
                   onClick={() => setSpeed(s)}
                   className={`py-1.5 rounded-lg text-[11px] font-medium transition-all ${
@@ -93,6 +99,7 @@ export default function NanoPage() {
             <div className="grid grid-cols-3 gap-1.5">
               {aspectRatios.map(r => (
                 <button
+                  type="button"
                   key={r}
                   onClick={() => setAspect(r)}
                   className={`py-1.5 rounded-lg text-[11px] font-medium transition-all ${
@@ -122,6 +129,7 @@ export default function NanoPage() {
 
         <div className="p-4 border-t border-white/[0.05]">
           <button
+            type="button"
             onClick={handleGenerate}
             disabled={!prompt.trim() || generating}
             className="w-full py-3 rounded-xl bg-yellow-400 text-black font-semibold text-[13px] hover:bg-yellow-300 transition-colors disabled:opacity-30 flex items-center justify-center gap-2"
@@ -132,7 +140,7 @@ export default function NanoPage() {
               <><Zap className="w-4 h-4" />Generate Fast</>
             )}
           </button>
-          <p className="text-[10px] text-zinc-600 text-center mt-2">~{speed === 'Turbo' ? '5-10s' : speed === 'Standard' ? '10-20s' : '20-30s'} · {count * 2}⚡ credits</p>
+          <p className="text-[10px] text-zinc-600 text-center mt-2">~{speed === 'Turbo' ? '5-10s' : speed === 'Standard' ? '10-20s' : '20-30s'} · Saves to Assets</p>
         </div>
       </div>
 
@@ -149,7 +157,7 @@ export default function NanoPage() {
           <div className="mx-5 mt-4 flex items-start gap-2.5 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
             <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
             <p className="text-[12px] text-red-300">{error}</p>
-            <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-200 text-[11px]">×</button>
+            <button type="button" onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-200 text-[11px]">×</button>
           </div>
         )}
 
