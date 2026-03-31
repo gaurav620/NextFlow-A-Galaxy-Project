@@ -46,6 +46,7 @@ export default function ImagePage() {
           aspectRatio: aspect,
           style,
           count: 4,
+          modelId: model.id,
         }),
       });
       const data = await res.json();

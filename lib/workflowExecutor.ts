@@ -96,7 +96,9 @@ export async function executeWorkflow(
                 nodeId: node.id,
               }),
             })
-            const data = await res.json()
+            if (!res.ok) throw new Error(`API Error: ${res.statusText}`)
+            const data = await res.json().catch(() => null)
+            if (!data) throw new Error('Invalid JSON response from LLM API')
             if (!data.success) throw new Error(data.error || 'LLM failed')
             output = data.output
           } else if (node.type === 'cropImageNode') {
@@ -119,7 +121,9 @@ export async function executeWorkflow(
                 nodeId: node.id,
               }),
             })
-            const data = await res.json()
+            if (!res.ok) throw new Error(`API Error: ${res.statusText}`)
+            const data = await res.json().catch(() => null)
+            if (!data) throw new Error('Invalid JSON response from Crop API')
             if (!data.success) throw new Error(data.error || 'Crop failed')
             output = data.output
           } else if (node.type === 'extractFrameNode') {
@@ -136,7 +140,9 @@ export async function executeWorkflow(
                 nodeId: node.id,
               }),
             })
-            const data = await res.json()
+            if (!res.ok) throw new Error(`API Error: ${res.statusText}`)
+            const data = await res.json().catch(() => null)
+            if (!data) throw new Error('Invalid JSON response from Extract API')
             if (!data.success) throw new Error(data.error || 'Extract failed')
             output = data.output
           }

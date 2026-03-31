@@ -1,12 +1,33 @@
 'use client';
 
-import { useState } from 'react';
-import { Grid3x3, ArrowRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Grid3x3, ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function WorkflowsPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('projects');
   const [workflows, setWorkflows] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
+
+  useEffect(() => {
+    async function fetchWorkflows() {
+      try {
+        const res = await fetch('/api/workflow');
+        const data = await res.json();
+        if (data.success) {
+          setWorkflows(data.workflows);
+        }
+      } catch (error) {
+        console.error('Failed to fetch workflows:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchWorkflows();
+  }, []);
 
   const tabs = [
     { id: 'projects', label: 'Projects' },
@@ -15,9 +36,30 @@ export default function WorkflowsPage() {
     { id: 'templates', label: 'Templates' },
   ];
 
-  const handleNewWorkflow = () => {
-    // Navigate to create new workflow
-    window.location.href = '/dashboard';
+  const handleNewWorkflow = async () => {
+    if (isCreating) return;
+    setIsCreating(true);
+    try {
+      const res = await fetch('/api/workflow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'Untitled Workflow',
+          data: { nodes: [], edges: [] }
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        router.push(`/dashboard/workflows/${data.workflow.id}`);
+      } else {
+        alert('Failed to create workflow');
+        setIsCreating(false);
+      }
+    } catch (error) {
+      console.error('Error creating workflow:', error);
+      alert('Error creating workflow');
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -71,9 +113,10 @@ export default function WorkflowsPage() {
 
           <button
             onClick={handleNewWorkflow}
-            className="mt-4 border border-white/30 hover:border-white/60 text-white text-sm rounded-full px-5 py-2 flex items-center gap-2 w-fit hover:bg-white/5 transition-all"
+            disabled={isCreating}
+            className="mt-4 border border-white/30 hover:border-white/60 text-white text-sm rounded-full px-5 py-2 flex items-center gap-2 w-fit hover:bg-white/5 transition-all disabled:opacity-50"
           >
-            New Workflow
+             {isCreating ? 'Creating...' : 'New Workflow'}
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
@@ -102,7 +145,11 @@ export default function WorkflowsPage() {
       <div className="min-h-[calc(100vh-380px)]">
         {activeTab === 'projects' && (
           <>
-            {workflows.length === 0 ? (
+            isLoading ? (
+              <div className="flex items-center justify-center mt-24">
+                <Loader2 className="w-8 h-8 text-gray-500 animate-spin" />
+              </div>
+            ) : workflows.length === 0 ? (
               // Empty State
               <div className="flex flex-col items-center justify-center mt-24">
                 <div className="w-12 h-12 text-blue-500 mx-auto">
@@ -119,9 +166,10 @@ export default function WorkflowsPage() {
                 </p>
                 <button
                   onClick={handleNewWorkflow}
-                  className="mt-6 border border-white/20 text-white text-sm rounded-full px-6 py-2.5 hover:bg-white/5 transition-all"
+                  disabled={isCreating}
+                  className="mt-6 border border-white/20 text-white text-sm rounded-full px-6 py-2.5 hover:bg-white/5 transition-all disabled:opacity-50"
                 >
-                  New Workflow
+                  {isCreating ? 'Creating...' : 'New Workflow'}
                 </button>
               </div>
             ) : (

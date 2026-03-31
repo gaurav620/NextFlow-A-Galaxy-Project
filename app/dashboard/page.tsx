@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Search,
@@ -8,300 +8,297 @@ import {
   ChevronRight,
   Play,
   Star,
-  Zap,
   ExternalLink,
   Sparkles,
   Video,
-  ArrowUpRight,
+  ArrowRight,
   Eye,
+  Zap,
+  Diamond,
+  Heart,
+  ArrowUpRight,
 } from 'lucide-react';
+
+/* ─── TYPES ─────────────────────────────────────────────────── */
+interface Model {
+  name: string;
+  desc: string;
+  image: string;
+  tags: string[];
+  speed: number;    // 1-3
+  quality: number;  // 1-4
+  credits: number;
+}
 
 /* ─── DATA ─────────────────────────────────────────────────── */
 
 const quickActions = [
-  {
-    label: 'Generate Image',
-    href: '/dashboard/image',
-    image: '/card-portrait.png',
-    icon: '🖼️',
-  },
-  {
-    label: 'Generate Video',
-    href: '/dashboard/video',
-    image: '/v-kling.png',
-    icon: '🎬',
-  },
-  {
-    label: 'Upscale & Enhance',
-    href: '/dashboard/enhancer',
-    image: '/m-flux2.png',
-    icon: '✨',
-  },
-  {
-    label: 'Realtime',
-    href: '/dashboard/realtime',
-    image: '/bento-eye.png',
-    icon: '⚡',
-  },
+  { label: 'Generate Image',  href: '/dashboard/image',    image: '/card-portrait.png',  icon: '🖼️', accentColor: '#4B9FFF' },
+  { label: 'Generate Video',  href: '/dashboard/video',    image: '/v-kling.png',         icon: '🎬', accentColor: '#FF8A4B' },
+  { label: 'Upscale & Enhance', href: '/dashboard/enhancer', image: '/m-flux2.png',       icon: '✨', accentColor: '#A78BFA' },
+  { label: 'Realtime',        href: '/dashboard/realtime', image: '/bento-eye.png',       icon: '⚡', accentColor: '#22D3EE' },
 ];
 
-const imageModels = [
-  {
-    name: 'Nano Banana Pro',
-    desc: 'Smartest model. World\'s best prompt adherence. Best model for complex tasks and image editing.',
-    image: '/m-nano1.png',
-    tags: ['Featured'],
-    speed: '⚡⚡',
-    quality: '♥♥♥♥',
-    credits: -100,
-    badge: 'featured',
-  },
-  {
-    name: 'Nano Banana 2',
-    desc: 'Google\'s latest flash image model (also known as Gemini 3.1 Flash Image) optimized for fast generation with support for up to 4K...',
-    image: '/m-nano2.png',
-    tags: ['Featured', 'New'],
-    speed: '⚡⚡',
-    quality: '♥♥♥♥',
-    credits: -50,
-    badge: 'featured',
-  },
-  {
-    name: 'Flux 2',
-    desc: 'FLUX.2 [dev] from Black Forest Labs. Enhanced realism and crisper text generation.',
-    image: '/m-flux2.png',
-    tags: ['Free', 'New'],
-    speed: '⚡',
-    quality: '♥♥',
-    credits: 20,
-    badge: 'free',
-  },
-  {
-    name: 'Z Image',
-    desc: 'Cheapest model. Medium-quality photorealism at a budget. Realistic textures, weak diversity.',
-    image: '/m-zimage.png',
-    tags: ['Free', 'New'],
-    speed: '⚡',
-    quality: '♥',
-    credits: 2,
-    badge: 'free',
-  },
+const imageModels: Model[] = [
+  { name: 'Nano Banana Pro', desc: 'World\'s best prompt adherence. Best model for complex tasks and image editing.', image: '/m-nano1.png', tags: ['Featured'], speed: 2, quality: 4, credits: -100 },
+  { name: 'Nano Banana 2',   desc: 'Google\'s latest flash image model optimized for fast generation with support for 4K output.', image: '/m-nano2.png', tags: ['Featured', 'New'], speed: 2, quality: 4, credits: -50 },
+  { name: 'Flux 2',          desc: 'FLUX.2 [dev] from Black Forest Labs. Enhanced realism and crisper text generation.', image: '/m-flux2.png', tags: ['Free', 'New'], speed: 1, quality: 2, credits: 20 },
+  { name: 'Z Image',         desc: 'Cheapest model. Medium-quality photorealism at a budget. Realistic textures, weak diversity.', image: '/m-zimage.png', tags: ['Free', 'New'], speed: 1, quality: 1, credits: 2 },
 ];
 
-const videoModels = [
-  {
-    name: 'Kling 2.6',
-    desc: 'Frontier model from Kling with native audio. Highest quality at a moderate price point.',
-    image: '/v-kling.png',
-    tags: ['Featured'],
-    credits: -300,
-    badge: 'featured',
-    hasGenBtn: true,
-  },
-  {
-    name: 'LTX-2',
-    desc: 'Affordable medium-quality audio-video model from Lightricks with native sound generation.',
-    image: '/v-ltx.png',
-    tags: ['New'],
-    credits: -200,
-    badge: 'new',
-  },
-  {
-    name: 'Kling 3.0',
-    desc: 'Latest frontier model from Kling with native audio and extended durations up to 15 seconds.',
-    image: '/v-kling3.png',
-    tags: ['New'],
-    credits: -1000,
-    badge: 'new',
-  },
-  {
-    name: 'Kling o3',
-    desc: 'Advanced reasoning video model with strong video element, and video reference...',
-    image: '/v-kling3.png',
-    tags: ['New'],
-    credits: -1000,
-    badge: 'new',
-  },
+const videoModels: Model[] = [
+  { name: 'Kling 2.6',  desc: 'Frontier model from Kling with native audio. Highest quality at a moderate price point.', image: '/v-kling.png',  tags: ['Featured'], speed: 2, quality: 4, credits: -300 },
+  { name: 'LTX-2',      desc: 'Affordable medium-quality audio-video model from Lightricks with native sound generation.', image: '/v-ltx.png',   tags: ['New'],       speed: 2, quality: 3, credits: -200 },
+  { name: 'Kling 3.0',  desc: 'Latest frontier model from Kling with native audio and extended durations up to 15 seconds.', image: '/v-kling3.png', tags: ['New'],    speed: 1, quality: 4, credits: -1000 },
+  { name: 'Kling o3',   desc: 'Advanced reasoning video model with strong element and reference control.', image: '/v-kling3.png', tags: ['New'],    speed: 2, quality: 4, credits: -800 },
 ];
 
 const nodeApps = [
-  {
-    name: 'CCTV Selfies',
-    desc: 'Put your face and outfit into a convincing collage of CCTV st...',
-    image: '/card-portrait.png',
-    bg: 'from-zinc-800 to-zinc-900',
-  },
-  {
-    name: 'Animorph yourself',
-    desc: 'How would you look like morphing into a raccoon, giraffe, m...',
-    image: '/card-capybara.png',
-    bg: 'from-pink-900 to-pink-950',
-  },
-  {
-    name: 'Digicam Snapshots',
-    desc: 'Show your best outfits on a 2000s digicam. Proof you were ...',
-    image: '/card-truck.png',
-    bg: 'from-zinc-700 to-zinc-800',
-  },
-  {
-    name: 'Truck Ad',
-    desc: 'Place your product on a virtual truck. Get a video and a 4K...',
-    image: '/bento-warrior.png',
-    bg: 'from-zinc-800 to-zinc-900',
-  },
+  { name: 'CCTV Selfies',       desc: 'Put your face into a convincing CCTV-style collage.',  image: '/card-portrait.png', bg: 'from-zinc-800 to-zinc-900' },
+  { name: 'Animorph yourself',  desc: 'Morph yourself into a raccoon, giraffe, or any animal.', image: '/card-capybara.png', bg: 'from-pink-900 to-pink-950' },
+  { name: 'Digicam Snapshots',  desc: 'Show your best outfits on a 2000s digicam.',            image: '/card-truck.png',    bg: 'from-zinc-700 to-zinc-800' },
+  { name: 'Truck Ad',           desc: 'Place your product on a virtual truck for 4K output.',  image: '/bento-warrior.png', bg: 'from-zinc-800 to-zinc-900' },
 ];
 
 const releaseNotes = [
-  {
-    title: 'Annotations in NextFlow Edit',
-    desc: 'Mark up multiple regions, write a separate prompt for each one, and generate all the changes in a single pass.',
-    date: 'Mar 28, 2026',
-    image: '/bento-speed.png',
-  },
-  {
-    title: 'The Node Agent',
-    desc: 'An AI agent that builds and runs creative workflows from a single sentence.',
-    date: 'Mar 18, 2026',
-    image: '/bento-eye.png',
-  },
-  {
-    title: 'A New, More Powerful NextFlow Edit',
-    desc: 'Change specific regions, render new perspectives, adjust lighting, apply color palettes, and more. A rebuilt editing tool with fine-grained AI control.',
-    date: 'Mar 9, 2026',
-    image: '/card-portrait.png',
-  },
-  {
-    title: 'Turn Any Image Into a Prompt',
-    desc: 'Drop any image into NextFlow and get a detailed, generation-ready prompt in seconds. AI vision analyzes style, lighting, composition, and more.',
-    date: 'Mar 5, 2026',
-    image: '/m-flux2.png',
-  },
+  { title: 'Annotations in NextFlow Edit', desc: 'Mark up multiple regions, write a separate prompt for each, and generate all changes in a single pass.', date: 'Mar 28, 2026', image: '/bento-speed.png' },
+  { title: 'The Node Agent', desc: 'An AI agent that builds and runs creative workflows from a single sentence.', date: 'Mar 18, 2026', image: '/bento-eye.png' },
+  { title: 'A New, More Powerful NextFlow Edit', desc: 'Change regions, render new perspectives, adjust lighting, apply color palettes, and more.', date: 'Mar 9, 2026', image: '/card-portrait.png' },
+  { title: 'Turn Any Image Into a Prompt', desc: 'Drop any image into NextFlow and get a detailed, generation-ready prompt in seconds.', date: 'Mar 5, 2026', image: '/m-flux2.png' },
 ];
 
 const instantActions = [
-  {
-    name: 'AI Hairstyle',
-    desc: 'Try new hairstyles with AI for free. Upload your photo to change haircuts, colors, and hair styles instantly using our AI...',
-    image: '/m-flux2.png',
-  },
-  {
-    name: 'Colorize',
-    desc: 'Turn sketches, doodles, or lineart colorful pictures.',
-    image: '/m-nano1.png',
-    bw: true,
-  },
-  {
-    name: 'Change Lighting',
-    desc: 'Dim the lights, change the time of day, or make it rain.',
-    image: '/bento-warrior.png',
-  },
-  {
-    name: 'Clothes Changer',
-    desc: 'Upload selfies and try on different outfits with our free AI virtual try-on tool. See how any clothing looks on you instantly.',
-    image: '/card-portrait.png',
-  },
+  { name: 'AI Hairstyle',     desc: 'Try new hairstyles with AI for free. Upload your photo to change haircuts instantly.', image: '/m-flux2.png' },
+  { name: 'Colorize',         desc: 'Turn sketches, doodles, or lineart into colorful pictures.',                           image: '/m-nano1.png', bw: true },
+  { name: 'Change Lighting',  desc: 'Dim the lights, change the time of day, or make it rain.',                            image: '/bento-warrior.png' },
+  { name: 'Clothes Changer',  desc: 'Upload selfies and try on different outfits with our free AI virtual try-on tool.',   image: '/card-portrait.png' },
 ];
 
-/* ─── BADGE COMPONENT ─────────────────────────────────────── */
-function Badge({ type, label }: { type: string; label: string }) {
-  const styles: Record<string, string> = {
-    featured: 'bg-purple-600/80 text-purple-100',
-    new: 'bg-zinc-700/90 text-zinc-200',
-    free: 'bg-zinc-700/90 text-zinc-200',
-  };
+/* ─── HELPERS ────────────────────────────────────────────────── */
+
+function ModelBadge({ tag }: { tag: string }) {
+  const isFeatured = tag.toLowerCase() === 'featured';
+  const isNew = tag.toLowerCase() === 'new';
+  const isFree = tag.toLowerCase() === 'free';
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold ${styles[type] || styles.new}`}>
-      {type === 'featured' && <Star className="w-2.5 h-2.5 fill-purple-300 text-purple-300" />}
-      {label}
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide ${
+      isFeatured ? 'bg-purple-600/90 text-purple-100' :
+      isNew      ? 'bg-zinc-700/90 text-zinc-200' :
+      isFree     ? 'bg-zinc-700/90 text-zinc-200' :
+                   'bg-zinc-700/90 text-zinc-200'
+    }`}>
+      {isFeatured && <Star className="w-2.5 h-2.5 fill-purple-300 text-purple-300" />}
+      {tag}
     </span>
   );
 }
 
-/* ─── SECTION HEADER ──────────────────────────────────────── */
-function SectionHeader({
-  title,
-  hasSearch,
-  hasNav,
-}: {
-  title: string;
-  hasSearch?: boolean;
-  hasNav?: boolean;
-}) {
+function SpeedDots({ count }: { count: number }) {
   return (
-    <div className="flex items-center justify-between mb-5">
-      <div className="flex items-center gap-3">
-        <h2 className="text-white font-semibold text-[17px]">{title}</h2>
-        {hasSearch && (
-          <button className="w-7 h-7 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center transition-colors">
-            <Search className="w-3.5 h-3.5 text-zinc-400" />
-          </button>
-        )}
-      </div>
-      {hasNav && (
-        <div className="flex gap-1.5">
-          <button className="w-7 h-7 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center transition-colors">
-            <ChevronLeft className="w-3.5 h-3.5 text-zinc-400" />
-          </button>
-          <button className="w-7 h-7 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center transition-colors">
-            <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
-          </button>
-        </div>
-      )}
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3].map(i => (
+        <Zap key={i} className={`w-3 h-3 ${i <= count ? 'text-yellow-400 fill-yellow-400' : 'text-zinc-700'}`} />
+      ))}
+    </div>
+  );
+}
+
+function QualityDots({ count }: { count: number }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4].map(i => (
+        <Diamond key={i} className={`w-2.5 h-2.5 ${i <= count ? 'text-blue-400 fill-blue-400' : 'text-zinc-700'}`} />
+      ))}
     </div>
   );
 }
 
 /* ─── MODEL CARD ──────────────────────────────────────────── */
-function ModelCard({
-  model,
-  hasGenBtn,
-}: {
-  model: (typeof imageModels)[0] & { hasGenBtn?: boolean };
-  hasGenBtn?: boolean;
-}) {
+function ModelCard({ model, hasGenBtn, toolHref }: { model: Model; hasGenBtn?: boolean; toolHref?: string }) {
   return (
-    <div className="bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 hover:border-zinc-700 transition-all duration-200 cursor-pointer group flex flex-col">
+    <Link href={toolHref || '/dashboard/image'} className="block bg-[#111] rounded-2xl overflow-hidden border border-white/[0.05] hover:border-white/[0.12] transition-all duration-300 cursor-pointer group flex-shrink-0">
       {/* Thumbnail */}
-      <div className="relative aspect-video overflow-hidden flex-shrink-0">
+      <div className="relative overflow-hidden" style={{ aspectRatio: '3/2' }}>
         <img
           src={model.image}
           alt={model.name}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        {/* Badges */}
-        <div className="absolute top-2 left-2 flex gap-1 flex-wrap">
-          {model.tags.map((tag) => (
-            <Badge key={tag} type={tag.toLowerCase()} label={tag} />
-          ))}
+        {/* Badge row */}
+        <div className="absolute top-2.5 left-2.5 flex gap-1 flex-wrap">
+          {model.tags.map(tag => <ModelBadge key={tag} tag={tag} />)}
         </div>
-        {/* Play overlay on hover */}
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+        {/* Play overlay */}
+        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+          <div className="w-11 h-11 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
             <Play className="w-4 h-4 text-white fill-white ml-0.5" />
           </div>
         </div>
       </div>
 
       {/* Info */}
-      <div className="p-3 flex flex-col gap-2 flex-1">
+      <div className="p-3.5 flex flex-col gap-2">
         <p className="text-white font-semibold text-[13px] leading-tight">{model.name}</p>
-        <p className="text-zinc-500 text-[11px] leading-relaxed line-clamp-2">{model.desc}</p>
+        <p className="text-zinc-500 text-[11.5px] leading-relaxed line-clamp-2">{model.desc}</p>
+
         {/* Meta row */}
-        <div className="mt-auto flex items-center justify-between">
+        <div className="flex items-center justify-between mt-0.5">
           <div className="flex items-center gap-3">
-            <span className="text-zinc-500 text-[10px]">{model.speed}</span>
-            <span className="text-zinc-500 text-[10px]">{model.quality}</span>
+            <SpeedDots count={model.speed} />
+            <QualityDots count={model.quality} />
           </div>
-          <span className={`text-[11px] font-medium ${model.credits < 0 ? 'text-orange-400' : 'text-emerald-400'}`}>
-            {model.credits > 0 ? `${model.credits}` : `${model.credits}`} ⚡
+          <span className={`text-[11px] font-semibold ${model.credits < 0 ? 'text-orange-400' : 'text-emerald-400'}`}>
+            {model.credits > 0 ? `+${model.credits}` : model.credits} ⚡
           </span>
         </div>
+
         {hasGenBtn && (
-          <button className="mt-2 w-full py-2 rounded-lg bg-white text-black text-[12px] font-semibold hover:bg-zinc-100 transition-colors flex items-center justify-center gap-1.5">
+          <button
+            className="mt-1 w-full py-2 rounded-xl bg-white text-black text-[12px] font-bold hover:bg-zinc-100 transition-colors flex items-center justify-center gap-1.5"
+            onClick={e => e.preventDefault()}
+          >
             <Video className="w-3.5 h-3.5" />
             Generate video
           </button>
         )}
+      </div>
+    </Link>
+  );
+}
+
+/* ─── HORIZONTAL SCROLL CAROUSEL ─────────────────────────── */
+function Carousel({ children, id }: { children: React.ReactNode; id: string }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const scroll = (dir: 'left' | 'right') => {
+    if (!scrollRef.current) return;
+    scrollRef.current.scrollBy({ left: dir === 'right' ? 360 : -360, behavior: 'smooth' });
+  };
+  return (
+    <div className="relative group/carousel">
+      <div
+        ref={scrollRef}
+        id={id}
+        className="flex gap-4 overflow-x-auto [&::-webkit-scrollbar]:hidden scroll-smooth pb-2"
+      >
+        {children}
+      </div>
+      {/* Arrow buttons */}
+      <button
+        onClick={() => scroll('left')}
+        className="absolute -left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-white hover:bg-zinc-800 transition-all opacity-0 group-hover/carousel:opacity-100 z-10 shadow-xl"
+      >
+        <ChevronLeft className="w-4 h-4" />
+      </button>
+      <button
+        onClick={() => scroll('right')}
+        className="absolute -right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-white hover:bg-zinc-800 transition-all opacity-0 group-hover/carousel:opacity-100 z-10 shadow-xl"
+      >
+        <ChevronRight className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
+/* ─── SECTION HEADER ──────────────────────────────────────── */
+function SectionHeader({ title, hasSearch, onScrollLeft, onScrollRight }: {
+  title: string;
+  hasSearch?: boolean;
+  onScrollLeft?: () => void;
+  onScrollRight?: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center gap-3">
+        <h2 className="text-white font-semibold text-[18px] tracking-tight">{title}</h2>
+        {hasSearch && (
+          <button className="w-7 h-7 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center transition-colors">
+            <Search className="w-3.5 h-3.5 text-zinc-400" />
+          </button>
+        )}
+      </div>
+      <div className="flex gap-1.5">
+        <button onClick={onScrollLeft}  className="w-7 h-7 rounded-full bg-zinc-800/70 hover:bg-zinc-700 border border-white/[0.06] flex items-center justify-center transition-colors">
+          <ChevronLeft className="w-3.5 h-3.5 text-zinc-300" />
+        </button>
+        <button onClick={onScrollRight} className="w-7 h-7 rounded-full bg-zinc-800/70 hover:bg-zinc-700 border border-white/[0.06] flex items-center justify-center transition-colors">
+          <ChevronRight className="w-3.5 h-3.5 text-zinc-300" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── HERO BANNER ─────────────────────────────────────────── */
+function HeroBanner() {
+  const [current, setCurrent] = useState(0);
+
+  return (
+    <div
+      className="relative w-full overflow-hidden rounded-2xl"
+      style={{
+        height: 420,
+        background: 'linear-gradient(160deg, #1a3a6e 0%, #0e1f48 25%, #080f28 60%, #030609 100%)',
+      }}
+    >
+      {/* Animated gradient orbs */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div
+          className="absolute -top-24 -left-24 w-[420px] h-[420px] rounded-full opacity-40"
+          style={{ background: 'radial-gradient(circle, #3b82f6 0%, transparent 65%)', filter: 'blur(50px)' }}
+        />
+        <div
+          className="absolute -top-10 right-0 w-[340px] h-[340px] rounded-full opacity-25"
+          style={{ background: 'radial-gradient(circle, #6366f1 0%, transparent 65%)', filter: 'blur(60px)' }}
+        />
+        <div
+          className="absolute bottom-0 left-1/4 w-[500px] h-48 opacity-20"
+          style={{ background: 'radial-gradient(ellipse, #60a5fa 0%, transparent 70%)', filter: 'blur(40px)' }}
+        />
+        <div
+          className="absolute top-1/3 right-1/4 w-48 h-48 rounded-full opacity-15"
+          style={{ background: 'radial-gradient(circle, #a78bfa 0%, transparent 70%)', filter: 'blur(35px)' }}
+        />
+      </div>
+
+      {/* Noise texture overlay */}
+      <div className="absolute inset-0 opacity-[0.03]"
+        style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }}
+      />
+
+      {/* Content */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-8">
+        <h1
+          className="text-white text-[42px] md:text-[52px] font-black tracking-tight text-center leading-tight max-w-3xl"
+          style={{ textShadow: '0 4px 40px rgba(59,130,246,0.4)' }}
+        >
+          Start by generating a free image
+        </h1>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/dashboard/image"
+            className="flex items-center gap-2.5 px-9 py-3.5 bg-white text-black text-[14px] font-bold rounded-full hover:bg-zinc-100 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/30"
+          >
+            Generate Image
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+          <Link
+            href="/dashboard/video"
+            className="flex items-center gap-2.5 px-9 py-3.5 bg-transparent text-white text-[14px] font-semibold rounded-full border border-white/30 hover:bg-white/10 hover:border-white/50 transition-all active:scale-95"
+          >
+            Generate Video
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </div>
+
+      {/* Navigation arrows */}
+      <div className="absolute top-4 right-4 flex gap-1">
+        <button className="w-7 h-7 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition-colors border border-white/10">
+          <ChevronLeft className="w-3.5 h-3.5" />
+        </button>
+        <button className="w-7 h-7 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition-colors border border-white/10">
+          <ChevronRight className="w-3.5 h-3.5" />
+        </button>
       </div>
     </div>
   );
@@ -309,154 +306,148 @@ function ModelCard({
 
 /* ─── PAGE ─────────────────────────────────────────────────── */
 export default function DashboardHome() {
-  const [activeTab, setActiveTab] = useState<'image' | 'video'>('image');
+  const imgScrollRef  = useRef<HTMLDivElement>(null);
+  const vidScrollRef  = useRef<HTMLDivElement>(null);
+  const nodeScrollRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (ref: React.RefObject<HTMLDivElement>, dir: 'left' | 'right') => {
+    ref.current?.scrollBy({ left: dir === 'right' ? 360 : -360, behavior: 'smooth' });
+  };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#111] scrollbar-thin scrollbar-track-transparent scrollbar-thumb-zinc-700">
-      <div className="max-w-[900px] mx-auto px-6 py-6 space-y-10">
+    <div
+      className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden"
+      style={{ background: '#0c0c0c' }}
+    >
+      <div className="max-w-[1280px] mx-auto px-6 py-8 space-y-14">
 
         {/* ── HERO BANNER ──────────────────────────────────────── */}
-        <div
-          className="rounded-2xl overflow-hidden relative"
-          style={{
-            background: 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 50%, #222 100%)',
-            height: 180,
-          }}
-        >
-          {/* Subtle radial glow */}
-          <div className="absolute inset-0 pointer-events-none" style={{
-            backgroundImage: 'radial-gradient(ellipse at 50% 120%, rgba(120,120,140,0.18) 0%, transparent 70%)',
-          }} />
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
-            <p className="text-white/90 text-[22px] font-light tracking-wide">
-              Start by generating a free image
-            </p>
-            <div className="flex items-center gap-3">
-              <Link
-                href="/dashboard/image"
-                className="flex items-center gap-1.5 px-4 py-2 bg-white text-black text-[13px] font-semibold rounded-full hover:bg-zinc-100 transition-colors"
-              >
-                Generate Image
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </Link>
-              <Link
-                href="/dashboard/video"
-                className="flex items-center gap-1.5 px-4 py-2 bg-transparent text-white text-[13px] font-medium rounded-full border border-white/20 hover:bg-white/10 transition-colors"
-              >
-                Generate Video
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
-          <div className="absolute top-3 right-4 flex gap-1">
-            <button className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors">
-              <ChevronLeft className="w-3 h-3" />
-            </button>
-            <button className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors">
-              <ChevronRight className="w-3 h-3" />
-            </button>
-          </div>
-        </div>
+        <HeroBanner />
 
         {/* ── QUICK ACTIONS ───────────────────────────────────── */}
-        <div className="grid grid-cols-4 gap-3">
-          {quickActions.map((action) => (
-            <Link
-              key={action.label}
-              href={action.href}
-              className="relative rounded-xl overflow-hidden aspect-[4/3] cursor-pointer group block"
-            >
-              <img
-                src={action.image}
-                alt={action.label}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-              {/* Tool icon badge */}
-              <div className="absolute top-2 right-2 w-7 h-7 rounded-lg bg-zinc-900/80 backdrop-blur-sm flex items-center justify-center text-sm border border-white/10">
-                {action.icon}
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 p-3">
-                <p className="text-white text-[12px] font-medium">{action.label}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <section>
+          <div className="grid grid-cols-4 gap-4">
+            {quickActions.map((action) => (
+              <Link
+                key={action.label}
+                href={action.href}
+                className="group relative flex flex-col gap-0 cursor-pointer"
+              >
+                {/* Image Card */}
+                <div className="relative overflow-hidden rounded-2xl w-full" style={{ aspectRatio: '1/1' }}>
+                  <img
+                    src={action.image}
+                    alt={action.label}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  {/* overlay */}
+                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300" />
+                  {/* Icon badge */}
+                  <div
+                    className="absolute top-3 right-3 w-8 h-8 rounded-xl flex items-center justify-center text-[14px] backdrop-blur-md border border-white/10"
+                    style={{ background: 'rgba(0,0,0,0.5)' }}
+                  >
+                    {action.icon}
+                  </div>
+                </div>
+                {/* Label BELOW card, outside */}
+                <div className="mt-3 px-0.5">
+                  <p className="text-white text-[13px] font-semibold group-hover:text-zinc-200 transition-colors">{action.label}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
 
         {/* ── UPGRADE BANNER ──────────────────────────────────── */}
         <div
           className="rounded-2xl flex items-center justify-between px-8 py-5 relative overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, #1a1a1a 0%, #111 100%)', border: '1px solid #2a2a2a' }}
+          style={{ background: 'linear-gradient(135deg, #141414 0%, #0d0d0d 100%)', border: '1px solid rgba(255,255,255,0.07)' }}
         >
-          <div className="space-y-1.5 flex-1">
-            {[
-              'Upscale images & videos to 22K',
-              'Lora fine-tuning',
-              'Access all 150+ models',
-              'Ultra fast & no throttling',
-            ].map((item) => (
-              <div key={item} className="flex items-center gap-2">
+          <div className="space-y-2">
+            {['Upscale images & videos to 22K', 'Lora fine-tuning', 'Access all 150+ models', 'Ultra fast & no throttling'].map(item => (
+              <div key={item} className="flex items-center gap-2.5">
                 <div className="w-1 h-1 rounded-full bg-zinc-500" />
                 <p className="text-zinc-400 text-[13px]">{item}</p>
               </div>
             ))}
           </div>
           <div className="flex items-center gap-6">
-            <div className="text-center">
-              <p className="text-white font-black text-[36px] leading-none tracking-tight">
+            <div>
+              <p className="text-white font-black text-[40px] leading-none tracking-tight">
                 Try <span className="text-purple-400">Pro</span>
               </p>
             </div>
-            {/* Icon cluster */}
             <div className="relative w-20 h-16 flex-shrink-0">
-              <div className="absolute top-0 right-0 w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-pink-500 shadow-lg" />
-              <div className="absolute top-4 right-6 w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-purple-500 shadow-lg" />
+              <div className="absolute top-0 right-0 w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-pink-500 shadow-lg shadow-orange-500/30" />
+              <div className="absolute top-4 right-6 w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-purple-500 shadow-lg shadow-blue-500/30" />
               <div className="absolute top-6 right-1 w-9 h-9 rounded-xl bg-gradient-to-br from-zinc-600 to-zinc-700 shadow-lg flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-zinc-300" />
               </div>
             </div>
+            <Link
+              href="/dashboard/pricing"
+              className="px-5 py-2.5 bg-white text-black text-[13px] font-bold rounded-full hover:bg-zinc-100 transition-all hover:scale-105 flex-shrink-0"
+            >
+              Upgrade →
+            </Link>
           </div>
         </div>
 
         {/* ── EXPLORE IMAGE MODELS ─────────────────────────────── */}
         <section id="explore-image-models">
-          <SectionHeader title="Explore image models" hasSearch hasNav />
-          <div className="grid grid-cols-4 gap-3">
-            {imageModels.map((model) => (
-              <ModelCard key={model.name} model={model as any} />
+          <SectionHeader
+            title="Explore image models"
+            hasSearch
+            onScrollLeft={() => scroll(imgScrollRef, 'left')}
+            onScrollRight={() => scroll(imgScrollRef, 'right')}
+          />
+          <div ref={imgScrollRef} className="flex gap-4 overflow-x-auto [&::-webkit-scrollbar]:hidden scroll-smooth">
+            {imageModels.map(model => (
+              <div key={model.name} className="flex-shrink-0 w-[260px]">
+                <ModelCard model={model} toolHref="/dashboard/image" />
+              </div>
             ))}
           </div>
         </section>
 
         {/* ── TRY VIDEO MODELS ─────────────────────────────────── */}
         <section id="try-video-models">
-          <SectionHeader title="Try video models" hasSearch hasNav />
-          <div className="grid grid-cols-4 gap-3">
+          <SectionHeader
+            title="Try video models"
+            hasSearch
+            onScrollLeft={() => scroll(vidScrollRef, 'left')}
+            onScrollRight={() => scroll(vidScrollRef, 'right')}
+          />
+          <div ref={vidScrollRef} className="flex gap-4 overflow-x-auto [&::-webkit-scrollbar]:hidden scroll-smooth">
             {videoModels.map((model, i) => (
-              <ModelCard key={model.name} model={model as any} hasGenBtn={i === 0} />
+              <div key={model.name} className="flex-shrink-0 w-[260px]">
+                <ModelCard model={model} hasGenBtn={i === 0} toolHref="/dashboard/video" />
+              </div>
             ))}
           </div>
         </section>
 
         {/* ── PLAY WITH NODE APPS ──────────────────────────────── */}
         <section id="node-apps">
-          <SectionHeader title="Play with node apps" hasNav />
-          <div className="grid grid-cols-4 gap-3">
+          <SectionHeader
+            title="Play with node apps"
+            onScrollLeft={() => scroll(nodeScrollRef, 'left')}
+            onScrollRight={() => scroll(nodeScrollRef, 'right')}
+          />
+          <div ref={nodeScrollRef} className="flex gap-4 overflow-x-auto [&::-webkit-scrollbar]:hidden scroll-smooth">
             {nodeApps.map((app) => (
               <Link
                 key={app.name}
                 href="/dashboard/nodes"
-                className="relative rounded-xl overflow-hidden aspect-[4/3] cursor-pointer group block"
+                className="group relative flex-shrink-0 w-[200px] rounded-2xl overflow-hidden cursor-pointer block"
+                style={{ aspectRatio: '3/4' }}
               >
-                <img
-                  src={app.image}
-                  alt={app.name}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-3 space-y-1">
-                  <p className="text-white text-[13px] font-semibold leading-tight">{app.name}</p>
-                  <p className="text-zinc-400 text-[10px] leading-relaxed line-clamp-2">{app.desc}</p>
+                <img src={app.image} alt={app.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent group-hover:via-black/20 transition-all" />
+                <div className="absolute bottom-0 left-0 right-0 p-4 space-y-1.5">
+                  <p className="text-white text-[13px] font-bold leading-tight">{app.name}</p>
+                  <p className="text-zinc-400 text-[11px] leading-relaxed line-clamp-2">{app.desc}</p>
                 </div>
               </Link>
             ))}
@@ -466,55 +457,49 @@ export default function DashboardHome() {
         {/* ── RELEASE NOTES ────────────────────────────────────── */}
         <section id="release-notes">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-white font-semibold text-[17px]">Release notes</h2>
-            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[12px] font-medium transition-colors">
-              View all
-              <ExternalLink className="w-3 h-3" />
+            <h2 className="text-white font-semibold text-[18px] tracking-tight">Release notes</h2>
+            <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-800/70 hover:bg-zinc-700/70 text-zinc-300 text-[12px] font-medium transition-colors border border-white/[0.06]">
+              View all <ExternalLink className="w-3 h-3" />
             </button>
           </div>
           <div className="grid grid-cols-2 gap-4">
             {releaseNotes.map((note) => (
               <div
                 key={note.title}
-                className="flex gap-4 p-4 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors cursor-pointer group"
+                className="flex gap-4 p-4 rounded-2xl bg-[#111] border border-white/[0.05] hover:border-white/[0.1] transition-all cursor-pointer group"
               >
-                {/* Thumbnail */}
-                <div className="w-[120px] h-[80px] rounded-xl overflow-hidden flex-shrink-0">
-                  <img
-                    src={note.image}
-                    alt={note.title}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
+                <div className="w-[110px] h-[75px] rounded-xl overflow-hidden flex-shrink-0">
+                  <img src={note.image} alt={note.title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
                 </div>
-                {/* Text */}
                 <div className="flex flex-col justify-between min-w-0 flex-1">
                   <div>
                     <p className="text-white text-[13px] font-semibold leading-tight mb-1.5 line-clamp-2">{note.title}</p>
-                    <p className="text-zinc-500 text-[11px] leading-relaxed line-clamp-3">{note.desc}</p>
+                    <p className="text-zinc-500 text-[11px] leading-relaxed line-clamp-2">{note.desc}</p>
                   </div>
-                  <p className="text-zinc-600 text-[10px] mt-2">{note.date}</p>
+                  <p className="text-zinc-600 text-[10px]">{note.date}</p>
                 </div>
               </div>
             ))}
           </div>
         </section>
 
-        {/* ── INSTANT RESULTS / ACTIONS ────────────────────────── */}
+        {/* ── INSTANT ACTIONS ─────────────────────────────────── */}
         <section id="instant-actions">
-          <SectionHeader title="Instant results with NextFlow actions" hasNav />
-          <div className="grid grid-cols-4 gap-3">
+          <SectionHeader title="Instant results with NextFlow actions" />
+          <div className="grid grid-cols-4 gap-4">
             {instantActions.map((action) => (
               <Link
                 key={action.name}
-                href="/dashboard/nodes"
-                className="relative rounded-xl overflow-hidden aspect-[3/4] cursor-pointer group block"
+                href="/dashboard/edit"
+                className="group relative rounded-2xl overflow-hidden cursor-pointer block"
+                style={{ aspectRatio: '3/4' }}
               >
                 <img
                   src={action.image}
                   alt={action.name}
-                  className={`absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${action.bw ? 'grayscale' : ''}`}
+                  className={`absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${action.bw ? 'grayscale' : ''}`}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent group-hover:via-black/20 transition-all" />
                 <div className="absolute bottom-0 left-0 right-0 p-4 space-y-1.5">
                   <p className="text-white text-[14px] font-bold leading-tight">{action.name}</p>
                   <p className="text-zinc-400 text-[11px] leading-relaxed line-clamp-3">{action.desc}</p>
@@ -525,34 +510,20 @@ export default function DashboardHome() {
         </section>
 
         {/* ── FOOTER ───────────────────────────────────────────── */}
-        <footer className="border-t border-zinc-800 pt-10 pb-6">
-          <div className="grid grid-cols-4 gap-8 mb-8">
+        <footer style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} className="pt-10 pb-8">
+          <div className="grid grid-cols-4 gap-8 mb-10">
             {[
-              {
-                heading: 'NextFlow',
-                links: ['Log In', 'Pricing', 'Plans', 'NextFlow Terms', 'NextFlow Enterprise', 'Gallery', 'NextFlow for Architecture'],
-              },
-              {
-                heading: 'Products',
-                links: ['Image', 'Video', 'Enhancer', 'Realtime', 'Edit', 'Chat', 'Stage', 'Animator', 'Train'],
-              },
-              {
-                heading: 'Resources',
-                links: ['Pricing', 'Careers', 'Terms of Service', 'Privacy Policy', 'Documentation', 'Models'],
-              },
-              {
-                heading: 'About',
-                links: ['Blog', 'Discord', 'Articles'],
-              },
+              { heading: 'NextFlow', links: ['Log In', 'Pricing', 'Plans', 'Terms of Service', 'Enterprise', 'Gallery'] },
+              { heading: 'Products', links: ['Image', 'Video', 'Enhancer', 'Realtime', 'Edit', 'Chat', 'Stage', 'Animator', 'Train'] },
+              { heading: 'Resources', links: ['Pricing', 'Careers', 'Terms', 'Privacy', 'Documentation', 'Models'] },
+              { heading: 'About', links: ['Blog', 'Discord', 'Articles'] },
             ].map((col) => (
               <div key={col.heading}>
-                <p className="text-zinc-500 text-[11px] font-semibold uppercase tracking-widest mb-4">{col.heading}</p>
-                <ul className="space-y-2.5">
-                  {col.links.map((link) => (
+                <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-4">{col.heading}</p>
+                <ul className="space-y-3">
+                  {col.links.map(link => (
                     <li key={link}>
-                      <a href="#" className="text-zinc-500 hover:text-zinc-300 text-[12px] transition-colors">
-                        {link}
-                      </a>
+                      <a href="#" className="text-zinc-500 hover:text-zinc-200 text-[12px] transition-colors">{link}</a>
                     </li>
                   ))}
                 </ul>
@@ -560,16 +531,15 @@ export default function DashboardHome() {
             ))}
           </div>
           <div className="flex items-center justify-between">
-            <p className="text-zinc-700 text-[11px]">© 2026 NextFlow</p>
+            <p className="text-zinc-700 text-[11px]">© 2026 NextFlow AI • Made with ❤️ in India</p>
             <div className="flex items-center gap-4">
-              {['✉', '𝕏', 'in', '▶'].map((icon) => (
-                <button key={icon} className="text-zinc-600 hover:text-zinc-400 transition-colors text-[14px]">
-                  {icon}
-                </button>
+              {['✉', '𝕏', 'in', '▶'].map(icon => (
+                <button key={icon} className="text-zinc-600 hover:text-zinc-300 transition-colors text-[14px]">{icon}</button>
               ))}
             </div>
           </div>
         </footer>
+
       </div>
     </div>
   );

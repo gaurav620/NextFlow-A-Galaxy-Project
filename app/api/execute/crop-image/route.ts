@@ -10,9 +10,15 @@ export async function POST(req: NextRequest) {
 
     const { imageUrl, x = 0, y = 0, width = 100, height = 100, nodeId, workflowRunId } = await req.json()
 
-    const response = await fetch(imageUrl)
-    const arrayBuffer = await response.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
+    let buffer: Buffer;
+    if (imageUrl.startsWith('data:')) {
+      const base64Data = imageUrl.split(',')[1];
+      buffer = Buffer.from(base64Data, 'base64');
+    } else {
+      const response = await fetch(imageUrl);
+      const arrayBuffer = await response.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
+    }
     const metadata = await sharp(buffer).metadata()
 
     const imgWidth = metadata.width || 800

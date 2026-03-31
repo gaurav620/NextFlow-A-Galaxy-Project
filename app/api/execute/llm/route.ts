@@ -31,12 +31,20 @@ export async function POST(req: NextRequest) {
     if (body.images?.length) {
       for (const imgUrl of body.images) {
         try {
-          const res = await fetch(imgUrl)
-          const buffer = await res.arrayBuffer()
-          const base64 = Buffer.from(buffer).toString('base64')
-          const mimeType = res.headers.get('content-type') || 'image/jpeg'
-          parts.push({ inlineData: { data: base64, mimeType } })
-        } catch {}
+          if (imgUrl.startsWith('data:')) {
+            const [header, base64Data] = imgUrl.split(',');
+            const mimeType = header.split(':')[1].split(';')[0];
+            parts.push({ inlineData: { data: base64Data, mimeType } });
+          } else {
+            const res = await fetch(imgUrl)
+            const buffer = await res.arrayBuffer()
+            const base64 = Buffer.from(buffer).toString('base64')
+            const mimeType = res.headers.get('content-type') || 'image/jpeg'
+            parts.push({ inlineData: { data: base64, mimeType } })
+          }
+        } catch (err) {
+          console.error('Failed to parse image for LLM:', err)
+        }
       }
     }
 
