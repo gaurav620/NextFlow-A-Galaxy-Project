@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import {
   Search,
   ChevronLeft,
@@ -113,89 +114,78 @@ function QualityDots({ count }: { count: number }) {
   );
 }
 
+/* ─── FRAMER VARIANTS ─────────────────────────────────────── */
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 30, scale: 0.95 },
+  show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 300, damping: 24 } }
+};
+
+const hoverSpring = {
+  scale: 1.02,
+  y: -2,
+  transition: { type: 'spring', stiffness: 400, damping: 20 }
+};
+
 /* ─── MODEL CARD ──────────────────────────────────────────── */
 function ModelCard({ model, hasGenBtn, toolHref }: { model: Model; hasGenBtn?: boolean; toolHref?: string }) {
   return (
-    <Link href={toolHref || '/dashboard/image'} className="block bg-[#111] rounded-2xl overflow-hidden border border-white/[0.05] hover:border-white/[0.12] transition-all duration-300 cursor-pointer group flex-shrink-0">
-      {/* Thumbnail */}
-      <div className="relative overflow-hidden" style={{ aspectRatio: '3/2' }}>
-        <img
-          src={model.image}
-          alt={model.name}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-        {/* Badge row */}
-        <div className="absolute top-2.5 left-2.5 flex gap-1 flex-wrap">
-          {model.tags.map(tag => <ModelBadge key={tag} tag={tag} />)}
-        </div>
-        {/* Play overlay */}
-        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-          <div className="w-11 h-11 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
-            <Play className="w-4 h-4 text-white fill-white ml-0.5" />
+    <motion.div whileHover={hoverSpring}>
+      <Link href={toolHref || '/dashboard/image'} className="block bg-[#111] rounded-2xl overflow-hidden border border-white/[0.05] hover:border-white/[0.12] transition-colors duration-300 cursor-pointer group flex-shrink-0 shadow-xl">
+        {/* Thumbnail */}
+        <div className="relative overflow-hidden" style={{ aspectRatio: '3/2' }}>
+          <img
+            src={model.image}
+            alt={model.name}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+          {/* Badge row */}
+          <div className="absolute top-2.5 left-2.5 flex gap-1 flex-wrap">
+            {model.tags.map(tag => <ModelBadge key={tag} tag={tag} />)}
+          </div>
+          {/* Play overlay */}
+          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+            <div className="w-11 h-11 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+              <Play className="w-4 h-4 text-white fill-white ml-0.5" />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Info */}
-      <div className="p-3.5 flex flex-col gap-2">
-        <p className="text-white font-semibold text-[13px] leading-tight">{model.name}</p>
-        <p className="text-zinc-500 text-[11.5px] leading-relaxed line-clamp-2">{model.desc}</p>
+        {/* Info */}
+        <div className="p-3.5 flex flex-col gap-2">
+          <p className="text-white font-semibold text-[13px] leading-tight">{model.name}</p>
+          <p className="text-zinc-500 text-[11.5px] leading-relaxed line-clamp-2">{model.desc}</p>
 
-        {/* Meta row */}
-        <div className="flex items-center justify-between mt-0.5">
-          <div className="flex items-center gap-3">
-            <SpeedDots count={model.speed} />
-            <QualityDots count={model.quality} />
+          {/* Meta row */}
+          <div className="flex items-center justify-between mt-0.5">
+            <div className="flex items-center gap-3">
+              <SpeedDots count={model.speed} />
+              <QualityDots count={model.quality} />
+            </div>
+            <span className={`text-[11px] font-semibold ${model.credits < 0 ? 'text-orange-400' : 'text-emerald-400'}`}>
+              {model.credits > 0 ? `+${model.credits}` : model.credits} ⚡
+            </span>
           </div>
-          <span className={`text-[11px] font-semibold ${model.credits < 0 ? 'text-orange-400' : 'text-emerald-400'}`}>
-            {model.credits > 0 ? `+${model.credits}` : model.credits} ⚡
-          </span>
+
+          {hasGenBtn && (
+            <button
+              className="mt-1 w-full py-2 rounded-xl bg-white text-black text-[12px] font-bold hover:bg-zinc-100 transition-colors flex items-center justify-center gap-1.5 shadow-md"
+              onClick={e => e.preventDefault()}
+            >
+              <Video className="w-3.5 h-3.5" />
+              Generate video
+            </button>
+          )}
         </div>
-
-        {hasGenBtn && (
-          <button
-            className="mt-1 w-full py-2 rounded-xl bg-white text-black text-[12px] font-bold hover:bg-zinc-100 transition-colors flex items-center justify-center gap-1.5"
-            onClick={e => e.preventDefault()}
-          >
-            <Video className="w-3.5 h-3.5" />
-            Generate video
-          </button>
-        )}
-      </div>
-    </Link>
-  );
-}
-
-/* ─── HORIZONTAL SCROLL CAROUSEL ─────────────────────────── */
-function Carousel({ children, id }: { children: React.ReactNode; id: string }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const scroll = (dir: 'left' | 'right') => {
-    if (!scrollRef.current) return;
-    scrollRef.current.scrollBy({ left: dir === 'right' ? 360 : -360, behavior: 'smooth' });
-  };
-  return (
-    <div className="relative group/carousel">
-      <div
-        ref={scrollRef}
-        id={id}
-        className="flex gap-4 overflow-x-auto [&::-webkit-scrollbar]:hidden scroll-smooth pb-2"
-      >
-        {children}
-      </div>
-      {/* Arrow buttons */}
-      <button
-        onClick={() => scroll('left')}
-        className="absolute -left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-white hover:bg-zinc-800 transition-all opacity-0 group-hover/carousel:opacity-100 z-10 shadow-xl"
-      >
-        <ChevronLeft className="w-4 h-4" />
-      </button>
-      <button
-        onClick={() => scroll('right')}
-        className="absolute -right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-white hover:bg-zinc-800 transition-all opacity-0 group-hover/carousel:opacity-100 z-10 shadow-xl"
-      >
-        <ChevronRight className="w-4 h-4" />
-      </button>
-    </div>
+      </Link>
+    </motion.div>
   );
 }
 
@@ -217,11 +207,11 @@ function SectionHeader({ title, hasSearch, onScrollLeft, onScrollRight }: {
         )}
       </div>
       <div className="flex gap-1.5">
-        <button onClick={onScrollLeft}  className="w-7 h-7 rounded-full bg-zinc-800/70 hover:bg-zinc-700 border border-white/[0.06] flex items-center justify-center transition-colors">
-          <ChevronLeft className="w-3.5 h-3.5 text-zinc-300" />
+        <button onClick={onScrollLeft}  className="w-7 h-7 rounded-full bg-zinc-800/70 hover:bg-zinc-700 border border-white/[0.06] flex items-center justify-center transition-colors group">
+          <ChevronLeft className="w-3.5 h-3.5 text-zinc-400 group-hover:text-white transition-colors" />
         </button>
-        <button onClick={onScrollRight} className="w-7 h-7 rounded-full bg-zinc-800/70 hover:bg-zinc-700 border border-white/[0.06] flex items-center justify-center transition-colors">
-          <ChevronRight className="w-3.5 h-3.5 text-zinc-300" />
+        <button onClick={onScrollRight} className="w-7 h-7 rounded-full bg-zinc-800/70 hover:bg-zinc-700 border border-white/[0.06] flex items-center justify-center transition-colors group">
+          <ChevronRight className="w-3.5 h-3.5 text-zinc-400 group-hover:text-white transition-colors" />
         </button>
       </div>
     </div>
@@ -230,33 +220,35 @@ function SectionHeader({ title, hasSearch, onScrollLeft, onScrollRight }: {
 
 /* ─── HERO BANNER ─────────────────────────────────────────── */
 function HeroBanner() {
-  const [current, setCurrent] = useState(0);
-
   return (
-    <div
-      className="relative w-full overflow-hidden rounded-2xl"
+    <motion.div
+      variants={itemVariants}
+      className="relative w-full overflow-hidden rounded-[24px]"
       style={{
         height: 420,
-        background: 'linear-gradient(160deg, #1a3a6e 0%, #0e1f48 25%, #080f28 60%, #030609 100%)',
+        background: 'linear-gradient(160deg, #111827 0%, #0c1220 25%, #080b15 60%, #030406 100%)',
+        border: '1px solid rgba(255,255,255,0.03)'
       }}
     >
       {/* Animated gradient orbs */}
       <div className="absolute inset-0 overflow-hidden">
-        <div
-          className="absolute -top-24 -left-24 w-[420px] h-[420px] rounded-full opacity-40"
+        <motion.div
+          animate={{ x: [0, 20, 0], y: [0, -20, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute -top-24 -left-24 w-[420px] h-[420px] rounded-full opacity-30"
           style={{ background: 'radial-gradient(circle, #3b82f6 0%, transparent 65%)', filter: 'blur(50px)' }}
         />
-        <div
+        <motion.div
+          animate={{ x: [0, -30, 0], y: [0, 30, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
           className="absolute -top-10 right-0 w-[340px] h-[340px] rounded-full opacity-25"
-          style={{ background: 'radial-gradient(circle, #6366f1 0%, transparent 65%)', filter: 'blur(60px)' }}
+          style={{ background: 'radial-gradient(circle, #8b5cf6 0%, transparent 65%)', filter: 'blur(60px)' }}
         />
-        <div
+        <motion.div
+           animate={{ scale: [1, 1.1, 1] }}
+           transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
           className="absolute bottom-0 left-1/4 w-[500px] h-48 opacity-20"
-          style={{ background: 'radial-gradient(ellipse, #60a5fa 0%, transparent 70%)', filter: 'blur(40px)' }}
-        />
-        <div
-          className="absolute top-1/3 right-1/4 w-48 h-48 rounded-full opacity-15"
-          style={{ background: 'radial-gradient(circle, #a78bfa 0%, transparent 70%)', filter: 'blur(35px)' }}
+          style={{ background: 'radial-gradient(ellipse, #3b82f6 0%, transparent 70%)', filter: 'blur(40px)' }}
         />
       </div>
 
@@ -267,40 +259,49 @@ function HeroBanner() {
 
       {/* Content */}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-8">
-        <h1
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
           className="text-white text-[42px] md:text-[52px] font-black tracking-tight text-center leading-tight max-w-3xl"
-          style={{ textShadow: '0 4px 40px rgba(59,130,246,0.4)' }}
+          style={{ textShadow: '0 4px 40px rgba(59,130,246,0.3)' }}
         >
-          Start by generating a free image
-        </h1>
-        <div className="flex items-center gap-4">
+          Build and execute AI workflows seamlessly
+        </motion.h1>
+        
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="flex items-center gap-4"
+        >
           <Link
-            href="/dashboard/image"
-            className="flex items-center gap-2.5 px-9 py-3.5 bg-white text-black text-[14px] font-bold rounded-full hover:bg-zinc-100 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/30"
+            href="/dashboard/workflows"
+            className="flex items-center gap-2.5 px-9 py-3.5 bg-white text-black text-[14px] font-bold rounded-full hover:bg-zinc-100 transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-white/10"
           >
-            Generate Image
+            Open Node Canvas
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
             href="/dashboard/video"
-            className="flex items-center gap-2.5 px-9 py-3.5 bg-transparent text-white text-[14px] font-semibold rounded-full border border-white/30 hover:bg-white/10 hover:border-white/50 transition-all active:scale-95"
+            className="flex items-center gap-2.5 px-9 py-3.5 bg-transparent text-white text-[14px] font-semibold rounded-full border border-white/20 hover:bg-white/10 hover:border-white/40 transition-all hover:scale-105 active:scale-95"
           >
             Generate Video
-            <ArrowRight className="w-4 h-4" />
+            <Play className="w-4 h-4" />
           </Link>
-        </div>
+        </motion.div>
       </div>
 
       {/* Navigation arrows */}
-      <div className="absolute top-4 right-4 flex gap-1">
-        <button className="w-7 h-7 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition-colors border border-white/10">
-          <ChevronLeft className="w-3.5 h-3.5" />
+      <div className="absolute top-4 right-4 flex gap-2">
+        <button className="w-8 h-8 rounded-full bg-white/5 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/10 transition-colors border border-white/10">
+          <ChevronLeft className="w-4 h-4" />
         </button>
-        <button className="w-7 h-7 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition-colors border border-white/10">
-          <ChevronRight className="w-3.5 h-3.5" />
+        <button className="w-8 h-8 rounded-full bg-white/5 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/10 transition-colors border border-white/10">
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -316,202 +317,214 @@ export default function DashboardHome() {
 
   return (
     <div
-      className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden"
-      style={{ background: '#0c0c0c' }}
+      className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden scroll-smooth"
+      style={{ background: '#0A0A0A' }}
     >
-      <div className="max-w-[1280px] mx-auto px-6 py-8 space-y-14">
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+        className="max-w-[1280px] mx-auto px-6 py-8 space-y-16"
+      >
 
         {/* ── HERO BANNER ──────────────────────────────────────── */}
         <HeroBanner />
 
         {/* ── QUICK ACTIONS ───────────────────────────────────── */}
-        <section>
-          <div className="grid grid-cols-4 gap-4">
+        <motion.section variants={itemVariants}>
+          <div className="grid grid-cols-4 gap-5">
             {quickActions.map((action) => (
-              <Link
-                key={action.label}
-                href={action.href}
-                className="group relative flex flex-col gap-0 cursor-pointer"
-              >
-                {/* Image Card */}
-                <div className="relative overflow-hidden rounded-2xl w-full" style={{ aspectRatio: '1/1' }}>
-                  <img
-                    src={action.image}
-                    alt={action.label}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  {/* overlay */}
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300" />
-                  {/* Icon badge */}
-                  <div
-                    className="absolute top-3 right-3 w-8 h-8 rounded-xl flex items-center justify-center text-[14px] backdrop-blur-md border border-white/10"
-                    style={{ background: 'rgba(0,0,0,0.5)' }}
-                  >
-                    {action.icon}
+              <motion.div whileHover={hoverSpring} key={action.label}>
+                <Link
+                  href={action.href}
+                  className="group relative flex flex-col gap-0 cursor-pointer"
+                >
+                  {/* Image Card */}
+                  <div className="relative overflow-hidden rounded-[20px] w-full border border-white/[0.04] group-hover:border-white/[0.1] shadow-2xl transition-all" style={{ aspectRatio: '1/1' }}>
+                    <img
+                      src={action.image}
+                      alt={action.label}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                    />
+                    {/* overlay */}
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-500" />
+                    {/* Icon badge */}
+                    <div
+                      className="absolute top-4 right-4 w-9 h-9 rounded-xl flex items-center justify-center text-[16px] backdrop-blur-xl border border-white/10 shadow-lg"
+                      style={{ background: 'rgba(0,0,0,0.6)' }}
+                    >
+                      {action.icon}
+                    </div>
                   </div>
-                </div>
-                {/* Label BELOW card, outside */}
-                <div className="mt-3 px-0.5">
-                  <p className="text-white text-[13px] font-semibold group-hover:text-zinc-200 transition-colors">{action.label}</p>
-                </div>
-              </Link>
+                  {/* Label BELOW card, outside */}
+                  <div className="mt-3.5 px-1 flex items-center justify-between">
+                    <p className="text-zinc-300 text-[14px] font-semibold group-hover:text-white transition-colors tracking-tight">{action.label}</p>
+                    <ArrowUpRight className="w-4 h-4 text-zinc-600 group-hover:text-white transition-colors opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0" />
+                  </div>
+                </Link>
+              </motion.div>
             ))}
           </div>
-        </section>
+        </motion.section>
 
         {/* ── UPGRADE BANNER ──────────────────────────────────── */}
-        <div
-          className="rounded-2xl flex items-center justify-between px-8 py-5 relative overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, #141414 0%, #0d0d0d 100%)', border: '1px solid rgba(255,255,255,0.07)' }}
+        <motion.div
+           variants={itemVariants}
+           whileHover={{ scale: 1.01, transition: { type: 'spring', stiffness: 400, damping: 30 } }}
+          className="rounded-[24px] flex items-center justify-between px-10 py-7 relative overflow-hidden shadow-2xl"
+          style={{ background: 'linear-gradient(135deg, #16161a 0%, #0d0d0f 100%)', border: '1px solid rgba(255,255,255,0.06)' }}
         >
-          <div className="space-y-2">
+          <div className="space-y-3">
             {['Upscale images & videos to 22K', 'Lora fine-tuning', 'Access all 150+ models', 'Ultra fast & no throttling'].map(item => (
-              <div key={item} className="flex items-center gap-2.5">
-                <div className="w-1 h-1 rounded-full bg-zinc-500" />
-                <p className="text-zinc-400 text-[13px]">{item}</p>
+              <div key={item} className="flex items-center gap-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_#6366f1]" />
+                <p className="text-zinc-300 font-medium text-[14px] tracking-tight">{item}</p>
               </div>
             ))}
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-8">
             <div>
-              <p className="text-white font-black text-[40px] leading-none tracking-tight">
-                Try <span className="text-purple-400">Pro</span>
+              <p className="text-white font-black text-[42px] leading-none tracking-tight">
+                Try <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">Pro</span>
               </p>
             </div>
-            <div className="relative w-20 h-16 flex-shrink-0">
-              <div className="absolute top-0 right-0 w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-pink-500 shadow-lg shadow-orange-500/30" />
-              <div className="absolute top-4 right-6 w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-purple-500 shadow-lg shadow-blue-500/30" />
-              <div className="absolute top-6 right-1 w-9 h-9 rounded-xl bg-gradient-to-br from-zinc-600 to-zinc-700 shadow-lg flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-zinc-300" />
+            <div className="relative w-24 h-20 flex-shrink-0">
+              <motion.div animate={{ rotate: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 4 }} className="absolute top-0 right-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 to-pink-500 shadow-lg shadow-orange-500/30" />
+              <motion.div animate={{ rotate: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 5 }} className="absolute top-4 right-8 w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-purple-500 shadow-lg shadow-blue-500/30" />
+              <div className="absolute top-7 right-2 w-10 h-10 rounded-xl bg-[#111] border border-white/10 shadow-2xl flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-white" />
               </div>
             </div>
             <Link
               href="/dashboard/pricing"
-              className="px-5 py-2.5 bg-white text-black text-[13px] font-bold rounded-full hover:bg-zinc-100 transition-all hover:scale-105 flex-shrink-0"
+              className="px-6 py-3 bg-white text-black text-[14px] font-bold rounded-full hover:bg-zinc-100 transition-all hover:scale-105 active:scale-95 shadow-xl flex-shrink-0"
             >
               Upgrade →
             </Link>
           </div>
-        </div>
+        </motion.div>
 
         {/* ── EXPLORE IMAGE MODELS ─────────────────────────────── */}
-        <section id="explore-image-models">
+        <motion.section variants={itemVariants} id="explore-image-models">
           <SectionHeader
             title="Explore image models"
             hasSearch
             onScrollLeft={() => scroll(imgScrollRef, 'left')}
             onScrollRight={() => scroll(imgScrollRef, 'right')}
           />
-          <div ref={imgScrollRef} className="flex gap-4 overflow-x-auto [&::-webkit-scrollbar]:hidden scroll-smooth">
+          <div ref={imgScrollRef} className="flex gap-4 overflow-x-auto [&::-webkit-scrollbar]:hidden scroll-smooth pb-4 px-1 -mx-1">
             {imageModels.map(model => (
-              <div key={model.name} className="flex-shrink-0 w-[260px]">
+              <div key={model.name} className="flex-shrink-0 w-[270px]">
                 <ModelCard model={model} toolHref="/dashboard/image" />
               </div>
             ))}
           </div>
-        </section>
+        </motion.section>
 
         {/* ── TRY VIDEO MODELS ─────────────────────────────────── */}
-        <section id="try-video-models">
+        <motion.section variants={itemVariants} id="try-video-models">
           <SectionHeader
             title="Try video models"
             hasSearch
             onScrollLeft={() => scroll(vidScrollRef, 'left')}
             onScrollRight={() => scroll(vidScrollRef, 'right')}
           />
-          <div ref={vidScrollRef} className="flex gap-4 overflow-x-auto [&::-webkit-scrollbar]:hidden scroll-smooth">
+          <div ref={vidScrollRef} className="flex gap-4 overflow-x-auto [&::-webkit-scrollbar]:hidden scroll-smooth pb-4 px-1 -mx-1">
             {videoModels.map((model, i) => (
-              <div key={model.name} className="flex-shrink-0 w-[260px]">
+              <div key={model.name} className="flex-shrink-0 w-[270px]">
                 <ModelCard model={model} hasGenBtn={i === 0} toolHref="/dashboard/video" />
               </div>
             ))}
           </div>
-        </section>
+        </motion.section>
 
         {/* ── PLAY WITH NODE APPS ──────────────────────────────── */}
-        <section id="node-apps">
+        <motion.section variants={itemVariants} id="node-apps">
           <SectionHeader
             title="Play with node apps"
             onScrollLeft={() => scroll(nodeScrollRef, 'left')}
             onScrollRight={() => scroll(nodeScrollRef, 'right')}
           />
-          <div ref={nodeScrollRef} className="flex gap-4 overflow-x-auto [&::-webkit-scrollbar]:hidden scroll-smooth">
+          <div ref={nodeScrollRef} className="flex gap-4 overflow-x-auto [&::-webkit-scrollbar]:hidden scroll-smooth pb-4 px-1 -mx-1">
             {nodeApps.map((app) => (
-              <Link
-                key={app.name}
-                href="/dashboard/nodes"
-                className="group relative flex-shrink-0 w-[200px] rounded-2xl overflow-hidden cursor-pointer block"
-                style={{ aspectRatio: '3/4' }}
-              >
-                <img src={app.image} alt={app.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent group-hover:via-black/20 transition-all" />
-                <div className="absolute bottom-0 left-0 right-0 p-4 space-y-1.5">
-                  <p className="text-white text-[13px] font-bold leading-tight">{app.name}</p>
-                  <p className="text-zinc-400 text-[11px] leading-relaxed line-clamp-2">{app.desc}</p>
-                </div>
-              </Link>
+              <motion.div whileHover={hoverSpring} key={app.name} className="flex-shrink-0">
+                <Link
+                  href="/dashboard/workflows"
+                  className="group relative w-[210px] rounded-[20px] overflow-hidden cursor-pointer block border border-white/[0.04] shadow-xl"
+                  style={{ aspectRatio: '3/4' }}
+                >
+                  <img src={app.image} alt={app.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent transition-all" />
+                  <div className="absolute bottom-0 left-0 right-0 p-5 space-y-2">
+                    <p className="text-white text-[15px] font-bold leading-tight drop-shadow-md">{app.name}</p>
+                    <p className="text-zinc-300 text-[12px] font-medium leading-relaxed drop-shadow line-clamp-2">{app.desc}</p>
+                  </div>
+                </Link>
+              </motion.div>
             ))}
           </div>
-        </section>
+        </motion.section>
 
         {/* ── RELEASE NOTES ────────────────────────────────────── */}
-        <section id="release-notes">
-          <div className="flex items-center justify-between mb-5">
+        <motion.section variants={itemVariants} id="release-notes">
+          <div className="flex items-center justify-between mb-6">
             <h2 className="text-white font-semibold text-[18px] tracking-tight">Release notes</h2>
-            <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-800/70 hover:bg-zinc-700/70 text-zinc-300 text-[12px] font-medium transition-colors border border-white/[0.06]">
-              View all <ExternalLink className="w-3 h-3" />
+            <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 text-[12px] font-medium transition-colors border border-white/[0.06]">
+              View all <ExternalLink className="w-3.5 h-3.5" />
             </button>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-5">
             {releaseNotes.map((note) => (
-              <div
+              <motion.div
+                whileHover={{ scale: 1.01, y: -2, backgroundColor: 'rgba(255,255,255,0.03)' }}
                 key={note.title}
-                className="flex gap-4 p-4 rounded-2xl bg-[#111] border border-white/[0.05] hover:border-white/[0.1] transition-all cursor-pointer group"
+                className="flex gap-5 p-5 rounded-[20px] bg-[#111] border border-white/[0.06] hover:border-white/[0.12] transition-colors cursor-pointer shadow-lg"
               >
-                <div className="w-[110px] h-[75px] rounded-xl overflow-hidden flex-shrink-0">
-                  <img src={note.image} alt={note.title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
+                <div className="w-[120px] h-[80px] rounded-xl overflow-hidden flex-shrink-0 shadow-md">
+                  <img src={note.image} alt={note.title} className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" />
                 </div>
                 <div className="flex flex-col justify-between min-w-0 flex-1">
                   <div>
-                    <p className="text-white text-[13px] font-semibold leading-tight mb-1.5 line-clamp-2">{note.title}</p>
-                    <p className="text-zinc-500 text-[11px] leading-relaxed line-clamp-2">{note.desc}</p>
+                    <p className="text-zinc-100 text-[14px] font-bold leading-tight mb-1.5 line-clamp-2">{note.title}</p>
+                    <p className="text-zinc-400 text-[12px] leading-relaxed line-clamp-2">{note.desc}</p>
                   </div>
-                  <p className="text-zinc-600 text-[10px]">{note.date}</p>
+                  <p className="text-zinc-500 font-medium text-[11px] mt-2">{note.date}</p>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
-        </section>
+        </motion.section>
 
         {/* ── INSTANT ACTIONS ─────────────────────────────────── */}
-        <section id="instant-actions">
+        <motion.section variants={itemVariants} id="instant-actions">
           <SectionHeader title="Instant results with NextFlow actions" />
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 gap-5">
             {instantActions.map((action) => (
-              <Link
-                key={action.name}
-                href="/dashboard/edit"
-                className="group relative rounded-2xl overflow-hidden cursor-pointer block"
-                style={{ aspectRatio: '3/4' }}
-              >
-                <img
-                  src={action.image}
-                  alt={action.name}
-                  className={`absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${action.bw ? 'grayscale' : ''}`}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent group-hover:via-black/20 transition-all" />
-                <div className="absolute bottom-0 left-0 right-0 p-4 space-y-1.5">
-                  <p className="text-white text-[14px] font-bold leading-tight">{action.name}</p>
-                  <p className="text-zinc-400 text-[11px] leading-relaxed line-clamp-3">{action.desc}</p>
-                </div>
-              </Link>
+              <motion.div whileHover={hoverSpring} key={action.name}>
+                <Link
+                  href="/dashboard/edit"
+                  className="group relative rounded-[20px] overflow-hidden cursor-pointer block border border-white/[0.04] shadow-xl"
+                  style={{ aspectRatio: '3/4' }}
+                >
+                  <img
+                    src={action.image}
+                    alt={action.name}
+                    className={`absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 ${action.bw ? 'grayscale' : ''}`}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent transition-all opacity-80 group-hover:opacity-100" />
+                  <div className="absolute bottom-0 left-0 right-0 p-5 space-y-2">
+                    <p className="text-white text-[15px] font-bold leading-tight drop-shadow-md">{action.name}</p>
+                    <p className="text-zinc-300 text-[12px] font-medium leading-relaxed drop-shadow line-clamp-3">{action.desc}</p>
+                  </div>
+                </Link>
+              </motion.div>
             ))}
           </div>
-        </section>
+        </motion.section>
 
         {/* ── FOOTER ───────────────────────────────────────────── */}
-        <footer style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} className="pt-10 pb-8">
-          <div className="grid grid-cols-4 gap-8 mb-10">
+        <motion.footer variants={itemVariants} style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }} className="pt-12 pb-10">
+          <div className="grid grid-cols-4 gap-8 mb-12">
             {[
               { heading: 'NextFlow', links: ['Log In', 'Pricing', 'Plans', 'Terms of Service', 'Enterprise', 'Gallery'] },
               { heading: 'Products', links: ['Image', 'Video', 'Enhancer', 'Realtime', 'Edit', 'Chat', 'Stage', 'Animator', 'Train'] },
@@ -519,28 +532,28 @@ export default function DashboardHome() {
               { heading: 'About', links: ['Blog', 'Discord', 'Articles'] },
             ].map((col) => (
               <div key={col.heading}>
-                <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-4">{col.heading}</p>
-                <ul className="space-y-3">
+                <p className="text-white text-[11px] font-bold uppercase tracking-widest mb-5 opacity-90">{col.heading}</p>
+                <ul className="space-y-3.5">
                   {col.links.map(link => (
                     <li key={link}>
-                      <a href="#" className="text-zinc-500 hover:text-zinc-200 text-[12px] transition-colors">{link}</a>
+                      <a href="#" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">{link}</a>
                     </li>
                   ))}
                 </ul>
               </div>
             ))}
           </div>
-          <div className="flex items-center justify-between">
-            <p className="text-zinc-700 text-[11px]">© 2026 NextFlow AI • Made with ❤️ in India</p>
-            <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between border-t border-white/[0.04] pt-6">
+            <p className="text-zinc-500 font-medium text-[12px]">© 2026 NextFlow AI • Made with ❤️</p>
+            <div className="flex items-center gap-5">
               {['✉', '𝕏', 'in', '▶'].map(icon => (
-                <button key={icon} className="text-zinc-600 hover:text-zinc-300 transition-colors text-[14px]">{icon}</button>
+                <button key={icon} className="text-zinc-400 hover:text-white transition-colors text-[16px]">{icon}</button>
               ))}
             </div>
           </div>
-        </footer>
+        </motion.footer>
 
-      </div>
+      </motion.div>
     </div>
   );
 }
