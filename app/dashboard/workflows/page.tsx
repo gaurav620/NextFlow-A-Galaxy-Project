@@ -145,7 +145,7 @@ export default function WorkflowsPage() {
       <div className="min-h-[calc(100vh-380px)]">
         {activeTab === 'projects' && (
           <>
-            isLoading ? (
+            {isLoading ? (
               <div className="flex items-center justify-center mt-24">
                 <Loader2 className="w-8 h-8 text-gray-500 animate-spin" />
               </div>

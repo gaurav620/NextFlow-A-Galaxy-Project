@@ -65,9 +65,10 @@ const nodeDefinitions = [
 export default function WorkflowEditorPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
   const router = useRouter()
+  const { id } = React.use(params)
 
   const {
     nodes, edges, setNodes, setEdges,
@@ -80,7 +81,6 @@ export default function WorkflowEditorPage({
 
   // Load workflow from DB when opening an existing workflow (id !== 'new')
   useEffect(() => {
-    const id = params.id
     if (!id || id === 'new') return
     fetch(`/api/workflow/${id}`)
       .then(r => r.json())
@@ -94,7 +94,7 @@ export default function WorkflowEditorPage({
         }
       })
       .catch(err => console.error('Failed to load workflow:', err))
-  }, [params.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const onNodesChange = useCallback(
     (changes: any) => setNodes(applyNodeChanges(changes, nodes as any) as any),
