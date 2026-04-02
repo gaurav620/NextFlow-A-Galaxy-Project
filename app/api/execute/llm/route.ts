@@ -3,6 +3,8 @@ import { auth } from '@clerk/nextjs/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
+import { tasks } from '@trigger.dev/sdk/v3'
+import type { llmTask } from '@/trigger/tasks/llm'
 
 const schema = z.object({
   model: z.string().default('gemini-2.0-flash'),
@@ -19,37 +21,56 @@ export async function POST(req: NextRequest) {
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = schema.parse(await req.json())
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-    const geminiModel = genAI.getGenerativeModel({ model: body.model })
 
-    const parts: any[] = []
-    if (body.systemPrompt) {
-      parts.push({ text: `System: ${body.systemPrompt}\n\n` })
-    }
-    parts.push({ text: body.userMessage })
+    let output: string
 
-    if (body.images?.length) {
-      for (const imgUrl of body.images) {
-        try {
-          if (imgUrl.startsWith('data:')) {
-            const [header, base64Data] = imgUrl.split(',');
-            const mimeType = header.split(':')[1].split(';')[0];
-            parts.push({ inlineData: { data: base64Data, mimeType } });
-          } else {
-            const res = await fetch(imgUrl)
-            const buffer = await res.arrayBuffer()
-            const base64 = Buffer.from(buffer).toString('base64')
-            const mimeType = res.headers.get('content-type') || 'image/jpeg'
-            parts.push({ inlineData: { data: base64, mimeType } })
+    // Use Trigger.dev task when secret key is available
+    if (process.env.TRIGGER_SECRET_KEY) {
+      const result = await tasks.triggerAndWait<typeof llmTask>('llm-node', {
+        model: body.model,
+        systemPrompt: body.systemPrompt,
+        userMessage: body.userMessage,
+        images: body.images,
+        workflowRunId: body.workflowRunId,
+        nodeId: body.nodeId,
+      })
+
+      if (!result.ok) {
+        throw new Error('LLM task failed')
+      }
+      output = result.output.output
+    } else {
+      // Direct fallback for local dev without Trigger.dev CLI
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
+      const geminiModel = genAI.getGenerativeModel({ model: body.model })
+
+      const parts: any[] = []
+      if (body.systemPrompt) parts.push({ text: `System: ${body.systemPrompt}\n\n` })
+      parts.push({ text: body.userMessage })
+
+      if (body.images?.length) {
+        for (const imgUrl of body.images) {
+          try {
+            if (imgUrl.startsWith('data:')) {
+              const [header, base64Data] = imgUrl.split(',')
+              const mimeType = header.split(':')[1].split(';')[0]
+              parts.push({ inlineData: { data: base64Data, mimeType } })
+            } else {
+              const res = await fetch(imgUrl)
+              const buffer = await res.arrayBuffer()
+              const base64 = Buffer.from(buffer).toString('base64')
+              const mimeType = res.headers.get('content-type') || 'image/jpeg'
+              parts.push({ inlineData: { data: base64, mimeType } })
+            }
+          } catch (err) {
+            console.error('Failed to parse image for LLM:', err)
           }
-        } catch (err) {
-          console.error('Failed to parse image for LLM:', err)
         }
       }
-    }
 
-    const result = await geminiModel.generateContent(parts)
-    const output = result.response.text()
+      const geminiResult = await geminiModel.generateContent(parts)
+      output = geminiResult.response.text()
+    }
 
     if (body.workflowRunId && body.nodeId) {
       await prisma.nodeRun.create({

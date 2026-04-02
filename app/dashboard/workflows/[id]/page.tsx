@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback, useRef } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import ReactFlow, {
   Background,
@@ -24,6 +24,7 @@ import {
   Search,
   Workflow,
   Loader2,
+  Download,
 } from 'lucide-react'
 import {
   Tooltip,
@@ -67,7 +68,7 @@ export default function WorkflowEditorPage({
   params: { id: string }
 }) {
   const router = useRouter()
-  
+
   const {
     nodes, edges, setNodes, setEdges,
     workflowName, setWorkflowName,
@@ -76,6 +77,24 @@ export default function WorkflowEditorPage({
     resetOutputs, addExecutingNode,
     removeExecutingNode, setNodeOutput, updateNodeData
   } = useWorkflowStore()
+
+  // Load workflow from DB when opening an existing workflow (id !== 'new')
+  useEffect(() => {
+    const id = params.id
+    if (!id || id === 'new') return
+    fetch(`/api/workflow/${id}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.success && data.workflow) {
+          const wf = data.workflow
+          setCurrentWorkflowId(wf.id)
+          setWorkflowName(wf.name || 'Untitled Workflow')
+          if (wf.data?.nodes) setNodes(wf.data.nodes)
+          if (wf.data?.edges) setEdges(wf.data.edges)
+        }
+      })
+      .catch(err => console.error('Failed to load workflow:', err))
+  }, [params.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const onNodesChange = useCallback(
     (changes: any) => setNodes(applyNodeChanges(changes, nodes as any) as any),
@@ -144,6 +163,22 @@ export default function WorkflowEditorPage({
     setNodes(sampleWorkflow.nodes as any)
     setEdges(sampleWorkflow.edges as any)
     setWorkflowName('Product Marketing Kit Generator')
+  }
+
+  function handleExport() {
+    const exportData = {
+      name: workflowName || 'Untitled Workflow',
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      data: { nodes, edges },
+    }
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${(workflowName || 'workflow').replace(/\s+/g, '-').toLowerCase()}.json`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   const handleDragStart = (
@@ -239,6 +274,16 @@ export default function WorkflowEditorPage({
           <button onClick={handleSave} className="text-xs text-gray-400 border border-white/10 rounded-full px-3 py-1 hover:bg-white/5 transition-colors">
             Save
           </button>
+          <TooltipProvider delayDuration={0}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button onClick={handleExport} className="text-gray-500 hover:text-white transition-colors">
+                  <Download className="w-4 h-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Export JSON</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <TooltipProvider delayDuration={0}>
             <Tooltip>
               <TooltipTrigger asChild>
