@@ -1,6 +1,11 @@
 import { create } from 'zustand'
 import type { WorkflowNode, WorkflowEdge, WorkflowNodeData } from '@/types/workflow'
 
+interface HistoryEntry {
+  nodes: WorkflowNode[]
+  edges: WorkflowEdge[]
+}
+
 interface WorkflowStore {
   nodes: WorkflowNode[]
   edges: WorkflowEdge[]
@@ -9,8 +14,12 @@ interface WorkflowStore {
   isRunning: boolean
   currentWorkflowId: string | null
   workflowName: string
+  // Undo/Redo
+  past: HistoryEntry[]
+  future: HistoryEntry[]
   setNodes: (nodes: WorkflowNode[]) => void
   setEdges: (edges: WorkflowEdge[]) => void
+  setNodesAndEdges: (nodes: WorkflowNode[], edges: WorkflowEdge[]) => void
   setWorkflowName: (name: string) => void
   setNodeOutput: (nodeId: string, output: any) => void
   addExecutingNode: (nodeId: string) => void
@@ -19,9 +28,14 @@ interface WorkflowStore {
   resetOutputs: () => void
   setCurrentWorkflowId: (id: string | null) => void
   updateNodeData: (nodeId: string, data: Partial<WorkflowNodeData>) => void
+  undo: () => void
+  redo: () => void
+  snapshot: () => void
 }
 
-export const useWorkflowStore = create<WorkflowStore>((set) => ({
+const MAX_HISTORY = 50
+
+export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
   nodes: [],
   edges: [],
   nodeOutputs: {},
@@ -29,8 +43,30 @@ export const useWorkflowStore = create<WorkflowStore>((set) => ({
   isRunning: false,
   currentWorkflowId: null,
   workflowName: 'Untitled Workflow',
-  setNodes: (nodes) => set({ nodes }),
-  setEdges: (edges) => set({ edges }),
+  past: [],
+  future: [],
+
+  snapshot: () => {
+    const { nodes, edges, past } = get()
+    set({
+      past: [...past.slice(-MAX_HISTORY + 1), { nodes, edges }],
+      future: [],
+    })
+  },
+
+  setNodes: (nodes) => {
+    get().snapshot()
+    set({ nodes })
+  },
+  setEdges: (edges) => {
+    get().snapshot()
+    set({ edges })
+  },
+  setNodesAndEdges: (nodes, edges) => {
+    get().snapshot()
+    set({ nodes, edges })
+  },
+
   setWorkflowName: (workflowName) => set({ workflowName }),
   setNodeOutput: (nodeId, output) =>
     set((state) => ({ nodeOutputs: { ...state.nodeOutputs, [nodeId]: output } })),
@@ -51,4 +87,28 @@ export const useWorkflowStore = create<WorkflowStore>((set) => ({
         node.id === nodeId ? { ...node, data: { ...node.data, ...data } } : node
       ),
     })),
+
+  undo: () => {
+    const { past, nodes, edges, future } = get()
+    if (past.length === 0) return
+    const prev = past[past.length - 1]
+    set({
+      nodes: prev.nodes,
+      edges: prev.edges,
+      past: past.slice(0, -1),
+      future: [{ nodes, edges }, ...future.slice(0, MAX_HISTORY - 1)],
+    })
+  },
+
+  redo: () => {
+    const { future, nodes, edges, past } = get()
+    if (future.length === 0) return
+    const next = future[0]
+    set({
+      nodes: next.nodes,
+      edges: next.edges,
+      past: [...past.slice(-MAX_HISTORY + 1), { nodes, edges }],
+      future: future.slice(1),
+    })
+  },
 }))

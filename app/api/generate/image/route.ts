@@ -26,6 +26,7 @@ const schema = z.object({
   negPrompt: z.string().optional(),
   aspectRatio: z.string().default('1:1'),
   style: z.string().optional(),
+  resolution: z.string().optional(),
   count: z.number().min(1).max(4).default(4),
   modelId: z.string().optional(),
 });
@@ -84,12 +85,24 @@ export async function POST(req: NextRequest) {
     
     // Determine the Pollinations model mapping based on our frontend 'modelId'
     let polliModel = 'flux'; // Default to Flux
-    if (body.modelId && body.modelId.includes('imagen3')) polliModel = 'flux-pro';
-    if (body.modelId && body.modelId.includes('nano')) polliModel = 'turbo';
+    const modelId = (body.modelId || '').toLowerCase();
+    if (modelId.includes('imagen3') || modelId.includes('krea1') || modelId.includes('nextflow')) polliModel = 'flux-pro';
+    if (modelId.includes('nano')) polliModel = 'turbo';
+    if (modelId.includes('recraft')) polliModel = 'flux';
+
+    const resolutionScaleMap: Record<string, number> = {
+      '1k': 1,
+      '1.2k': 1.2,
+      '1.5k': 1.5,
+      '4k': 2,
+    };
+    const scale = resolutionScaleMap[(body.resolution || '').toLowerCase()] ?? 1;
+    const scaledWidth = Math.round(w * scale);
+    const scaledHeight = Math.round(h * scale);
     
     const encodeParams = new URLSearchParams({
-      width: w.toString(),
-      height: h.toString(),
+      width: scaledWidth.toString(),
+      height: scaledHeight.toString(),
       nologo: 'true',
       model: polliModel,
       enhance: 'true',

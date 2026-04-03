@@ -1,299 +1,273 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Sparkles, ChevronDown, Download, Heart, Share2, RotateCcw, Sliders, AlertCircle } from 'lucide-react';
-import { useAssetStore } from '@/store/assets';
+import { useMemo, useState } from "react";
+import {
+  ChevronDown,
+  Download,
+  Image as ImageIcon,
+  Layers,
+  PanelRightClose,
+  PanelRightOpen,
+  Plus,
+  Sparkles,
+  Wand2,
+} from "lucide-react";
+import { useAssetStore } from "@/store/assets";
 
-const models = [
-  { id: 'imagen3', name: 'Imagen 3', tag: 'Featured', credits: -100 },
-  { id: 'imagen3-fast', name: 'Imagen 3 Fast', tag: 'Fast', credits: -50 },
-  { id: 'flux2', name: 'Flux 2', tag: 'Free', credits: 20 },
-  { id: 'zimage', name: 'Z Image', tag: 'Free', credits: 2 },
+type ModelOption = {
+  id: string;
+  name: string;
+  subtitle: string;
+  credits: string;
+};
+
+type InspirationCard = {
+  title: string;
+  image: string;
+  prompt: string;
+  rotation: string;
+  offset: string;
+};
+
+const models: ModelOption[] = [
+  { id: "krea1", name: "NextFlow 1", subtitle: "Most creative model with LoRAs", credits: "6 ⚡" },
+  { id: "nano-banana", name: "Nano Banana", subtitle: "Most versatile intelligent model", credits: "30 ⚡" },
+  { id: "nano-banana-pro", name: "Nano Banana Pro", subtitle: "Highest quality for premium outputs", credits: "80 ⚡" },
+  { id: "flux-klein", name: "Flux 2 Klein", subtitle: "Fast lightweight Flux model", credits: "4 ⚡" },
+  { id: "recraft-v4", name: "Recraft V4", subtitle: "Sharp detailed image rendering", credits: "12 ⚡" },
 ];
 
-const aspectRatios = ['1:1', '16:9', '9:16', '4:3', '3:4', '21:9'];
+const ratioOptions = ["1:1", "16:9", "9:16", "4:3", "3:4", "21:9"];
+const resolutionOptions = ["1K", "1.2K", "1.5K", "4K"];
 
-const stylePresets = [
-  'None', 'Photorealistic', 'Digital Art', 'Oil Painting',
-  'Watercolor', 'Anime', 'Cinematic', 'Sketch',
+const inspirationCards: InspirationCard[] = [
+  {
+    title: "35mm Photo of a fox...",
+    image: "https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=900&q=80",
+    prompt: "35mm photo of a fox playing the drums in a lush forest, cinematic lighting, ultra detailed",
+    rotation: "-rotate-6",
+    offset: "-translate-x-28",
+  },
+  {
+    title: "A highly stylized...",
+    image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=900&q=80",
+    prompt: "a highly stylized cinematic street scene, dreamy atmosphere, rich colors, ultra sharp",
+    rotation: "-rotate-2",
+    offset: "-translate-x-8",
+  },
+  {
+    title: "Different pieces...",
+    image: "https://images.unsplash.com/photo-1555126634-323283e090fa?w=900&q=80",
+    prompt: "different pieces of sushi floating in air, studio lighting, product photography, white background",
+    rotation: "rotate-3",
+    offset: "translate-x-12",
+  },
+  {
+    title: "A small, warm...",
+    image: "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?w=900&q=80",
+    prompt: "a small warm roadside diner under dramatic stormy sky, moody cinematic realism",
+    rotation: "rotate-6",
+    offset: "translate-x-28",
+  },
 ];
+
+const ratioToFriendly = {
+  "1:1": "Square",
+  "16:9": "Landscape",
+  "9:16": "Portrait",
+  "4:3": "Classic",
+  "3:4": "Tall",
+  "21:9": "Cinematic",
+} as const;
 
 export default function ImagePage() {
   const { addAsset } = useAssetStore();
-  const [prompt, setPrompt] = useState('');
-  const [negPrompt, setNegPrompt] = useState('');
-  const [model, setModel] = useState(models[0]);
-  const [aspect, setAspect] = useState('1:1');
-  const [style, setStyle] = useState('None');
-  const [showNeg, setShowNeg] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [results, setResults] = useState<string[]>([]);
-  const [showModelDrop, setShowModelDrop] = useState(false);
-  const [selectedImg, setSelectedImg] = useState<string | null>(null);
+
+  const [prompt, setPrompt] = useState("");
+  const [negativePrompt, setNegativePrompt] = useState("");
+  const [model, setModel] = useState<ModelOption>(models[0]);
+  const [ratio, setRatio] = useState("1:1");
+  const [resolution, setResolution] = useState("1K");
+  const [resultImages, setResultImages] = useState<string[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [showModelMenu, setShowModelMenu] = useState(false);
+  const [showRatioMenu, setShowRatioMenu] = useState(false);
+  const [showResolutionMenu, setShowResolutionMenu] = useState(false);
+  const [showImagePromptMenu, setShowImagePromptMenu] = useState(false);
+  const [showRightPanel, setShowRightPanel] = useState(true);
+
+  const [selectedCard, setSelectedCard] = useState(0);
+
+  const activePrompt = useMemo(() => prompt.trim(), [prompt]);
+
+  const closeMenus = () => {
+    setShowModelMenu(false);
+    setShowRatioMenu(false);
+    setShowResolutionMenu(false);
+    setShowImagePromptMenu(false);
+  };
+
   const handleGenerate = async () => {
-    if (!prompt.trim()) return;
-    setGenerating(true);
+    if (!activePrompt || isGenerating) return;
+
+    setIsGenerating(true);
     setError(null);
+
     try {
-      const res = await fetch('/api/generate/image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/generate/image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: prompt.trim(),
-          negPrompt: negPrompt.trim() || undefined,
-          aspectRatio: aspect,
-          style,
-          count: 4,
+          prompt: activePrompt,
+          negPrompt: negativePrompt.trim() || undefined,
+          aspectRatio: ratio,
+          style: "None",
+          resolution,
+          count: 1,
           modelId: model.id,
         }),
       });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'Generation failed');
-      setResults(prev => [...data.images, ...prev]);
-      // Auto-save to Assets
-      for (const imgUrl of data.images) {
-        addAsset({ url: imgUrl, prompt: prompt.trim(), tool: 'image', ratio: aspect });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Image generation failed");
       }
-    } catch (err: any) {
-      setError(err.message);
+
+      const images: string[] = data.images || [];
+      if (images.length === 0) {
+        throw new Error("No image returned from generator");
+      }
+
+      setResultImages((prev) => [...images, ...prev]);
+
+      for (const imageUrl of images) {
+        addAsset({
+          url: imageUrl,
+          prompt: activePrompt,
+          tool: "image",
+          ratio,
+        });
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Image generation failed";
+      setError(message);
     } finally {
-      setGenerating(false);
+      setIsGenerating(false);
     }
   };
 
-  const handleDownload = (src: string, i: number) => {
-    const a = document.createElement('a');
+  const handleCardHover = (index: number) => {
+    setSelectedCard(index);
+    setPrompt(inspirationCards[index].prompt);
+  };
+
+  const handleDownload = (src: string, idx: number) => {
+    const a = document.createElement("a");
     a.href = src;
-    a.download = `nextflow-image-${i + 1}.png`;
+    a.download = `nextflow-image-${idx + 1}.png`;
     a.click();
   };
 
   return (
-    <div className="flex w-full h-full text-white overflow-hidden bg-[#09090b]">
-
-      {/* ── LEFT PANEL ────────────────────────────────── */}
-      <div className="w-[280px] border-r border-white/[0.05] bg-[#000] flex flex-col flex-shrink-0">
-        <div className="h-12 flex items-center px-4 border-b border-white/[0.05] gap-2">
-          <div className="w-5 h-5 rounded bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-[10px]">🖼️</div>
-          <span className="text-[13px] font-semibold">Image Generation</span>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-5 [&::-webkit-scrollbar]:hidden pb-24">
-
-          {/* Prompt */}
-          <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">Prompt</label>
-            <textarea
-              value={prompt}
-              onChange={e => setPrompt(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleGenerate(); }}
-              placeholder="Describe what you want to generate..."
-              rows={4}
-              className="w-full bg-[#111] border border-white/[0.07] hover:border-white/[0.12] focus:border-white/[0.18] rounded-xl p-3 text-[12px] text-zinc-200 placeholder:text-zinc-600 resize-none outline-none transition-colors"
-            />
-          </div>
-
-          {/* Negative prompt toggle */}
-          <button
-            type="button"
-            onClick={() => setShowNeg(!showNeg)}
-            className="flex items-center gap-1.5 text-[11px] text-zinc-600 hover:text-zinc-300 transition-colors"
-          >
-            <ChevronDown className={`w-3 h-3 transition-transform ${showNeg ? 'rotate-180' : ''}`} />
-            Negative prompt
-          </button>
-          {showNeg && (
-            <textarea
-              value={negPrompt}
-              onChange={e => setNegPrompt(e.target.value)}
-              placeholder="What to avoid..."
-              rows={2}
-              className="w-full bg-[#111] border border-white/[0.07] rounded-xl p-3 text-[12px] text-zinc-200 placeholder:text-zinc-600 resize-none outline-none"
-            />
-          )}
-
-          <div className="border-t border-white/[0.05]" />
-
-          {/* Model */}
-          <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">Model</label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowModelDrop(!showModelDrop)}
-                className="w-full flex items-center justify-between bg-[#111] border border-white/[0.07] rounded-xl px-3 py-2.5 text-[12px] text-zinc-200 hover:border-white/[0.12] transition-colors"
-              >
-                <span>{model.name}</span>
-                <div className="flex items-center gap-2">
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${model.credits < 0 ? 'text-orange-400' : 'text-emerald-400'}`}>
-                    {model.credits > 0 ? `+${model.credits}` : model.credits}⚡
-                  </span>
-                  <ChevronDown className="w-3 h-3 text-zinc-500" />
-                </div>
-              </button>
-              {showModelDrop && (
-                <div className="absolute top-full mt-1 w-full bg-[#161616] border border-white/[0.08] rounded-xl overflow-hidden z-20 shadow-2xl">
-                  {models.map(m => (
-                    <button
-                      type="button"
-                      key={m.id}
-                      onClick={() => { setModel(m); setShowModelDrop(false); }}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 text-[12px] hover:bg-white/5 transition-colors ${m.id === model.id ? 'text-white bg-white/5' : 'text-zinc-400'}`}
-                    >
-                      <span>{m.name}</span>
-                      <span className={`text-[10px] ${m.credits < 0 ? 'text-orange-400' : 'text-emerald-400'}`}>
-                        {m.credits > 0 ? `+${m.credits}` : m.credits}⚡
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Aspect Ratio */}
-          <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">Aspect Ratio</label>
-            <div className="grid grid-cols-3 gap-1.5">
-              {aspectRatios.map(r => (
-                <button
-                  type="button"
-                  key={r}
-                  onClick={() => setAspect(r)}
-                  className={`py-1.5 rounded-lg text-[11px] font-medium transition-all ${
-                    aspect === r ? 'bg-white text-black' : 'bg-[#111] text-zinc-500 hover:text-zinc-200 border border-white/[0.06]'
-                  }`}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Style */}
-          <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">Style</label>
-            <div className="grid grid-cols-2 gap-1.5">
-              {stylePresets.map(s => (
-                <button
-                  type="button"
-                  key={s}
-                  onClick={() => setStyle(s)}
-                  className={`py-1.5 px-2 rounded-lg text-[11px] font-medium transition-all text-left ${
-                    style === s ? 'bg-white/10 text-white border border-white/20' : 'bg-[#111] text-zinc-500 hover:text-zinc-300 border border-white/[0.05]'
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Generate button */}
-        <div className="p-4 border-t border-white/[0.05]">
-          <button
-            type="button"
-            onClick={handleGenerate}
-            disabled={!prompt.trim() || generating}
-            className="w-full py-3 rounded-xl bg-white text-black font-semibold text-[13px] hover:bg-zinc-100 transition-colors disabled:opacity-30 flex items-center justify-center gap-2"
-          >
-            {generating ? (
-              <>
-                <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4" />
-                Generate
-              </>
-            )}
-          </button>
-          <p className="text-[10px] text-zinc-700 text-center mt-1.5">⌘+Enter · Auto-saves to Assets</p>
-        </div>
-      </div>
-
-      {/* ── MAIN CANVAS ───────────────────────────────── */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top bar */}
-        <div className="h-12 flex items-center justify-between px-5 border-b border-white/[0.05] flex-shrink-0">
-          <span className="text-[12px] text-zinc-500">
-            {results.length > 0 ? `${results.length} results` : 'No generations yet'}
-          </span>
-          <div className="flex items-center gap-2">
-            <button type="button" className="p-1.5 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-white transition-colors">
-              <Sliders className="w-3.5 h-3.5" />
-            </button>
+    <div
+      className="relative flex h-full w-full overflow-hidden text-white"
+      style={{ background: "radial-gradient(80% 80% at 50% 20%, #0f1014 0%, #07080a 65%, #050607 100%)" }}
+      onClick={closeMenus}
+    >
+      <div className="flex-1 px-5 pb-8 pt-4 md:px-8">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="relative" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
-              title="Clear results"
-              onClick={() => setResults([])}
-              className="p-1.5 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-white transition-colors"
+              onClick={() => setShowModelMenu((v) => !v)}
+              className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-200 hover:border-white/20"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <span>{model.name}</span>
+              <ChevronDown className="h-3.5 w-3.5 text-zinc-500" />
             </button>
-          </div>
-        </div>
 
-        {/* Error banner */}
-        {error && (
-          <div className="mx-5 mt-4 flex items-start gap-2.5 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
-            <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-            <p className="text-[12px] text-red-300">{error}</p>
-            <button type="button" onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-200 text-[11px]">×</button>
-          </div>
-        )}
-
-        {/* Results grid */}
-        <div className="flex-1 overflow-y-auto p-5 [&::-webkit-scrollbar]:hidden">
-          {generating && results.length === 0 && (
-            <div className="h-full flex flex-col items-center justify-center gap-4">
-              <div className="grid grid-cols-2 gap-3 w-48">
-                {[0, 1, 2, 3].map(i => (
-                  <div key={i} className="aspect-square rounded-xl bg-white/[0.04] animate-pulse" />
+            {showModelMenu && (
+              <div className="absolute left-0 top-full z-30 mt-2 w-80 rounded-2xl border border-white/10 bg-[#16171c]/95 p-2 shadow-2xl backdrop-blur-xl">
+                {models.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      setModel(item);
+                      setShowModelMenu(false);
+                    }}
+                    className={`mb-1 flex w-full items-start justify-between rounded-xl px-3 py-2 text-left transition ${
+                      item.id === model.id ? "bg-white/10 text-white" : "text-zinc-400 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    <div>
+                      <p className="text-sm font-medium">{item.name}</p>
+                      <p className="text-xs text-zinc-500">{item.subtitle}</p>
+                    </div>
+                    <span className="text-xs text-zinc-300">{item.credits}</span>
+                  </button>
                 ))}
               </div>
-              <p className="text-zinc-500 text-[12px]">Generating with Imagen 3...</p>
-            </div>
-          )}
-          {!generating && results.length === 0 && !error && (
-            <div className="h-full flex flex-col items-center justify-center gap-3 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-2xl">🖼️</div>
-              <p className="text-zinc-500 text-[13px]">Enter a prompt and click Generate</p>
-              <p className="text-zinc-700 text-[11px]">Powered by Google Imagen 3 · Saves to Assets</p>
-            </div>
-          )}
-          {results.length > 0 && (
-            <div className="grid grid-cols-3 gap-3">
-              {generating && [0, 1, 2, 3].map(i => (
-                <div key={`skeleton-${i}`} className="aspect-square rounded-xl bg-white/[0.04] animate-pulse" />
-              ))}
-              {results.map((src, i) => (
-                <div
-                  key={i}
-                  className="relative group rounded-xl overflow-hidden aspect-square cursor-pointer"
-                  onClick={() => setSelectedImg(src)}
-                >
-                  <img src={src} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-end p-2 gap-1.5">
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowRightPanel((v) => !v);
+            }}
+            className="rounded-xl border border-white/10 bg-white/5 p-2 text-zinc-300 hover:border-white/20 hover:text-white"
+            title={showRightPanel ? "Hide right panel" : "Show right panel"}
+          >
+            {showRightPanel ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+          </button>
+        </div>
+
+        <div className="relative flex min-h-[62vh] items-center justify-center">
+          {resultImages.length === 0 ? (
+            <>
+              <div className="pointer-events-none absolute -top-8 text-center">
+                <div className="mb-2 flex items-center justify-center gap-2">
+                  <ImageIcon className="h-9 w-9 text-blue-300" />
+                  <h1 className="text-5xl font-semibold tracking-tight">Image</h1>
+                </div>
+              </div>
+
+              <div className="relative mt-8 h-[330px] w-full max-w-4xl">
+                {inspirationCards.map((card, index) => (
+                  <button
+                    key={card.title}
+                    type="button"
+                    onMouseEnter={() => handleCardHover(index)}
+                    onFocus={() => handleCardHover(index)}
+                    className={`absolute left-1/2 top-1/2 h-[280px] w-[190px] -translate-y-1/2 rounded-2xl border border-white/10 bg-zinc-900 text-left shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:border-white/25 ${card.rotation} ${card.offset} ${
+                      selectedCard === index ? "ring-1 ring-white/30" : ""
+                    }`}
+                  >
+                    <img src={card.image} alt={card.title} className="h-full w-full rounded-2xl object-cover" />
+                    <div className="absolute inset-x-0 bottom-0 rounded-b-2xl bg-gradient-to-t from-black/80 to-transparent p-3">
+                      <p className="truncate text-lg font-medium">{card.title}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {resultImages.map((src, idx) => (
+                <div key={`${src}-${idx}`} className="group relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                  <img src={src} alt={`Result ${idx + 1}`} className="h-[280px] w-full object-cover" />
+                  <div className="absolute inset-0 flex items-end justify-end bg-black/30 p-2 opacity-0 transition group-hover:opacity-100">
                     <button
                       type="button"
-                      title="Favorite"
-                      onClick={e => e.stopPropagation()}
-                      className="w-7 h-7 rounded-lg bg-black/60 backdrop-blur-sm flex items-center justify-center hover:bg-black/80 transition-colors"
+                      onClick={() => handleDownload(src, idx)}
+                      className="rounded-lg bg-black/70 p-2 text-white hover:bg-black"
                     >
-                      <Heart className="w-3.5 h-3.5 text-white" />
-                    </button>
-                    <button
-                      type="button"
-                      title="Download"
-                      onClick={e => { e.stopPropagation(); handleDownload(src, i); }}
-                      className="w-7 h-7 rounded-lg bg-black/60 backdrop-blur-sm flex items-center justify-center hover:bg-black/80 transition-colors"
-                    >
-                      <Download className="w-3.5 h-3.5 text-white" />
+                      <Download className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
@@ -301,36 +275,173 @@ export default function ImagePage() {
             </div>
           )}
         </div>
-      </div>
 
-      {/* ── LIGHTBOX ──────────────────────────────────── */}
-      {selectedImg && (
-        <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-8"
-          onClick={() => setSelectedImg(null)}
-        >
-          <div className="relative max-w-2xl w-full" onClick={e => e.stopPropagation()}>
-            <img src={selectedImg} alt="" className="w-full rounded-2xl shadow-2xl" />
-            <div className="absolute top-3 right-3 flex gap-2">
+        <div className="mx-auto mt-4 w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
+          {error && <p className="mb-2 text-sm text-red-400">{error}</p>}
+
+          <div className="rounded-3xl border border-white/10 bg-[#1a1c22]/95 p-4 shadow-2xl backdrop-blur-2xl">
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Describe an image and click generate..."
+              className="h-20 w-full resize-none bg-transparent text-base text-zinc-100 placeholder:text-zinc-500 focus:outline-none"
+            />
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                title="Download"
-                onClick={() => handleDownload(selectedImg, 0)}
-                className="w-8 h-8 rounded-lg bg-black/60 backdrop-blur-sm flex items-center justify-center hover:bg-black/80 transition-colors"
+                onClick={() => {
+                  setModel(models[0]);
+                  setShowModelMenu(true);
+                }}
+                className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-sm text-zinc-200 hover:bg-white/10"
               >
-                <Download className="w-4 h-4 text-white" />
+                {model.name}
               </button>
+
               <button
                 type="button"
-                title="Share image"
-                aria-label="Share image"
-                className="w-8 h-8 rounded-lg bg-black/60 backdrop-blur-sm flex items-center justify-center hover:bg-black/80 transition-colors"
+                className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-300 hover:bg-white/10"
               >
-                <Share2 className="w-4 h-4 text-white" />
+                LoRA
+              </button>
+
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowImagePromptMenu((v) => !v)}
+                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-300 hover:bg-white/10"
+                >
+                  Image prompt
+                </button>
+                {showImagePromptMenu && (
+                  <div className="absolute bottom-full left-0 z-30 mb-2 w-64 rounded-2xl border border-white/10 bg-[#1a1c22] p-3 shadow-2xl">
+                    <p className="mb-2 text-xs text-zinc-400">Upload/select image for image prompt guidance.</p>
+                    <button type="button" className="mb-2 w-full rounded-xl bg-white px-3 py-2 text-sm font-medium text-black">
+                      Upload
+                    </button>
+                    <button type="button" className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-zinc-200">
+                      Select asset
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="button"
+                className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-300 hover:bg-white/10"
+              >
+                Style transfer
+              </button>
+
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowRatioMenu((v) => !v)}
+                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-300 hover:bg-white/10"
+                >
+                  {ratio}
+                </button>
+                {showRatioMenu && (
+                  <div className="absolute bottom-full left-0 z-30 mb-2 w-44 rounded-2xl border border-white/10 bg-[#1a1c22] p-2 shadow-2xl">
+                    {ratioOptions.map((item) => (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => {
+                          setRatio(item);
+                          setShowRatioMenu(false);
+                        }}
+                        className={`mb-1 flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm ${
+                          ratio === item ? "bg-white/10 text-white" : "text-zinc-300 hover:bg-white/5"
+                        }`}
+                      >
+                        <span>{item}</span>
+                        <span className="text-xs text-zinc-500">{ratioToFriendly[item as keyof typeof ratioToFriendly]}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowResolutionMenu((v) => !v)}
+                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-300 hover:bg-white/10"
+                >
+                  <Sparkles className="mr-1 inline h-3.5 w-3.5" />
+                  {resolution}
+                </button>
+                {showResolutionMenu && (
+                  <div className="absolute bottom-full right-0 z-30 mb-2 w-32 rounded-2xl border border-white/10 bg-[#1a1c22] p-2 shadow-2xl">
+                    {resolutionOptions.map((item) => (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => {
+                          setResolution(item);
+                          setShowResolutionMenu(false);
+                        }}
+                        className={`mb-1 w-full rounded-lg px-2 py-1.5 text-left text-sm ${
+                          resolution === item ? "bg-white/10 text-white" : "text-zinc-300 hover:bg-white/5"
+                        }`}
+                      >
+                        {item}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGenerate}
+                disabled={!activePrompt || isGenerating}
+                className="ml-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {isGenerating ? <Wand2 className="h-4 w-4 animate-spin" /> : <Plus className="h-5 w-5" />}
               </button>
             </div>
           </div>
         </div>
+      </div>
+
+      {showRightPanel && (
+        <aside className="w-[280px] border-l border-white/10 bg-[#0f1015]/95 p-4 backdrop-blur-xl">
+          <div className="mb-4 flex items-center gap-2">
+            <Layers className="h-4 w-4 text-zinc-400" />
+            <h3 className="text-sm font-semibold text-zinc-200">Image settings</h3>
+          </div>
+
+          <div className="space-y-4 text-sm">
+            <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <p className="mb-1 text-xs text-zinc-500">Model</p>
+              <p className="font-medium text-zinc-100">{model.name}</p>
+              <p className="text-xs text-zinc-500">{model.subtitle}</p>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <p className="mb-1 text-xs text-zinc-500">Aspect ratio</p>
+              <p className="font-medium text-zinc-100">{ratio}</p>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <p className="mb-1 text-xs text-zinc-500">Resolution</p>
+              <p className="font-medium text-zinc-100">{resolution}</p>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <p className="mb-1 text-xs text-zinc-500">Negative prompt</p>
+              <textarea
+                value={negativePrompt}
+                onChange={(e) => setNegativePrompt(e.target.value)}
+                placeholder="Avoid objects, style or artifacts..."
+                className="h-20 w-full resize-none rounded-lg border border-white/10 bg-black/30 p-2 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none"
+              />
+            </div>
+          </div>
+        </aside>
       )}
     </div>
   );
