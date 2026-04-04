@@ -90,7 +90,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ── SIDEBAR ──────────────────────────────────────────── */}
       <motion.div
         animate={{ width: isSidebarOpen ? 220 : 70 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        transition={{ type: 'spring' as const, damping: 25, stiffness: 200 }}
         className="flex flex-col h-full flex-shrink-0 relative overflow-visible z-50"
         style={{ background: '#0A0A0A', borderRight: '1px solid rgba(255,255,255,0.06)' }}
       >

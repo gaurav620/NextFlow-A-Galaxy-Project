@@ -125,13 +125,13 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 30, scale: 0.95 },
-  show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 300, damping: 24 } }
+  show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring' as const, stiffness: 300, damping: 24 } }
 };
 
 const hoverSpring = {
   scale: 1.02,
   y: -2,
-  transition: { type: 'spring', stiffness: 400, damping: 20 }
+  transition: { type: 'spring' as const, stiffness: 400, damping: 20 }
 };
 
 /* ─── MODEL CARD ──────────────────────────────────────────── */
@@ -370,7 +370,7 @@ export default function DashboardHome() {
         {/* ── UPGRADE BANNER ──────────────────────────────────── */}
         <motion.div
            variants={itemVariants}
-           whileHover={{ scale: 1.01, transition: { type: 'spring', stiffness: 400, damping: 30 } }}
+           whileHover={{ scale: 1.01, transition: { type: 'spring' as const, stiffness: 400, damping: 30 } }}
           className="rounded-[24px] flex items-center justify-between px-10 py-7 relative overflow-hidden shadow-2xl"
           style={{ background: 'linear-gradient(135deg, #16161a 0%, #0d0d0f 100%)', border: '1px solid rgba(255,255,255,0.06)' }}
         >
