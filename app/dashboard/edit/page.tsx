@@ -1,200 +1,275 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { Upload, Wand2, Download, X, ChevronDown } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Upload, Download, Layers, Undo2, Redo2, Sparkles, Image as ImageIcon, 
+  Crop, Sliders, Sun, Brush, Box, Palette, ChevronRight, ChevronDown, Check, MousePointer2
+} from 'lucide-react';
+import { useAssetStore } from '@/store/assets';
 
-const editModes = [
-  { id: 'inpaint', label: 'Inpaint', desc: 'Edit selected region' },
-  { id: 'outpaint', label: 'Outpaint', desc: 'Extend beyond edges' },
-  { id: 'replace', label: 'Replace', desc: 'Replace background' },
-  { id: 'relight', label: 'Relight', desc: 'Change lighting' },
+const MODELS = [
+  { id: 'flux2', name: 'NextFlow 2 Klein', desc: 'Fast, high quality' },
+  { id: 'flux1', name: 'NextFlow 1', desc: 'Standard model' }
 ];
 
-const strengthPresets = ['Subtle', 'Balanced', 'Strong', 'Extreme'];
+const ACCORDION_SECTIONS = [
+  { id: 'change-region', label: 'Change Region', icon: Sparkles },
+  { id: 'annotate', label: 'Annotate', icon: Layers },
+  { id: 'crop-expand', label: 'Crop & Expand', icon: Crop },
+  { id: 'adjustments', label: 'Image Adjustments', icon: Sliders },
+  { id: 'lighting', label: 'Change Lighting', icon: Sun },
+  { id: 'draw', label: 'Draw', icon: Brush },
+  { id: 'camera', label: 'Change Camera Angle', icon: Box },
+  { id: 'palette', label: 'Color Palette', icon: Palette },
+];
 
 export default function EditPage() {
-  const [image, setImage] = useState<string | null>(null);
-  const [prompt, setPrompt] = useState('');
-  const [mode, setMode] = useState('inpaint');
-  const [strength, setStrength] = useState('Balanced');
-  const [maskStrength, setMaskStrength] = useState(50);
-  const [generating, setGenerating] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
+  const { addAsset } = useAssetStore();
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const [image, setImage] = useState<string | null>(null);
+  const [originalImage, setOriginalImage] = useState<string | null>(null);
+  const [result, setResult] = useState<string | null>(null);
+  
+  const [prompt, setPrompt] = useState('');
+  const [generating, setGenerating] = useState(false);
+
+  const [selectedModel, setSelectedModel] = useState(MODELS[0]);
+  const [showModels, setShowModels] = useState(false);
+  
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   const handleFile = (file: File) => {
     if (file.type.startsWith('image/')) {
-      setImage(URL.createObjectURL(file));
+      const url = URL.createObjectURL(file);
+      setImage(url);
+      setOriginalImage(url);
       setResult(null);
     }
   };
 
-  const handleEdit = async () => {
+  const handleGenerate = async () => {
     if (!image || !prompt.trim()) return;
     setGenerating(true);
-    await new Promise(r => setTimeout(r, 2500));
-    setResult(image);
+    
+    // Simulating generation time
+    await new Promise(r => setTimeout(r, 2000));
+    
+    // Simulate API output using Pollinations
+    const seed = Math.floor(Math.random() * 1000000);
+    const imgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true&seed=${seed}`;
+    
+    setResult(imgUrl);
+    setImage(imgUrl); // Update main canvas to new generation
+    
+    addAsset({
+      url: imgUrl,
+      prompt: prompt.trim(),
+      tool: 'edit',
+      ratio: '1:1'
+    });
+    
     setGenerating(false);
   };
 
+  const handleDownload = () => {
+    if (!image) return;
+    const a = document.createElement('a');
+    a.href = image;
+    a.download = `nextflow-edit-${Date.now()}.jpg`;
+    a.click();
+  };
+
   return (
-    <div className="flex w-full h-full text-white overflow-hidden bg-[#09090b]">
-      {/* LEFT */}
-      <div className="w-[280px] border-r border-white/[0.05] bg-[#000] flex flex-col flex-shrink-0">
-        <div className="h-12 flex items-center px-4 border-b border-white/[0.05] gap-2">
-          <Wand2 className="w-4 h-4 text-purple-400" />
-          <span className="text-[13px] font-semibold">NextFlow Edit</span>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-5 [&::-webkit-scrollbar]:hidden pb-24">
-          {/* Upload */}
-          <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">Source Image</label>
-            <div
-              onClick={() => !image && fileRef.current?.click()}
-              onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
-              onDragOver={e => e.preventDefault()}
-              className="relative w-full rounded-xl border border-dashed border-white/[0.08] hover:border-white/[0.15] transition-colors cursor-pointer overflow-hidden bg-[#0d0d0f]"
-              style={{ height: image ? 140 : 90 }}
-            >
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
-              {image ? (
-                <>
-                  <img src={image} alt="" className="w-full h-full object-cover" />
-                  <button onClick={e => { e.stopPropagation(); setImage(null); setResult(null); }}
-                    className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/70 flex items-center justify-center">
-                    <X className="w-3.5 h-3.5 text-white" />
-                  </button>
-                </>
-              ) : (
-                <div className="h-full flex flex-col items-center justify-center gap-2">
-                  <Upload className="w-4 h-4 text-zinc-600" />
-                  <p className="text-[10px] text-zinc-600">Upload image to edit</p>
-                </div>
-              )}
+    <div className="flex w-full h-full text-white bg-[#0f0f0f] relative overflow-hidden font-sans">
+      
+      {/* MAIN WORKSPACE CANVAS */}
+      <div className="flex-1 relative flex flex-col items-center justify-center bg-gradient-to-br from-[#0c0f18] to-[#040508] p-4 lg:p-8">
+        
+        {/* Top Controls Overlay */}
+        {image && (
+          <div className="absolute top-6 left-6 right-6 flex justify-between z-40 items-start pointer-events-none">
+            <div className="flex items-center gap-2 pointer-events-auto">
+              <button className="p-2 bg-[#1a1c23] hover:bg-[#2a2c35] transition-colors rounded-xl border border-white/5 disabled:opacity-50" disabled>
+                <Undo2 className="w-4 h-4 text-zinc-400" />
+              </button>
+              <button className="p-2 bg-[#1a1c23] hover:bg-[#2a2c35] transition-colors rounded-xl border border-white/5 disabled:opacity-50" disabled>
+                <Redo2 className="w-4 h-4 text-zinc-400" />
+              </button>
             </div>
-          </div>
-
-          {/* Edit mode */}
-          <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">Edit Mode</label>
-            <div className="grid grid-cols-2 gap-1.5">
-              {editModes.map(m => (
-                <button
-                  key={m.id}
-                  onClick={() => setMode(m.id)}
-                  className={`p-2.5 rounded-xl text-left transition-all border ${
-                    mode === m.id ? 'border-purple-500/30 bg-purple-500/10' : 'border-white/[0.05] bg-[#111] hover:border-white/10'
-                  }`}
-                >
-                  <p className={`text-[11px] font-semibold ${mode === m.id ? 'text-purple-300' : 'text-zinc-300'}`}>{m.label}</p>
-                  <p className="text-[9px] text-zinc-600 mt-0.5">{m.desc}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Prompt */}
-          <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">Edit Prompt</label>
-            <textarea
-              value={prompt}
-              onChange={e => setPrompt(e.target.value)}
-              placeholder={mode === 'inpaint' ? 'What to replace the masked area with...' : mode === 'relight' ? 'Lighting description...' : 'Describe the edit...'}
-              rows={3}
-              className="w-full bg-[#111] border border-white/[0.07] hover:border-white/[0.12] focus:border-purple-500/30 rounded-xl p-3 text-[12px] text-zinc-200 placeholder:text-zinc-600 resize-none outline-none transition-colors"
-            />
-          </div>
-
-          <div className="border-t border-white/[0.05]" />
-
-          {/* Strength */}
-          <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">Edit Strength</label>
-            <div className="grid grid-cols-2 gap-1.5">
-              {strengthPresets.map(s => (
-                <button
-                  key={s}
-                  onClick={() => setStrength(s)}
-                  className={`py-1.5 rounded-lg text-[11px] font-medium transition-all ${
-                    strength === s ? 'bg-white text-black' : 'bg-[#111] text-zinc-500 hover:text-zinc-200 border border-white/[0.06]'
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Mask blur */}
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <label className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">Mask Blur</label>
-              <span className="text-[11px] text-zinc-400">{maskStrength}px</span>
-            </div>
-            <input
-              type="range" min={0} max={100} value={maskStrength}
-              onChange={e => setMaskStrength(Number(e.target.value))}
-              className="w-full h-1 appearance-none bg-zinc-800 rounded-full outline-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
-              style={{ background: `linear-gradient(to right, #a855f7 0%, #a855f7 ${maskStrength}%, #27272a ${maskStrength}%, #27272a 100%)` }}
-            />
-          </div>
-        </div>
-
-        <div className="p-4 border-t border-white/[0.05]">
-          <button
-            onClick={handleEdit}
-            disabled={!image || !prompt.trim() || generating}
-            className="w-full py-3 rounded-xl bg-white text-black font-semibold text-[13px] hover:bg-zinc-100 transition-colors disabled:opacity-30 flex items-center justify-center gap-2"
-          >
-            {generating ? (
-              <><div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />Editing...</>
-            ) : (
-              <><Wand2 className="w-4 h-4" />Apply Edit</>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* MAIN */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="h-12 flex items-center justify-between px-5 border-b border-white/[0.05] flex-shrink-0">
-          <span className="text-[12px] text-zinc-500">{result ? 'Edit applied' : 'Upload an image and describe your edit'}</span>
-          {result && (
-            <button className="flex items-center gap-1.5 text-[12px] text-zinc-300 hover:text-white px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
-              <Download className="w-3.5 h-3.5" /> Download
+            
+            <button onClick={handleDownload} className="flex items-center gap-2 px-4 py-2 bg-[#1a1c23] hover:bg-[#2a2c35] transition-colors rounded-xl border border-white/5 pointer-events-auto text-[13px] font-medium tracking-wide">
+              <Download className="w-4 h-4" /> Download
             </button>
-          )}
-        </div>
-        <div className="flex-1 flex items-center justify-center p-8 overflow-hidden">
-          {!image ? (
-            <div
-              onClick={() => fileRef.current?.click()}
-              className="w-full max-w-lg aspect-square border border-dashed border-white/[0.08] rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-white/[0.15] transition-colors bg-[#0d0d0f]"
-            >
-              <Upload className="w-10 h-10 text-zinc-700" />
-              <p className="text-[14px] text-zinc-500 font-medium">Upload an image to edit</p>
-              <p className="text-[12px] text-zinc-700">JPG, PNG, WEBP up to 20MB</p>
-            </div>
-          ) : result ? (
-            <div className="flex gap-6 max-w-3xl w-full">
-              <div className="flex-1 space-y-2">
-                <p className="text-[11px] text-zinc-500 text-center uppercase tracking-widest">Original</p>
-                <img src={image} alt="original" className="w-full rounded-xl border border-white/[0.06]" />
+          </div>
+        )}
+
+        <input 
+          ref={fileRef} 
+          type="file" 
+          accept="image/*" 
+          className="hidden" 
+          onChange={e => {
+            const f = e.target.files?.[0]; 
+            if (f) handleFile(f); 
+          }} 
+        />
+
+        {/* State 1: Empty Screen */}
+        {!image && (
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#1a1b1e] border border-white/5 shadow-2xl rounded-3xl p-8 max-w-[440px] w-full text-center">
+             
+             <div className="flex justify-center mb-6 relative">
+                {/* Collage Representation mimicking Krea */}
+                <div className="w-24 h-32 rounded-xl -rotate-12 bg-zinc-800 border-2 border-[#1a1b1e] shadow-xl overflow-hidden translate-x-4">
+                  <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=300&fit=crop" className="w-full h-full object-cover opacity-80" />
+                </div>
+                <div className="w-24 h-32 rounded-xl rotate-0 bg-zinc-800 border-2 border-[#1a1b1e] shadow-xl overflow-hidden z-10 -mt-4">
+                  <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=300&fit=crop" className="w-full h-full object-cover" />
+                </div>
+                <div className="w-24 h-32 rounded-xl rotate-12 bg-zinc-800 border-2 border-[#1a1b1e] shadow-xl overflow-hidden -translate-x-4">
+                  <img src="https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=200&h=300&fit=crop" className="w-full h-full object-cover opacity-80" />
+                </div>
+             </div>
+
+             <div className="flex items-center justify-center gap-3 mb-2">
+               <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center border border-indigo-500/30">
+                 <MousePointer2 className="w-4 h-4" />
+               </div>
+               <h1 className="text-3xl font-bold tracking-tight text-white">Edit <span className="bg-blue-500 text-white text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ml-2 align-middle top-[-4px] relative">New</span></h1>
+             </div>
+
+             <p className="text-zinc-400 text-[14px] leading-relaxed mb-8 max-w-[320px] mx-auto">
+               Rearrange objects in your scene, blend objects from multiple images, place characters, or expand edges.
+             </p>
+
+             <div className="flex items-center gap-3 w-full">
+               <button onClick={() => fileRef.current?.click()} className="flex-1 py-3 bg-blue-500 hover:bg-blue-600 transition-colors text-white font-medium rounded-xl flex items-center justify-center gap-2 text-[14px]">
+                 <Upload className="w-4 h-4" /> Upload image
+               </button>
+               <button onClick={() => fileRef.current?.click()} className="flex-1 py-3 bg-[#2a2c35] hover:bg-[#32343e] transition-colors text-zinc-300 font-medium rounded-xl flex items-center justify-center gap-2 text-[14px]">
+                 <ImageIcon className="w-4 h-4" /> Select asset
+               </button>
+             </div>
+          </motion.div>
+        )}
+
+        {/* State 2: Active Image / Generation */}
+        {image && (
+          <div className="w-full h-full flex items-center justify-center relative">
+            <AnimatePresence>
+              {generating && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-20 flex items-center justify-center backdrop-blur-sm bg-black/50 rounded-2xl">
+                   <div className="flex flex-col items-center gap-4">
+                     <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+                     <span className="text-[13px] font-medium tracking-widest uppercase text-white/80 animate-pulse">Editing</span>
+                   </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <img 
+              src={image} 
+              alt="Workspace" 
+              className={`w-auto h-auto max-w-[85%] max-h-[85%] object-contain rounded-2xl shadow-2xl transition-all duration-300 ${generating ? 'scale-95 blur-sm opacity-60' : 'scale-100'}`} 
+            />
+
+            {/* Original Asset Mini Preview (Bottom Left) */}
+            {originalImage && (
+              <div className="absolute bottom-6 left-6 z-30 pointer-events-auto">
+                <div className="w-[80px] h-[80px] rounded-xl border-2 border-white bg-black overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.5)] cursor-pointer hover:scale-105 transition-transform" title="Original Image">
+                  <img src={originalImage} className="w-full h-full object-cover" />
+                </div>
               </div>
-              <div className="flex-1 space-y-2">
-                <p className="text-[11px] text-purple-400 text-center uppercase tracking-widest">Edited</p>
-                <img src={result} alt="result" className="w-full rounded-xl border border-purple-500/20 shadow-lg shadow-purple-500/10" />
-              </div>
-            </div>
-          ) : (
-            <div className="max-w-sm w-full space-y-4">
-              <img src={image} alt="source" className="w-full rounded-xl border border-white/[0.06]" />
-              {!prompt && <p className="text-[12px] text-zinc-500 text-center">Enter an edit prompt on the left</p>}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* RIGHT EDITING TOOLKIT SIDEBAR */}
+      {image && (
+        <motion.div 
+          initial={{ x: 320 }} 
+          animate={{ x: 0 }} 
+          className="w-[320px] bg-[#111111] border-l border-white/[0.05] flex flex-col h-full flex-shrink-0 relative z-50 overflow-y-auto [&::-webkit-scrollbar]:hidden"
+        >
+           <div className="flex flex-col gap-1 p-3">
+             
+             {/* AI EDIT OPEN BY DEFAULT */}
+             <div className="bg-transparent rounded-xl overflow-hidden">
+               <div className="flex items-center gap-2 p-3 text-white font-medium text-[13px]">
+                  <Sparkles className="w-4 h-4 text-purple-400" /> AI Edit
+               </div>
+               <div className="px-3 pb-4 flex flex-col gap-3">
+                  <div className="bg-[#1a1c23] rounded-xl border border-white/5 p-3 flex flex-col gap-3">
+                    <textarea
+                      value={prompt}
+                      onChange={e => setPrompt(e.target.value)}
+                      placeholder="Describe what you want to change in your image..."
+                      className="w-full bg-transparent text-[13px] text-zinc-300 placeholder:text-zinc-600 outline-none resize-none min-h-[80px]"
+                    />
+                    <div className="flex">
+                      <button className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2a2c35] hover:bg-[#32343e] transition-colors rounded-full text-[11px] font-medium text-zinc-300">
+                        <ImageIcon className="w-3.5 h-3.5" /> Image reference
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <button onClick={() => setShowModels(!showModels)} className="w-full flex items-center justify-between px-3 py-2.5 bg-[#1a1c23] hover:bg-[#2a2c35] transition-colors rounded-xl border border-white/5 text-[12px] font-medium text-zinc-300">
+                       <span className="flex items-center gap-2"><div className="w-3 h-3 bg-purple-500 rounded-sm" /> {selectedModel.name}</span>
+                       <ChevronDown className="w-4 h-4 opacity-50" />
+                    </button>
+                    
+                    <AnimatePresence>
+                      {showModels && (
+                        <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="absolute top-[calc(100%+4px)] left-0 w-full bg-[#2a2c35] rounded-xl border border-white/5 shadow-xl overflow-hidden z-20">
+                           {MODELS.map(m => (
+                             <button key={m.id} onClick={() => { setSelectedModel(m); setShowModels(false); }} className={`w-full flex items-center justify-between px-3 py-2.5 text-left text-[12px] hover:bg-white/5 transition-colors ${selectedModel.id === m.id ? 'bg-white/5 text-white' : 'text-zinc-400'}`}>
+                               <div className="flex flex-col">
+                                 <span className="font-medium">{m.name}</span>
+                                 <span className="text-[10px] opacity-60">{m.desc}</span>
+                               </div>
+                               {selectedModel.id === m.id && <Check className="w-4 h-4 text-purple-400" />}
+                             </button>
+                           ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  <button 
+                    onClick={handleGenerate}
+                    disabled={generating || !prompt.trim()}
+                    className="w-full py-2.5 bg-[#e5e5e5] text-black font-semibold rounded-xl text-[13px] hover:bg-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mt-1"
+                  >
+                    <Sparkles className="w-4 h-4" /> Generate
+                  </button>
+               </div>
+             </div>
+
+             <div className="h-px w-full bg-white/5 my-1" />
+
+             {/* ACCORDION MENU LIST */}
+             {ACCORDION_SECTIONS.map((section) => (
+               <button 
+                 key={section.id}
+                 onClick={() => setExpandedSection(expandedSection === section.id ? null : section.id)}
+                 className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors group"
+               >
+                 <div className="flex items-center gap-3 text-zinc-400 group-hover:text-zinc-200 transition-colors">
+                   <section.icon className="w-4 h-4" />
+                   <span className="text-[13px] font-medium">{section.label}</span>
+                 </div>
+                 <ChevronRight className={`w-4 h-4 text-zinc-600 transition-transform ${expandedSection === section.id ? 'rotate-90' : ''}`} />
+               </button>
+             ))}
+
+          </div>
+        </motion.div>
+      )}
+
     </div>
   );
 }
