@@ -30,7 +30,7 @@ export default function VideoPage() {
   const [selectedModel, setSelectedModel] = useState(models[0]);
   const [duration, setDuration] = useState('5s');
   const [aspect, setAspect] = useState('16:9');
-  const [motion, setMotion] = useState(3);
+  const [motionScore, setMotionScore] = useState(3);
   const [generating, setGenerating] = useState(false);
   const [imageRef, setImageRef] = useState<string | null>(null);
   const [imageRefBase64, setImageRefBase64] = useState<string | null>(null);
@@ -74,7 +74,7 @@ export default function VideoPage() {
           model: selectedModel.id,
           duration,
           aspectRatio: aspect,
-          motionScore: motion,
+          motionScore: motionScore,
           imageRefBase64: imageRefBase64 ?? undefined,
           imageRefMimeType: imageRefBase64 ? imageRefMime : undefined,
         }),
@@ -407,8 +407,8 @@ export default function VideoPage() {
                    <div className="px-2 pb-2 flex items-center justify-between gap-3">
                      <span className="text-[10px] text-zinc-500">Static</span>
                      <input
-                        type="range" min={1} max={5} value={motion}
-                        onChange={e => setMotion(Number(e.target.value))}
+                        type="range" min={1} max={5} value={motionScore}
+                        onChange={e => setMotionScore(Number(e.target.value))}
                         className="w-full h-1.5 bg-zinc-800 rounded-full appearance-none outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
                      />
                      <span className="text-[10px] text-zinc-500">Fluid</span>
