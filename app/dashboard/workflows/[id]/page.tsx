@@ -2,20 +2,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import ReactFlow, {
-  Background,
-  BackgroundVariant,
-  Controls,
-  MiniMap,
-  applyNodeChanges,
-  applyEdgeChanges,
-  addEdge,
-  MarkerType,
-  ReactFlowInstance,
-  Connection,
-  useOnSelectionChange,
-} from 'reactflow'
-import 'reactflow/dist/style.css'
+import dynamic from 'next/dynamic'
 import {
   ChevronLeft,
   Share2,
@@ -39,25 +26,56 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import TextNode from '@/components/nodes/text-node'
-import ImageUploadNode from '@/components/nodes/image-upload-node'
-import VideoUploadNode from '@/components/nodes/video-upload-node'
-import LLMNode from '@/components/nodes/llm-node'
-import CropImageNode from '@/components/nodes/crop-image-node'
-import ExtractFrameNode from '@/components/nodes/extract-frame-node'
-import HistorySidebar from '@/components/history-sidebar'
 
 import { useWorkflowStore } from '@/store/workflowStore'
 import { executeWorkflow } from '@/lib/workflowExecutor'
 import { sampleWorkflow } from '@/data/sampleWorkflow'
 
+// ── Dynamic imports for ReactFlow (avoid SSR issues with React 19) ──
+const ReactFlow = dynamic(
+  () => import('reactflow').then(mod => mod.default),
+  { ssr: false }
+)
+const Background = dynamic(
+  () => import('reactflow').then(mod => mod.Background),
+  { ssr: false }
+)
+const Controls = dynamic(
+  () => import('reactflow').then(mod => mod.Controls),
+  { ssr: false }
+)
+const MiniMap = dynamic(
+  () => import('reactflow').then(mod => mod.MiniMap),
+  { ssr: false }
+)
+
+// We need these at runtime only — import via require inside the component
+// to avoid SSR issues. We'll use them in callbacks.
+let rfUtils: any = null
+if (typeof window !== 'undefined') {
+  import('reactflow').then(mod => {
+    rfUtils = mod
+  })
+}
+
+import 'reactflow/dist/style.css'
+
+// ── Dynamic imports for node components ──
+const TextNode = dynamic(() => import('@/components/nodes/text-node'), { ssr: false })
+const ImageUploadNode = dynamic(() => import('@/components/nodes/image-upload-node'), { ssr: false })
+const VideoUploadNode = dynamic(() => import('@/components/nodes/video-upload-node'), { ssr: false })
+const LLMNode = dynamic(() => import('@/components/nodes/llm-node'), { ssr: false })
+const CropImageNode = dynamic(() => import('@/components/nodes/crop-image-node'), { ssr: false })
+const ExtractFrameNode = dynamic(() => import('@/components/nodes/extract-frame-node'), { ssr: false })
+const HistorySidebar = dynamic(() => import('@/components/history-sidebar'), { ssr: false })
+
 const nodeTypes = {
-  textNode: TextNode,
-  imageUploadNode: ImageUploadNode,
-  videoUploadNode: VideoUploadNode,
-  llmNode: LLMNode,
-  cropImageNode: CropImageNode,
-  extractFrameNode: ExtractFrameNode,
+  textNode: TextNode as any,
+  imageUploadNode: ImageUploadNode as any,
+  videoUploadNode: VideoUploadNode as any,
+  llmNode: LLMNode as any,
+  cropImageNode: CropImageNode as any,
+  extractFrameNode: ExtractFrameNode as any,
 }
 
 const nodeDefinitions = [
@@ -87,24 +105,18 @@ function hasCycle(
   return false
 }
 
-function SelectionTracker({
-  onSelectionChange,
-}: {
-  onSelectionChange: (ids: string[]) => void
-}) {
-  useOnSelectionChange({
-    onChange: ({ nodes }) => onSelectionChange(nodes.map(n => n.id)),
-  })
-  return null
-}
-
 export default function WorkflowEditorPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
-  const router = useRouter()
   const { id } = React.use(params)
+  return <WorkflowEditorInner id={id} />
+}
+
+function WorkflowEditorInner({ id }: { id: string }) {
+  const router = useRouter()
+  const [mounted, setMounted] = useState(false)
 
   const {
     nodes, edges, setNodes, setEdges,
@@ -117,7 +129,7 @@ export default function WorkflowEditorPage({
   } = useWorkflowStore()
 
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([])
-  const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null)
+  const [reactFlowInstance, setReactFlowInstance] = useState<any>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [dagError, setDagError] = useState<string | null>(null)
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true)
@@ -125,6 +137,11 @@ export default function WorkflowEditorPage({
   const [historyOpen, setHistoryOpen] = useState(true)
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
   const importRef = useRef<HTMLInputElement>(null)
+
+  // Wait for client-side mount before rendering ReactFlow
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Load workflow from DB when opening an existing workflow (id !== 'new')
   useEffect(() => {
@@ -155,11 +172,17 @@ export default function WorkflowEditorPage({
   }, [undo, redo])
 
   const onNodesChange = useCallback(
-    (changes: any) => setNodes(applyNodeChanges(changes, nodes as any) as any),
+    (changes: any) => {
+      if (!rfUtils) return
+      setNodes(rfUtils.applyNodeChanges(changes, nodes as any) as any)
+    },
     [nodes, setNodes]
   )
   const onEdgesChange = useCallback(
-    (changes: any) => setEdges(applyEdgeChanges(changes, edges as any)),
+    (changes: any) => {
+      if (!rfUtils) return
+      setEdges(rfUtils.applyEdgeChanges(changes, edges as any))
+    },
     [edges, setEdges]
   )
 
@@ -329,27 +352,44 @@ export default function WorkflowEditorPage({
   }, [])
 
   const onConnect = useCallback(
-    (connection: Connection) => {
+    (connection: any) => {
+      if (!rfUtils) return
       // DAG validation: reject circular connections
       if (connection.source && connection.target && hasCycle(connection.source, connection.target, edges as any[])) {
         setDagError('Circular connection not allowed — this would create a loop.')
         setTimeout(() => setDagError(null), 3000)
         return
       }
-      setEdges(addEdge({
+      setEdges(rfUtils.addEdge({
         ...connection,
         id: `${connection.source}-${connection.target}-${Date.now()}`,
         animated: true,
         style: { stroke: '#a855f7', strokeWidth: 2 },
-        markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' },
+        markerEnd: { type: rfUtils.MarkerType.ArrowClosed, color: '#a855f7' },
       }, edges as any[]) as any)
     },
     [setEdges, edges]
   )
 
+  const onSelectionChange = useCallback(({ nodes: selectedNodes }: any) => {
+    setSelectedNodeIds(selectedNodes?.map((n: any) => n.id) || [])
+  }, [])
+
   const filteredNodes = nodeDefinitions.filter((node) =>
     node.label.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  // Show loading state until client-side mount
+  if (!mounted) {
+    return (
+      <div className="relative h-screen w-full overflow-hidden flex items-center justify-center" style={{ background: '#0a0a0a' }}>
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+          <p className="text-gray-500 text-sm">Loading workflow editor...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="relative h-screen w-full overflow-hidden" style={{ background: '#0a0a0a' }}>
@@ -596,11 +636,11 @@ export default function WorkflowEditorPage({
             onDragOver={onDragOver}
             nodeTypes={nodeTypes}
             onInit={setReactFlowInstance}
+            onSelectionChange={onSelectionChange}
             fitView
             deleteKeyCode="Delete"
           >
-            <SelectionTracker onSelectionChange={setSelectedNodeIds} />
-            <Background variant={BackgroundVariant.Dots} color="#1a2332" gap={24} size={1.5} />
+            <Background variant={'dots' as any} color="#1a2332" gap={24} size={1.5} />
             <Controls
               className="[&]:!bg-[#1c1c1c] [&]:!border-white/5 [&>button]:!bg-[#1c1c1c] [&>button]:!border-white/5 [&>button]:!text-gray-500 [&>button:hover]:!bg-white/5 [&>button:hover]:!text-white"
               showInteractive={false}
