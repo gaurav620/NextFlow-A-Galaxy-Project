@@ -1,132 +1,296 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Upload, RotateCcw, Sparkles, Download, X, ArrowRight } from 'lucide-react';
+import { Upload, Sparkles, X, Clapperboard, MonitorPlay, Film, ArrowRight, UserRound, ArrowDownToLine, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 
 export default function MotionTransferPage() {
-  const [sourceVideo, setSourceVideo] = useState<string | null>(null);
-  const [refVideo, setRefVideo] = useState<string | null>(null);
-  const [tracking, setTracking] = useState(true);
-  const [fps, setFps] = useState(24);
+  const [sourceFile, setSourceFile] = useState<string | null>(null);
+  const [refFile, setRefFile] = useState<string | null>(null);
+  const [sourceType, setSourceType] = useState<'image' | 'video' | null>(null);
   const [generating, setGenerating] = useState(false);
-  const [result, setResult] = useState(false);
-  const srcRef = useRef<HTMLInputElement>(null);
+  const [resultVideo, setResultVideo] = useState<string | null>(null);
+  const [orientation, setOrientation] = useState<'landscape' | 'portrait' | 'square'>('landscape');
+  
+  const srcInputRef = useRef<HTMLInputElement>(null);
   const refInputRef = useRef<HTMLInputElement>(null);
 
-  const handleGenerate = async () => {
-    if (!sourceVideo || !refVideo) return;
-    setGenerating(true);
-    await new Promise(r => setTimeout(r, 3500));
-    setResult(true);
-    setGenerating(false);
+  const handleSourceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type.startsWith('image/')) setSourceType('image');
+      else if (file.type.startsWith('video/')) setSourceType('video');
+      else return; // unhandled type
+
+      setSourceFile(URL.createObjectURL(file));
+      // Reset result on new input
+      setResultVideo(null);
+    }
   };
 
-  const VideoDrop = ({ label, value, onSet, onClear, inputRef }: any) => (
-    <div className="space-y-1.5">
-      <label className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">{label}</label>
-      <div
-        onClick={() => !value && inputRef.current?.click()}
-        onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f?.type.startsWith('video/')) onSet(URL.createObjectURL(f)); }}
-        onDragOver={e => e.preventDefault()}
-        className={`relative w-full rounded-xl border border-dashed transition-all cursor-pointer overflow-hidden bg-[#0d0d0f] ${value ? 'border-green-500/20' : 'border-white/[0.08] hover:border-white/[0.15]'}`}
-        style={{ height: 90 }}
-      >
-        <input ref={inputRef} type="file" accept="video/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) onSet(URL.createObjectURL(f)); }} />
-        {value ? (
-          <div className="h-full flex flex-col items-center justify-center gap-1.5">
-            <div className="w-8 h-8 rounded-xl bg-green-500/20 border border-green-500/30 flex items-center justify-center">
-              <RotateCcw className="w-4 h-4 text-green-400" />
-            </div>
-            <p className="text-[10px] text-green-400">Video loaded</p>
-            <button onClick={e => { e.stopPropagation(); onClear(); }} className="absolute top-2 right-2 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center">
-              <X className="w-3 h-3 text-white" />
-            </button>
-          </div>
-        ) : (
-          <div className="h-full flex flex-col items-center justify-center gap-2">
-            <Upload className="w-4 h-4 text-zinc-600" />
-            <p className="text-[10px] text-zinc-600">{label}</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  const handleRefUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('video/')) {
+      setRefFile(URL.createObjectURL(file));
+      setResultVideo(null);
+    }
+  };
+
+  const handleGenerate = async () => {
+    if (!sourceFile || !refFile) return;
+    setGenerating(true);
+    
+    try {
+      // We send a mock request to our Next.js API
+      const response = await fetch('/api/motion/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sourceFile: 'blob-url-mock',
+          refFile: 'blob-url-mock',
+          fps: 24,
+          tracking: true
+        })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setResultVideo(data.videoUrl);
+      } else {
+        alert("Generation failed");
+      }
+    } catch(err) {
+      console.error(err);
+      alert("Error occurred during generation");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  // Krea-inspired UI container class
+  const cardBaseStyle = "relative overflow-hidden bg-[#18181b]/50 backdrop-blur-xl border border-white/[0.08] hover:border-white/[0.15] transition-all group flex flex-col items-center justify-center cursor-pointer";
 
   return (
-    <div className="flex w-full h-full text-white overflow-hidden bg-[#09090b]">
-      <div className="w-[280px] border-r border-white/[0.05] bg-[#000] flex flex-col flex-shrink-0">
-        <div className="h-12 flex items-center px-4 border-b border-white/[0.05] gap-2">
-          <RotateCcw className="w-4 h-4 text-emerald-400" />
-          <span className="text-[13px] font-semibold">Motion Transfer</span>
-        </div>
+    <div className="w-full h-full min-h-screen bg-black flex flex-col items-center justify-center text-white relative overflow-hidden">
+      
+      {/* Background ambient lighting */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/10 via-black to-black pointer-events-none" />
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-5 [&::-webkit-scrollbar]:hidden pb-24">
-          <VideoDrop label="Source Video (subject)" value={sourceVideo} onSet={setSourceVideo} onClear={() => setSourceVideo(null)} inputRef={srcRef} />
-          <VideoDrop label="Reference Video (motion)" value={refVideo} onSet={setRefVideo} onClear={() => setRefVideo(null)} inputRef={refInputRef} />
-
-          <div className="border-t border-white/[0.05]" />
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[12px] text-zinc-300 font-medium">Subject Tracking</p>
-              <p className="text-[10px] text-zinc-600">Lock on primary subject</p>
-            </div>
-            <button onClick={() => setTracking(!tracking)}
-              className={`w-9 h-5 rounded-full transition-colors relative ${tracking ? 'bg-emerald-500' : 'bg-zinc-800'}`}>
-              <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${tracking ? 'left-[18px]' : 'left-0.5'}`} />
-            </button>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <label className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">Framerate</label>
-              <span className="text-[11px] text-zinc-400">{fps} fps</span>
-            </div>
-            <input type="range" min={12} max={60} step={6} value={fps}
-              onChange={e => setFps(Number(e.target.value))}
-              className="w-full h-1 appearance-none bg-zinc-800 rounded-full outline-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
-              style={{ background: `linear-gradient(to right, #34d399 0%, #34d399 ${((fps - 12) / 48) * 100}%, #27272a ${((fps - 12) / 48) * 100}%, #27272a 100%)` }}
-            />
-            <div className="flex justify-between text-[9px] text-zinc-700">
-              <span>12fps</span><span>60fps</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-4 border-t border-white/[0.05]">
-          <button onClick={handleGenerate} disabled={!sourceVideo || !refVideo || generating}
-            className="w-full py-3 rounded-xl bg-white text-black font-semibold text-[13px] hover:bg-zinc-100 transition-colors disabled:opacity-30 flex items-center justify-center gap-2">
-            {generating ? <><div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />Transferring...</>
-              : <><Sparkles className="w-4 h-4" />Transfer Motion</>}
-          </button>
+      {/* Header section */}
+      <div className="absolute top-0 left-0 w-full p-4 flex items-center justify-between z-10 pointer-events-none">
+        <div className="flex items-center gap-2 text-sm text-zinc-400">
+          <span>Model</span>
+          <span className="text-white bg-white/5 px-2 py-1 rounded-md border border-white/10 shadow-sm pointer-events-auto cursor-pointer hover:bg-white/10 transition">
+            NextFlow Motion Control v1 
+          </span>
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="h-12 flex items-center justify-between px-5 border-b border-white/[0.05] flex-shrink-0">
-          <span className="text-[12px] text-zinc-500">{result ? 'Transfer complete' : 'Upload source and reference videos'}</span>
-          {result && <button className="flex items-center gap-1.5 text-[12px] text-zinc-300 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"><Download className="w-3.5 h-3.5" />Download</button>}
-        </div>
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="text-center space-y-4 max-w-sm">
-            <div className="flex items-center justify-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                <RotateCcw className="w-6 h-6 text-emerald-400/50" />
-              </div>
-              <ArrowRight className="w-5 h-5 text-zinc-700" />
-              <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-emerald-400/50" />
-              </div>
-            </div>
-            <div>
-              <p className="text-white text-[15px] font-semibold mb-1">Motion Transfer</p>
-              <p className="text-zinc-500 text-[13px]">Upload a subject video and a reference video with the motion you want to transfer.</p>
-            </div>
-            {sourceVideo && !refVideo && <p className="text-[12px] text-emerald-400">✓ Source uploaded — now upload reference</p>}
-            {sourceVideo && refVideo && !result && <p className="text-[12px] text-green-400">✓ Ready — click Transfer Motion</p>}
+      <div className="w-full max-w-5xl mx-auto flex flex-col items-center z-10 p-6">
+        
+        {/* Title Section */}
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-3 mb-10"
+        >
+          <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center shadow-lg backdrop-blur-md">
+            <UserRound className="w-5 h-5 text-white" />
           </div>
-        </div>
+          <h1 className="text-4xl font-semibold tracking-tight">NextFlow Transfer</h1>
+        </motion.div>
+
+        {/* Central Workspace Card */}
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1 }}
+          className="bg-[#111113]/80 backdrop-blur-2xl border border-white/[0.05] p-6 rounded-[2rem] flex flex-col lg:flex-row items-center gap-4 lg:gap-6 shadow-2xl relative"
+        >
+          {/* Main Content Area OR Result */}
+          <AnimatePresence mode="wait">
+            {!resultVideo ? (
+               <motion.div 
+                 key="inputs"
+                 initial={{ opacity: 0, filter: "blur(10px)" }}
+                 animate={{ opacity: 1, filter: "blur(0px)" }}
+                 exit={{ opacity: 0, filter: "blur(10px)", scale: 0.95 }}
+                 className="flex flex-col lg:flex-row items-center gap-4 lg:gap-6"
+               >
+                 {/* Input 1: Character (Square) */}
+                  <div className="flex flex-col gap-2">
+                    <div 
+                      className={`${cardBaseStyle} w-64 h-64 rounded-3xl`}
+                    >
+                      <input 
+                        ref={srcInputRef} 
+                        type="file" 
+                        accept="image/*,video/*" 
+                        className="hidden" 
+                        onChange={handleSourceUpload} 
+                      />
+                      
+                      {sourceFile ? (
+                        <div className="absolute inset-0 group">
+                           {sourceType === 'image' ? (
+                             <img src={sourceFile} alt="Source" className="w-full h-full object-cover rounded-3xl" />
+                           ) : (
+                             <video src={sourceFile} autoPlay loop muted className="w-full h-full object-cover rounded-3xl" />
+                           )}
+                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
+                             <button onClick={() => srcInputRef.current?.click()} className="bg-white/20 backdrop-blur px-4 py-2 rounded-xl text-sm font-medium hover:bg-white/30 transition shadow">Replace</button>
+                             <button onClick={(e) => { e.stopPropagation(); setSourceFile(null); }} className="w-8 h-8 flex items-center justify-center bg-red-500/80 rounded-full hover:bg-red-500 transition shadow">
+                               <X className="w-4 h-4 text-white" />
+                             </button>
+                           </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-full w-full p-6 text-center gap-4">
+                          <UserRound className="w-8 h-8 text-zinc-500 group-hover:scale-110 transition-transform duration-300" />
+                          <p className="text-zinc-400 font-medium text-sm">Add character</p>
+                          <div className="flex flex-col w-full gap-2 mt-2 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+                             <button 
+                               onClick={() => srcInputRef.current?.click()} 
+                               className="w-full bg-[#3b82f6] hover:bg-[#2563eb] text-white py-2.5 rounded-xl text-sm font-semibold transition"
+                             >
+                               Upload file
+                             </button>
+                             <button className="w-full bg-white/5 hover:bg-white/10 text-zinc-300 py-2.5 rounded-xl text-sm font-semibold transition border border-white/5">
+                               Select asset
+                             </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Plus Separator */}
+                  <div className="text-zinc-500 flex-shrink-0">
+                    <span className="text-2xl font-light">+</span>
+                  </div>
+
+                  {/* Input 2: Expression & Motion (Rectangle) */}
+                  <div className="flex flex-col gap-2">
+                    <div 
+                      className={`${cardBaseStyle} w-80 lg:w-[480px] h-64 rounded-3xl`}
+                    >
+                      <input 
+                        ref={refInputRef} 
+                        type="file" 
+                        accept="video/*" 
+                        className="hidden" 
+                        onChange={handleRefUpload} 
+                      />
+
+                      {refFile ? (
+                        <div className="absolute inset-0 group">
+                           <video src={refFile} autoPlay loop muted className="w-full h-full object-cover rounded-3xl" />
+                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
+                             <button onClick={() => refInputRef.current?.click()} className="bg-white/20 backdrop-blur px-4 py-2 rounded-xl text-sm font-medium hover:bg-white/30 transition shadow">Replace</button>
+                             <button onClick={(e) => { e.stopPropagation(); setRefFile(null); }} className="w-8 h-8 flex items-center justify-center bg-red-500/80 rounded-full hover:bg-red-500 transition shadow">
+                               <X className="w-4 h-4 text-white" />
+                             </button>
+                           </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-full w-full p-6 text-center gap-4">
+                          <Film className="w-8 h-8 text-zinc-500 group-hover:scale-110 transition-transform duration-300" />
+                          <p className="text-zinc-400 font-medium text-sm">Add expression & motion</p>
+                          <div className="flex gap-2 mt-2 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+                             <button 
+                               onClick={() => refInputRef.current?.click()} 
+                               className="bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition border border-white/5 flex items-center gap-2"
+                             >
+                                <Upload className="w-4 h-4" /> Upload
+                             </button>
+                             <button className="bg-white/5 hover:bg-white/10 text-zinc-300 px-5 py-2.5 rounded-xl text-sm font-medium transition border border-white/5 flex items-center gap-2">
+                                <MonitorPlay className="w-4 h-4" /> Record
+                             </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+               </motion.div>
+            ) : (
+                <motion.div 
+                 key="result"
+                 initial={{ opacity: 0, scale: 0.95 }}
+                 animate={{ opacity: 1, scale: 1 }}
+                 className="flex flex-col items-center w-full max-w-4xl pt-4 pb-0 px-2"
+               >
+                 <div className="relative w-full max-w-[800px] aspect-video bg-black rounded-3xl overflow-hidden border border-white/10 shadow-2xl mb-6 group">
+                   {/* We display the mocked video directly */}
+                   <video 
+                     src={resultVideo} 
+                     autoPlay 
+                     loop 
+                     playsInline
+                     controls
+                     className="w-full h-full object-contain bg-[#0a0a0a]" 
+                   />
+                   <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition">
+                      <button onClick={() => setResultVideo(null)} className="px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-lg text-xs font-semibold hover:bg-black/80 transition flex items-center gap-2 border border-white/20">
+                         Create New
+                      </button>
+                   </div>
+                 </div>
+               </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Right Action Stack */}
+          {!resultVideo && (
+            <div className="flex flex-row lg:flex-col gap-3 lg:ml-4 w-full lg:w-auto mt-4 lg:mt-0">
+              <button 
+                onClick={() => {
+                   const opts: ('landscape' | 'portrait' | 'square')[] = ['landscape', 'portrait', 'square'];
+                   setOrientation(opts[(opts.indexOf(orientation) + 1) % 3]);
+                }}
+                className="flex-1 lg:flex-none border border-white/10 bg-[#18181b]/80 hover:bg-[#27272a]/80 backdrop-blur-md text-zinc-300 px-4 py-3 rounded-2xl flex items-center justify-center gap-2 text-sm font-medium transition"
+              >
+                <MonitorPlay className="w-4 h-4" />
+                <span className="capitalize">{orientation}</span>
+              </button>
+
+              <button 
+                onClick={handleGenerate}
+                disabled={!sourceFile || !refFile || generating}
+                className="flex-1 lg:flex-none bg-white text-black hover:bg-zinc-200 disabled:bg-zinc-800 disabled:text-zinc-500 px-6 py-3.5 rounded-2xl flex items-center justify-center gap-2 text-sm font-bold transition shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-white/20 disabled:shadow-none"
+              >
+                {generating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    Generate
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </motion.div>
+
+        {/* Tip section pointing out step order */}
+        {!resultVideo && (
+           <motion.div 
+             initial={{ opacity: 0 }}
+             animate={{ opacity: 1 }}
+             transition={{ delay: 0.5 }}
+             className="mt-6 text-zinc-500 text-sm font-medium flex items-center gap-2"
+           >
+             {!sourceFile ? "Step 1: Add a character to begin" : !refFile ? "Step 2: Add expression & motion reference" : "Ready: Click generate to animate"}
+           </motion.div>
+        )}
+
       </div>
+      
     </div>
   );
 }
