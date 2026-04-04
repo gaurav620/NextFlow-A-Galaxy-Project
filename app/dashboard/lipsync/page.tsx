@@ -1,136 +1,310 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { Upload, Mic, Play, Download, X, Sparkles } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Upload, Mic, Play, Download, X, Sparkles, ChevronDown, 
+  Smile, AlignLeft, Disc, Check, ArrowLeft
+} from 'lucide-react';
+import { useAssetStore } from '@/store/assets';
+
+const MODELS = [
+  { id: 'nextflow-sync', name: 'NextFlow Sync', desc: 'Omnimodal lipsync model' },
+  { id: 'fabric', name: 'Fabric Fast', desc: 'Turn any image into a talking video' }
+];
 
 export default function LipsyncPage() {
-  const [video, setVideo] = useState<string | null>(null);
-  const [audio, setAudio] = useState<string | null>(null);
-  const [audioName, setAudioName] = useState('');
-  const [faceDetect, setFaceDetect] = useState(true);
-  const [smoothing, setSmoothing] = useState(70);
-  const [generating, setGenerating] = useState(false);
-  const [result, setResult] = useState(false);
-  const videoRef = useRef<HTMLInputElement>(null);
-  const audioRef = useRef<HTMLInputElement>(null);
+  const { addAsset } = useAssetStore();
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  const handleVideo = (file: File) => {
-    if (file.type.startsWith('video/')) setVideo(URL.createObjectURL(file));
-  };
-  const handleAudio = (file: File) => {
-    setAudio(URL.createObjectURL(file));
-    setAudioName(file.name);
+  // States
+  const [selectedModel, setSelectedModel] = useState(MODELS[0]);
+  const [showModels, setShowModels] = useState(false);
+  
+  const [faceImage, setFaceImage] = useState<string | null>(null);
+  const [speechText, setSpeechText] = useState('');
+  
+  const [showTextModal, setShowTextModal] = useState(false);
+  const [tempSpeech, setTempSpeech] = useState('');
+
+  const [generating, setGenerating] = useState(false);
+  const [resultVideo, setResultVideo] = useState<string | null>(null);
+
+  const handleFaceUpload = (file: File) => {
+    if (file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      setFaceImage(url);
+    }
   };
 
   const handleGenerate = async () => {
-    if (!video || !audio) return;
+    if (!faceImage || !speechText.trim()) return;
     setGenerating(true);
-    await new Promise(r => setTimeout(r, 3000));
-    setResult(true);
+    
+    // Simulating generation time
+    await new Promise(r => setTimeout(r, 4000));
+    
+    // Since we can't reliably generate a deepfake video via basic API,
+    // we simulate the success by revealing the UI state and a stock loop.
+    // In production this would be the webhook response from the AI Lipsync worker
+    const dummyVideo = 'https://cdn.pixabay.com/video/2019/04/18/22822-331201502_tiny.mp4';
+    
+    setResultVideo(dummyVideo);
+    
+    addAsset({
+      url: faceImage, // Store face as thumbnail
+      prompt: speechText,
+      tool: 'lipsync',
+      ratio: '1:1'
+    });
+    
     setGenerating(false);
   };
 
-  const DropZone = ({ label, icon, accept, onFile, uploaded, name, onClear }: any) => (
-    <div className="space-y-1.5">
-      <label className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">{label}</label>
-      <div
-        onClick={() => !uploaded && document.getElementById(`input-${label}`)?.click()}
-        onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) onFile(f); }}
-        onDragOver={e => e.preventDefault()}
-        className={`relative w-full rounded-xl border border-dashed transition-all cursor-pointer overflow-hidden bg-[#0d0d0f] ${uploaded ? 'border-green-500/20' : 'border-white/[0.08] hover:border-white/[0.15]'}`}
-        style={{ height: 90 }}
-      >
-        <input id={`input-${label}`} type="file" accept={accept} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) onFile(f); }} />
-        {uploaded ? (
-          <div className="h-full flex flex-col items-center justify-center gap-1.5">
-            <div className="w-8 h-8 rounded-xl bg-green-500/20 border border-green-500/30 flex items-center justify-center">
-              {icon}
-            </div>
-            <p className="text-[10px] text-green-400 font-medium truncate max-w-[180px]">{name || 'Uploaded'}</p>
-            <button onClick={e => { e.stopPropagation(); onClear(); }}
-              className="absolute top-2 right-2 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center">
-              <X className="w-3 h-3 text-white" />
-            </button>
-          </div>
-        ) : (
-          <div className="h-full flex flex-col items-center justify-center gap-2">
-            <Upload className="w-4 h-4 text-zinc-600" />
-            <p className="text-[10px] text-zinc-600">Drop {label.toLowerCase()} or click</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  const resetSession = () => {
+    setFaceImage(null);
+    setSpeechText('');
+    setResultVideo(null);
+  };
 
   return (
-    <div className="flex w-full h-full text-white overflow-hidden bg-[#09090b]">
-      <div className="w-[280px] border-r border-white/[0.05] bg-[#000] flex flex-col flex-shrink-0">
-        <div className="h-12 flex items-center px-4 border-b border-white/[0.05] gap-2">
-          <Mic className="w-4 h-4 text-cyan-400" />
-          <span className="text-[13px] font-semibold">Video Lipsync</span>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-5 [&::-webkit-scrollbar]:hidden pb-24">
-          <DropZone label="Video" icon={<Play className="w-4 h-4 text-green-400" />} accept="video/*"
-            onFile={handleVideo} uploaded={!!video} name="video.mp4" onClear={() => setVideo(null)} />
-
-          <DropZone label="Audio" icon={<Mic className="w-4 h-4 text-green-400" />} accept="audio/*"
-            onFile={handleAudio} uploaded={!!audio} name={audioName} onClear={() => { setAudio(null); setAudioName(''); }} />
-
-          <div className="border-t border-white/[0.05]" />
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[12px] text-zinc-300 font-medium">Face Detection</p>
-              <p className="text-[10px] text-zinc-600">Auto-detect face regions</p>
-            </div>
-            <button onClick={() => setFaceDetect(!faceDetect)}
-              className={`w-9 h-5 rounded-full transition-colors relative ${faceDetect ? 'bg-cyan-500' : 'bg-zinc-800'}`}>
-              <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${faceDetect ? 'left-[18px]' : 'left-0.5'}`} />
-            </button>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <label className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">Smoothing</label>
-              <span className="text-[11px] text-zinc-400">{smoothing}%</span>
-            </div>
-            <input type="range" min={0} max={100} value={smoothing}
-              onChange={e => setSmoothing(Number(e.target.value))}
-              className="w-full h-1 appearance-none bg-zinc-800 rounded-full outline-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
-              style={{ background: `linear-gradient(to right, #22d3ee 0%, #22d3ee ${smoothing}%, #27272a ${smoothing}%, #27272a 100%)` }}
-            />
-          </div>
-        </div>
-
-        <div className="p-4 border-t border-white/[0.05]">
-          <button onClick={handleGenerate} disabled={!video || !audio || generating}
-            className="w-full py-3 rounded-xl bg-white text-black font-semibold text-[13px] hover:bg-zinc-100 transition-colors disabled:opacity-30 flex items-center justify-center gap-2">
-            {generating ? <><div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />Syncing...</>
-              : <><Sparkles className="w-4 h-4" />Generate Lipsync</>}
+    <div className="flex w-full h-full text-white bg-[#0f0f0f] relative overflow-hidden font-sans">
+      
+      {/* Top Left Model Selector (Krea Style) */}
+      <div className="absolute top-6 left-6 z-20">
+        <div className="relative">
+          <button 
+            onClick={() => setShowModels(!showModels)} 
+            className="flex items-center gap-2 px-3 py-1.5 text-zinc-400 hover:text-white transition-colors text-[14px] font-medium"
+          >
+            Model <span className="text-white">{selectedModel.name}</span>
+            <ChevronDown className="w-4 h-4 opacity-50" />
           </button>
+          
+          <AnimatePresence>
+            {showModels && (
+              <motion.div 
+                initial={{ opacity: 0, y: -5 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                exit={{ opacity: 0, y: -5 }} 
+                className="absolute top-full left-0 mt-2 w-[280px] bg-[#1a1b1e] rounded-xl border border-white/5 shadow-2xl p-2 z-50"
+              >
+                {MODELS.map(m => (
+                  <button 
+                    key={m.id} 
+                    onClick={() => { setSelectedModel(m); setShowModels(false); }} 
+                    className={`w-full flex items-center justify-between p-3 rounded-lg text-left text-[13px] hover:bg-white/5 transition-colors ${selectedModel.id === m.id ? 'bg-white/5 text-white' : 'text-zinc-400'}`}
+                  >
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-medium text-white">{m.name}</span>
+                      <span className="text-[11px] opacity-60 leading-tight">{m.desc}</span>
+                    </div>
+                    {selectedModel.id === m.id && <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="h-12 flex items-center justify-between px-5 border-b border-white/[0.05] flex-shrink-0">
-          <span className="text-[12px] text-zinc-500">{result ? 'Lipsync complete' : 'Upload video and audio to begin'}</span>
-          {result && <button className="flex items-center gap-1.5 text-[12px] text-zinc-300 hover:text-white px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"><Download className="w-3.5 h-3.5" />Download</button>}
-        </div>
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="text-center space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mx-auto">
-              <Mic className="w-8 h-8 text-cyan-400/50" />
+      <input 
+        ref={fileRef} 
+        type="file" 
+        accept="image/*" 
+        className="hidden" 
+        onChange={e => {
+          const f = e.target.files?.[0]; 
+          if (f) handleFaceUpload(f); 
+          e.target.value = ''; // reset so same file can trigger again
+        }} 
+      />
+
+      {/* Center Layout Container */}
+      <div className="flex-1 flex flex-col items-center justify-center p-8 relative">
+        
+        {/* State 1: Generation UI */}
+        {!resultVideo && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col items-center max-w-4xl w-full"
+          >
+            {/* Title */}
+            <div className="flex items-center gap-3 mb-12">
+              <div className="bg-[#1f2937] p-1.5 rounded-lg border border-white/10">
+                <Mic className="w-6 h-6 text-emerald-400" />
+              </div>
+              <h1 className="text-4xl font-semibold tracking-tight text-white">Lip sync</h1>
             </div>
-            <div>
-              <p className="text-white text-[15px] font-semibold mb-1">Video Lipsync</p>
-              <p className="text-zinc-500 text-[13px] max-w-xs">Upload a video with a face and an audio file. AI will sync the mouth movements to the audio.</p>
+
+            {/* Main Interactive Box */}
+            <div className="flex items-center bg-[#151516] p-3 rounded-[2rem] border border-white/[0.06] shadow-2xl">
+              
+              {/* FACE BLOCK */}
+              <div className="relative group">
+                <div 
+                  onClick={() => fileRef.current?.click()}
+                  className={`w-[160px] h-[160px] rounded-[1.5rem] flex flex-col items-center justify-center gap-3 cursor-pointer transition-all border ${faceImage ? 'border-emerald-500/30 bg-[#1f2937]' : 'border-white/[0.04] bg-[#222224] hover:bg-[#2A2A2D]'}`}
+                >
+                  {faceImage ? (
+                    <img src={faceImage} className="w-full h-full object-cover rounded-[1.5rem]" alt="Face" />
+                  ) : (
+                    <>
+                      <Smile className="w-8 h-8 text-zinc-400" />
+                      <span className="text-[14px] font-medium text-zinc-300">Add face</span>
+                    </>
+                  )}
+                </div>
+                {faceImage && (
+                  <button onClick={(e) => { e.stopPropagation(); setFaceImage(null); }} className="absolute -top-2 -right-2 bg-black border border-white/10 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-zinc-800">
+                    <X className="w-3.5 h-3.5 text-zinc-400" />
+                  </button>
+                )}
+                {!faceImage && (
+                  <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] font-bold px-2 py-1 uppercase tracking-wider rounded border border-white/10 whitespace-nowrap">
+                    Step 1: Add face
+                  </div>
+                )}
+              </div>
+
+              <div className="px-5 text-2xl font-light text-zinc-600">+</div>
+
+              {/* SPEECH BLOCK */}
+              <div className="relative group flex-shrink-0">
+                <div 
+                  onClick={() => {
+                     setTempSpeech(speechText);
+                     setShowTextModal(true);
+                  }}
+                  className={`w-[320px] h-[160px] rounded-[1.5rem] flex flex-col items-center justify-center gap-3 cursor-pointer transition-all border ${speechText ? 'border-emerald-500/30 bg-[#1f2937]' : 'border-white/[0.04] bg-[#222224] hover:bg-[#2A2A2D]'}`}
+                >
+                  {speechText ? (
+                    <div className="p-4 w-full h-full text-center flex flex-col items-center justify-center">
+                       <AlignLeft className="w-6 h-6 text-emerald-400 mb-2 opacity-80" />
+                       <p className="text-[13px] text-zinc-300 line-clamp-3 overflow-hidden italic leading-relaxed">"{speechText}"</p>
+                    </div>
+                  ) : (
+                    <>
+                      <Mic className="w-8 h-8 text-zinc-400" />
+                      <span className="text-[14px] font-medium text-zinc-300">Add speech</span>
+                    </>
+                  )}
+                </div>
+                {speechText && (
+                  <button onClick={(e) => { e.stopPropagation(); setSpeechText(''); }} className="absolute -top-2 -right-2 bg-black border border-white/10 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-zinc-800">
+                    <X className="w-3.5 h-3.5 text-zinc-400" />
+                  </button>
+                )}
+              </div>
+
+              {/* GENERATE BUTTON */}
+              <div className="ml-5 mr-1">
+                <button 
+                  onClick={handleGenerate}
+                  disabled={!faceImage || !speechText || generating}
+                  className={`px-6 py-4 rounded-xl font-medium tracking-wide flex items-center gap-2 transition-all ${
+                    (!faceImage || !speechText) 
+                      ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed' 
+                      : 'bg-white text-black hover:bg-zinc-200 shadow-xl'
+                  } ${generating ? 'opacity-80 cursor-wait' : ''}`}
+                >
+                  {generating ? (
+                    <><div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> Generating...</>
+                  ) : (
+                    <><Sparkles className="w-4 h-4" /> Generate</>
+                  )}
+                </button>
+              </div>
+
             </div>
-            {video && !audio && <p className="text-[12px] text-cyan-400">✓ Video uploaded — now upload audio</p>}
-            {video && audio && !result && <p className="text-[12px] text-green-400">✓ Ready — click Generate Lipsync</p>}
-          </div>
-        </div>
+          </motion.div>
+        )}
+
+        {/* State 2: Result Video Viewer */}
+        {resultVideo && (
+           <motion.div 
+             initial={{ opacity: 0, scale: 0.95 }} 
+             animate={{ opacity: 1, scale: 1 }}
+             className="w-full max-w-2xl flex flex-col items-center gap-6"
+           >
+              <div className="flex items-center justify-between w-full">
+                 <button onClick={resetSession} className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors text-[14px] font-medium">
+                    <ArrowLeft className="w-4 h-4" /> Start New
+                 </button>
+                 <button className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 transition-colors rounded-xl font-medium text-[13px] text-white">
+                    <Download className="w-4 h-4" /> Download
+                 </button>
+              </div>
+
+              <div className="w-full aspect-square md:aspect-[4/3] bg-black border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative group">
+                 {/* Simulate a video playing with stock video for demo effect */}
+                 <video src={resultVideo} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+                 
+                 {/* Visual indicator that this is the generated result incorporating the face */}
+                 {faceImage && (
+                    <div className="absolute bottom-4 left-4 w-12 h-12 rounded-lg border-2 border-white/20 overflow-hidden shadow-lg">
+                       <img src={faceImage} className="w-full h-full object-cover grayscale opacity-70" alt="Reference" />
+                    </div>
+                 )}
+              </div>
+           </motion.div>
+        )}
+
       </div>
+
+      {/* TEXT INPUT MODAL */}
+      <AnimatePresence>
+        {showTextModal && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 20 }} 
+              animate={{ scale: 1, y: 0 }} 
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-[#1a1b1e] border border-white/10 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl"
+            >
+              <div className="flex items-center gap-2 p-5 border-b border-white/5">
+                <AlignLeft className="w-5 h-5 text-emerald-400" />
+                <h2 className="text-lg font-semibold text-white">Write Speech</h2>
+              </div>
+              
+              <div className="p-5">
+                <textarea 
+                  value={tempSpeech}
+                  onChange={(e) => setTempSpeech(e.target.value)}
+                  placeholder="Type the script you want the face to say..."
+                  className="w-full h-40 bg-[#0f0f0f] border border-white/5 rounded-2xl p-4 text-[15px] text-zinc-200 placeholder:text-zinc-600 outline-none focus:border-emerald-500/50 resize-none"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 p-5 border-t border-white/5 bg-[#151516]">
+                <button 
+                  onClick={() => setShowTextModal(false)}
+                  className="px-5 py-2.5 rounded-xl text-[14px] font-medium text-zinc-400 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => {
+                    setSpeechText(tempSpeech);
+                    setShowTextModal(false);
+                  }}
+                  disabled={!tempSpeech.trim()}
+                  className="px-6 py-2.5 rounded-xl text-[14px] font-semibold bg-emerald-500 text-emerald-950 hover:bg-emerald-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Confirm Script
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
