@@ -3,7 +3,7 @@
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Image as ImageIcon, Play, Download, X, AlertCircle, RotateCcw, Pause, CheckCircle2, Circle, Settings2, Plus, Zap, Activity, Clock } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, Play, Download, X, AlertCircle, Pause, Settings2, Plus, Zap, Clock } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const models = [
@@ -92,8 +92,8 @@ export default function VideoPage() {
         aspectRatio: aspect,
       }, ...prev]);
       setPrompt('');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setGenerating(false);
       setStep('');
