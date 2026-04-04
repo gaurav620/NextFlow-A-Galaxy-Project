@@ -27,6 +27,11 @@ import {
   Upload,
   Undo2,
   Redo2,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Menu,
+  X,
+  Clock,
 } from 'lucide-react'
 import {
   Tooltip,
@@ -115,6 +120,9 @@ export default function WorkflowEditorPage({
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [dagError, setDagError] = useState<string | null>(null)
+  const [leftSidebarOpen, setLeftSidebarOpen] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(true)
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
   const importRef = useRef<HTMLInputElement>(null)
 
@@ -346,101 +354,121 @@ export default function WorkflowEditorPage({
   return (
     <div className="relative h-screen w-full overflow-hidden" style={{ background: '#0a0a0a' }}>
       {/* Top Bar */}
-      <div className="absolute top-0 left-0 right-0 h-12 z-40 flex items-center justify-between px-4" style={{ background: 'rgba(15, 15, 15, 0.8)', backdropFilter: 'blur(8px)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <div className="absolute top-0 left-0 right-0 h-12 z-40 flex items-center justify-between px-2 sm:px-4 gap-1 sm:gap-0" style={{ background: 'rgba(15, 15, 15, 0.8)', backdropFilter: 'blur(8px)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        {/* Mobile hamburger */}
+        <button type="button" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="sm:hidden text-gray-500 hover:text-white transition-colors p-1">
+          {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+
         {/* Left: Back & Workflow Name */}
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <button type="button" onClick={() => router.back()} className="text-gray-500 hover:text-white transition-colors">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <button type="button" onClick={() => router.back()} className="text-gray-500 hover:text-white transition-colors hidden sm:block">
             <ChevronLeft className="w-5 h-5" />
           </button>
           <input
             type="text"
             value={workflowName}
             onChange={(e) => setWorkflowName(e.target.value)}
-            className="bg-transparent text-white text-sm font-medium border-0 outline-none flex-1 max-w-xs"
+            className="bg-transparent text-white text-xs sm:text-sm font-medium border-0 outline-none flex-1 max-w-[120px] sm:max-w-xs"
             placeholder="Untitled Workflow"
           />
-          {/* Undo/Redo */}
-          <TooltipProvider delayDuration={0}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button type="button" onClick={undo} disabled={past.length === 0} className="text-gray-600 hover:text-white transition-colors disabled:opacity-30">
-                  <Undo2 className="w-3.5 h-3.5" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Undo (⌘Z)</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider delayDuration={0}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button type="button" onClick={redo} disabled={future.length === 0} className="text-gray-600 hover:text-white transition-colors disabled:opacity-30">
-                  <Redo2 className="w-3.5 h-3.5" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Redo (⌘⇧Z)</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          {/* Undo/Redo — hide on very small screens */}
+          <div className="hidden sm:flex items-center gap-1">
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" onClick={undo} disabled={past.length === 0} className="text-gray-600 hover:text-white transition-colors disabled:opacity-30">
+                    <Undo2 className="w-3.5 h-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Undo (⌘Z)</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" onClick={redo} disabled={future.length === 0} className="text-gray-600 hover:text-white transition-colors disabled:opacity-30">
+                    <Redo2 className="w-3.5 h-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Redo (⌘⇧Z)</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
 
         {/* Center: Run Controls */}
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={handleLoadSample} className="text-xs text-gray-400 border border-white/10 rounded-full px-3 py-1 hover:bg-white/5 transition-colors">
+        <div className="flex items-center gap-1 sm:gap-2">
+          <button type="button" onClick={handleLoadSample} className="text-[10px] sm:text-xs text-gray-400 border border-white/10 rounded-full px-2 sm:px-3 py-1 hover:bg-white/5 transition-colors hidden md:block">
             Load Sample
           </button>
           {selectedNodeIds.length > 0 && (
-            <button type="button" onClick={handleRunSelected} disabled={isRunning} className="text-xs text-purple-300 border border-purple-500/30 rounded-full px-3 py-1 hover:bg-purple-500/10 transition-colors disabled:opacity-50">
+            <button type="button" onClick={handleRunSelected} disabled={isRunning} className="text-[10px] sm:text-xs text-purple-300 border border-purple-500/30 rounded-full px-2 sm:px-3 py-1 hover:bg-purple-500/10 transition-colors disabled:opacity-50">
               Run Selected ({selectedNodeIds.length})
             </button>
           )}
-          <button type="button" onClick={handleRun} disabled={isRunning} className="bg-white text-black text-xs font-semibold rounded-full px-4 py-1.5 hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center gap-2">
-            {isRunning && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+          <button type="button" onClick={handleRun} disabled={isRunning} className="bg-white text-black text-[10px] sm:text-xs font-semibold rounded-full px-3 sm:px-4 py-1.5 hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center gap-1 sm:gap-2">
+            {isRunning && <Loader2 className="w-3 sm:w-3.5 h-3 sm:h-3.5 animate-spin" />}
             {isRunning ? 'Running...' : 'Run All'}
           </button>
         </div>
 
-        {/* Right: Import / Export / Save / Settings */}
-        <div className="flex items-center gap-3 ml-auto">
-          <button type="button" onClick={handleSave} className="text-xs text-gray-400 border border-white/10 rounded-full px-3 py-1 hover:bg-white/5 transition-colors">
+        {/* Right: Import / Export / Save / Settings / History toggle */}
+        <div className="flex items-center gap-1 sm:gap-3 ml-auto">
+          <button type="button" onClick={handleSave} className="text-[10px] sm:text-xs text-gray-400 border border-white/10 rounded-full px-2 sm:px-3 py-1 hover:bg-white/5 transition-colors">
             Save
           </button>
+          <div className="hidden sm:flex items-center gap-3">
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" onClick={() => importRef.current?.click()} className="text-gray-500 hover:text-white transition-colors">
+                    <Upload className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Import JSON</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" onClick={handleExport} className="text-gray-500 hover:text-white transition-colors">
+                    <Download className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Export JSON</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" className="text-gray-500 hover:text-white transition-colors">
+                    <Share2 className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Share</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" className="text-gray-500 hover:text-white transition-colors">
+                    <Settings className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Settings</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          {/* History sidebar toggle */}
           <TooltipProvider delayDuration={0}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <button type="button" onClick={() => importRef.current?.click()} className="text-gray-500 hover:text-white transition-colors">
-                  <Upload className="w-4 h-4" />
+                <button type="button" onClick={() => setHistoryOpen(!historyOpen)} className={`text-gray-500 hover:text-white transition-colors ${historyOpen ? 'text-purple-400' : ''}`}>
+                  <Clock className="w-4 h-4" />
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="bottom">Import JSON</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider delayDuration={0}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button type="button" onClick={handleExport} className="text-gray-500 hover:text-white transition-colors">
-                  <Download className="w-4 h-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Export JSON</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider delayDuration={0}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button type="button" className="text-gray-500 hover:text-white transition-colors">
-                  <Share2 className="w-4 h-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Share</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider delayDuration={0}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button type="button" className="text-gray-500 hover:text-white transition-colors">
-                  <Settings className="w-4 h-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Settings</TooltipContent>
+              <TooltipContent side="bottom">{historyOpen ? 'Hide' : 'Show'} History</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
@@ -456,32 +484,100 @@ export default function WorkflowEditorPage({
         </div>
       )}
 
-      {/* Left Mini Panel - Node Picker */}
-      <div className="absolute left-3 top-16 z-40 rounded-2xl p-2 w-[180px]" style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.05)' }}>
-        <div className="relative mb-2">
-          <Search className="absolute left-3 top-2 w-3.5 h-3.5 text-gray-600" />
-          <input
-            type="text"
-            placeholder="Search..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="rounded-xl px-3 py-2 pl-8 text-xs text-gray-400 placeholder-gray-600 w-full focus:outline-none"
-            style={{ background: '#0f0f0f', border: '1px solid rgba(255,255,255,0.05)' }}
-          />
+      {/* Mobile slide-out menu (node picker + extra actions) */}
+      {mobileMenuOpen && (
+        <div className="absolute left-0 top-12 bottom-0 z-50 w-[220px] sm:hidden overflow-y-auto" style={{ background: '#1c1c1c', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
+          <div className="p-3 space-y-3">
+            {/* Mobile-only actions */}
+            <div className="flex flex-col gap-1.5">
+              <button type="button" onClick={() => { router.back(); setMobileMenuOpen(false); }} className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                <ChevronLeft className="w-4 h-4" /> Back
+              </button>
+              <button type="button" onClick={() => { handleLoadSample(); setMobileMenuOpen(false); }} className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                <Workflow className="w-4 h-4" /> Load Sample
+              </button>
+              <button type="button" onClick={undo} disabled={past.length === 0} className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-all disabled:opacity-30">
+                <Undo2 className="w-4 h-4" /> Undo
+              </button>
+              <button type="button" onClick={redo} disabled={future.length === 0} className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-all disabled:opacity-30">
+                <Redo2 className="w-4 h-4" /> Redo
+              </button>
+              <button type="button" onClick={() => importRef.current?.click()} className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                <Upload className="w-4 h-4" /> Import JSON
+              </button>
+              <button type="button" onClick={handleExport} className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                <Download className="w-4 h-4" /> Export JSON
+              </button>
+            </div>
+            <div className="h-px bg-white/5" />
+            {/* Node picker */}
+            <div className="text-[10px] text-gray-600 uppercase px-1 font-medium tracking-wide">Nodes</div>
+            <div className="space-y-0.5">
+              {filteredNodes.map((node) => (
+                <div
+                  key={node.type}
+                  draggable
+                  onDragStart={(e) => { handleDragStart(e, node.type); setMobileMenuOpen(false); }}
+                  className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-white/5 cursor-grab active:cursor-grabbing text-xs text-gray-400 hover:text-white transition-all"
+                >
+                  <div className="w-4 h-4 rounded flex-shrink-0" style={{ background: node.color }} />
+                  <span>{node.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-        <div className="text-[10px] text-gray-600 uppercase px-2 py-1 font-medium tracking-wide">
-          Quick Access
-        </div>
+      )}
+
+      {/* Left Mini Panel - Node Picker (desktop, collapsible) */}
+      <div
+        className="absolute left-3 top-16 z-40 rounded-2xl p-2 hidden sm:block transition-all duration-300 ease-in-out"
+        style={{
+          background: '#1c1c1c',
+          border: '1px solid rgba(255,255,255,0.05)',
+          width: leftSidebarOpen ? 180 : 44,
+          overflow: 'hidden',
+        }}
+      >
+        {/* Toggle button */}
+        <button
+          type="button"
+          onClick={() => setLeftSidebarOpen(!leftSidebarOpen)}
+          className="w-full flex items-center justify-center mb-2 p-1.5 rounded-lg hover:bg-white/5 text-gray-500 hover:text-white transition-colors"
+          title={leftSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+        >
+          {leftSidebarOpen ? <PanelLeftClose className="w-3.5 h-3.5" /> : <PanelLeftOpen className="w-3.5 h-3.5" />}
+        </button>
+
+        {leftSidebarOpen && (
+          <>
+            <div className="relative mb-2">
+              <Search className="absolute left-3 top-2 w-3.5 h-3.5 text-gray-600" />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="rounded-xl px-3 py-2 pl-8 text-xs text-gray-400 placeholder-gray-600 w-full focus:outline-none"
+                style={{ background: '#0f0f0f', border: '1px solid rgba(255,255,255,0.05)' }}
+              />
+            </div>
+            <div className="text-[10px] text-gray-600 uppercase px-2 py-1 font-medium tracking-wide">
+              Quick Access
+            </div>
+          </>
+        )}
         <div className="space-y-0.5">
           {filteredNodes.map((node) => (
             <div
               key={node.type}
               draggable
               onDragStart={(e) => handleDragStart(e, node.type)}
-              className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-white/5 cursor-grab active:cursor-grabbing text-xs text-gray-400 hover:text-white transition-all"
+              className={`flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-white/5 cursor-grab active:cursor-grabbing text-xs text-gray-400 hover:text-white transition-all ${!leftSidebarOpen ? 'justify-center' : ''}`}
+              title={!leftSidebarOpen ? node.label : undefined}
             >
               <div className="w-4 h-4 rounded flex-shrink-0" style={{ background: node.color }} />
-              <span>{node.label}</span>
+              {leftSidebarOpen && <span>{node.label}</span>}
             </div>
           ))}
         </div>
@@ -518,17 +614,24 @@ export default function WorkflowEditorPage({
           </ReactFlow>
         </div>
 
-        {/* History Sidebar */}
-        <div className="w-80 flex-shrink-0 h-full border-l border-white/5 bg-[#0a0a0a]">
-          <HistorySidebar className="bg-transparent" />
-        </div>
+        {/* History Sidebar — collapsible, hidden on mobile */}
+        {historyOpen && (
+          <div className="hidden md:block w-80 flex-shrink-0 h-full border-l border-white/5 bg-[#0a0a0a]">
+            <HistorySidebar className="bg-transparent" />
+          </div>
+        )}
       </div>
+
+      {/* Mobile overlay backdrop */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40 sm:hidden" onClick={() => setMobileMenuOpen(false)} />
+      )}
 
       {/* Empty Canvas State */}
       {nodes.length === 0 && (
         <div className="absolute inset-0 pt-12 flex flex-col items-center justify-center pointer-events-none">
-          <Workflow className="w-16 h-16 text-gray-800" />
-          <p className="text-gray-700 text-sm mt-2">Drop nodes here to start building</p>
+          <Workflow className="w-12 sm:w-16 h-12 sm:h-16 text-gray-800" />
+          <p className="text-gray-700 text-xs sm:text-sm mt-2">Drop nodes here to start building</p>
         </div>
       )}
     </div>

@@ -53,6 +53,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [sessionsOpen, setSessionsOpen] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const sessions = [
@@ -69,6 +70,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Auto-collapse sidebar on mobile
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
+      setIsMobile(e.matches);
+      if (e.matches) setIsSidebarOpen(false);
+    };
+    handler(mq);
+    mq.addEventListener('change', handler as any);
+    return () => mq.removeEventListener('change', handler as any);
   }, []);
 
   const visibleTools = showAllTools ? toolItems : toolItems.slice(0, 6);
@@ -89,9 +102,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* ── SIDEBAR ──────────────────────────────────────────── */}
       <motion.div
-        animate={{ width: isSidebarOpen ? 220 : 70 }}
+        animate={{ width: isSidebarOpen ? 220 : (isMobile ? 0 : 70) }}
         transition={{ type: 'spring' as const, damping: 25, stiffness: 200 }}
-        className="flex flex-col h-full flex-shrink-0 relative overflow-visible z-50"
+        className={`flex flex-col h-full flex-shrink-0 relative overflow-visible z-50 ${isMobile && !isSidebarOpen ? 'hidden' : ''} ${isMobile && isSidebarOpen ? 'absolute left-0 top-0 bottom-0 shadow-2xl' : ''}`}
         style={{ background: '#0A0A0A', borderRight: '1px solid rgba(255,255,255,0.06)' }}
       >
 
@@ -359,6 +372,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
       </motion.div>
+
+      {/* Mobile sidebar backdrop overlay */}
+      {isMobile && isSidebarOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setIsSidebarOpen(false)} />
+      )}
+
+      {/* Mobile sidebar toggle button (floating) */}
+      {isMobile && !isSidebarOpen && (
+        <button
+          onClick={() => setIsSidebarOpen(true)}
+          className="fixed top-3 left-3 z-50 w-9 h-9 rounded-xl bg-[#1a1a1a] border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-all shadow-lg"
+        >
+          <PanelLeftOpen className="w-4 h-4" />
+        </button>
+      )}
 
       {/* ── MAIN CONTENT ─────────────────────────────────────── */}
       <div className="flex-1 relative flex flex-col overflow-hidden" style={{ background: '#0A0A0A' }}>
