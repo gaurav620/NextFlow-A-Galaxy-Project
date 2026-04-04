@@ -50,7 +50,8 @@ export default function VideoPage() {
   const [playing, setPlaying] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState('');
-  const [modelsOpen, setModelsOpen] = useState(false);
+  const [topModelsOpen, setTopModelsOpen] = useState(false);
+  const [bottomModelsOpen, setBottomModelsOpen] = useState(false);
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
 
   const handleImageDrop = (e: React.DragEvent) => {
@@ -132,7 +133,7 @@ export default function VideoPage() {
   };
 
   // The model selection list content
-  const ModelSelectorContent = () => (
+  const ModelSelectorContent = ({ onClose }: { onClose: () => void }) => (
     <div className="flex flex-col h-[500px] w-[320px] bg-[#1a1a1a] border border-white/10 rounded-2xl shadow-xl overflow-hidden">
       <div className="p-4 border-b border-white/5">
          <p className="text-[13px] font-medium text-white">Click to view all models</p>
@@ -143,7 +144,7 @@ export default function VideoPage() {
           return (
             <div 
               key={m.id} 
-              onClick={() => { setSelectedModel(m); setModelsOpen(false); }}
+              onClick={() => { setSelectedModel(m); onClose(); }}
               className={`p-3 rounded-xl cursor-pointer transition-all flex items-start gap-3 ${
                 isSelected ? 'bg-white/10' : 'hover:bg-white/5'
               }`}
@@ -192,7 +193,7 @@ export default function VideoPage() {
       
       {/* TOP LEFT MODEL SWITCHER */}
       <div className="absolute top-4 left-6 z-50">
-        <Popover open={modelsOpen} onOpenChange={setModelsOpen}>
+        <Popover open={topModelsOpen} onOpenChange={setTopModelsOpen}>
           <PopoverTrigger asChild>
             <button className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors bg-transparent border-none">
               <span className="text-[14px] font-medium">Model <span className="text-white">{selectedModel.name}</span></span>
@@ -200,7 +201,7 @@ export default function VideoPage() {
             </button>
           </PopoverTrigger>
           <PopoverContent side="bottom" align="start" className="p-0 border-none bg-transparent shadow-none" sideOffset={8}>
-            <ModelSelectorContent />
+            <ModelSelectorContent onClose={() => setTopModelsOpen(false)} />
           </PopoverContent>
         </Popover>
       </div>
@@ -352,7 +353,7 @@ export default function VideoPage() {
             <div className="px-3 pb-3 pt-1 flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden">
               
               {/* Selected Model Pill connected to the same model selector */}
-              <Popover open={modelsOpen} onOpenChange={setModelsOpen}>
+              <Popover open={bottomModelsOpen} onOpenChange={setBottomModelsOpen}>
                 <PopoverTrigger asChild>
                   <button className="flex items-center gap-2 px-3 py-1.5 rounded-3xl bg-[#2a2a2a] hover:bg-[#333] border border-transparent text-[13px] font-medium text-zinc-300 transition-colors">
                     <span className="text-zinc-400">@</span>
@@ -360,7 +361,7 @@ export default function VideoPage() {
                   </button>
                 </PopoverTrigger>
                 <PopoverContent side="top" align="start" className="p-0 border-none bg-transparent shadow-none" sideOffset={12}>
-                  <ModelSelectorContent />
+                  <ModelSelectorContent onClose={() => setBottomModelsOpen(false)} />
                 </PopoverContent>
               </Popover>
 
