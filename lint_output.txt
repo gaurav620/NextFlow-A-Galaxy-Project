@@ -1,0 +1,1 @@
+Invalid project directory provided, no such directory: /Users/sauravkumar/Library/CloudStorage/OneDrive-Personal/v0-next-flow-landing-page/lint

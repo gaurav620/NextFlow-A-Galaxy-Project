@@ -47,7 +47,7 @@ const emptyStateCards = [
 ];
 
 const MODELS = [
-  { id: 'flux', name: 'Krea 1', sub: 'Most creative model with LoRAs.', icon: ImageIcon },
+  { id: 'flux', name: 'NextFlow 1', sub: 'Most creative model with LoRAs.', icon: ImageIcon },
   { id: 'turbo', name: 'Nano Banana', sub: 'Most versatile intelligent model.', icon: Zap },
   { id: 'flux-pro', name: 'Nano Banana Pro', sub: "World's most intelligent model.", icon: Zap },
   { id: 'flux-3d', name: 'Flux 2 Klein', sub: 'Fast lightweight Flux 2 model.', icon: Box },
@@ -231,7 +231,7 @@ export default function GenericToolPage() {
         )}
       </div>
 
-      {/* Floating Bottom Command Bar (Krea Style) with Popovers */}
+      {/* Floating Bottom Command Bar (NextFlow Style) with Popovers */}
       <div 
         ref={popoverRef}
         className="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 w-full max-w-[800px] z-[100] px-4 flex flex-col items-center"

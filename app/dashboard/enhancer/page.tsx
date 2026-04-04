@@ -6,12 +6,12 @@ import { Sparkles, Image as ImageIcon, Download, X, AlertCircle, ChevronDown, Wa
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const models = [
-  { id: 'krea-enhance', name: 'Krea Enhance', icon: '✨', desc: 'Excellent AI enhancement, great overall details.', speed: 5, quality: 4, credits: 10, features: ['Upscale', 'Details'] },
+  { id: 'krea-enhance', name: 'NextFlow Enhance', icon: '✨', desc: 'Excellent AI enhancement, great overall details.', speed: 5, quality: 4, credits: 10, features: ['Upscale', 'Details'] },
   { id: 'magnific', name: 'Magnific', icon: '🔍', desc: 'Premium highly detailed enhancement.', speed: 3, quality: 5, credits: 40, features: ['Upscale', 'Extreme Details'] },
   { id: 'topaz-gen', name: 'Topaz Generative', icon: '🎯', desc: 'Generative AI upscaling by Topaz.', speed: 4, quality: 5, credits: 30, features: ['Upscale', 'Texture'] },
   { id: 'topaz-bloom', name: 'Topaz Bloom', icon: '🌸', desc: 'Smooth AI upscaling by Topaz.', speed: 4, quality: 4, credits: 20, features: ['Upscale'] },
   { id: 'magnific-precise', name: 'Magnific Precise', icon: '📐', desc: 'High fidelity realistic upscaling.', speed: 3, quality: 5, credits: 40, features: ['Upscale', 'Realism'] },
-  { id: 'krea-legacy', name: 'Krea Legacy', icon: '🔄', desc: 'Previous generation Krea enhancer.', speed: 5, quality: 3, credits: 5, features: ['Upscale'] },
+  { id: 'krea-legacy', name: 'NextFlow Legacy', icon: '🔄', desc: 'Previous generation NextFlow enhancer.', speed: 5, quality: 3, credits: 5, features: ['Upscale'] },
   { id: 'starlight', name: 'Starlight', icon: '⭐', desc: 'Balanced detail and lighting enhancement.', speed: 4, quality: 4, credits: 15, features: ['Upscale', 'Lighting'] },
   { id: 'astra', name: 'Astra', icon: '🌌', desc: 'Fast upscaling for subtle improvements.', speed: 5, quality: 3, credits: 10, features: ['Upscale'] }
 ];
@@ -231,7 +231,7 @@ export default function EnhancerPage() {
                       </div>
                       <div className="flex gap-2">
                         {result && (
-                           <a href={result} download="krea-enhanced.jpg" className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/10 backdrop-blur-md hover:bg-white/20 transition-colors border border-white/5">
+                           <a href={result} download="nextflow-enhanced.jpg" className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/10 backdrop-blur-md hover:bg-white/20 transition-colors border border-white/5">
                              <Download className="w-4 h-4 text-white" />
                            </a>
                         )}

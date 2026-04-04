@@ -206,7 +206,7 @@ export default function VideoPage() {
         </Popover>
       </div>
 
-      {/* MAIN KREA CANVAS AREA */}
+      {/* MAIN NEXTFLOW CANVAS AREA */}
       <div className="flex-1 relative flex flex-col items-center justify-center overflow-hidden">
         
         {/* Empty State / Center Logo */}

@@ -13,7 +13,6 @@ import {
   Upload,
   Search,
   Heart,
-  Plus,
   LayoutGrid,
   List,
   Download,
