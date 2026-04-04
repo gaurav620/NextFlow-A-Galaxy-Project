@@ -1,6 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Image as ImageIcon, Play, Download, X, AlertCircle, RotateCcw, Pause, CheckCircle2, Circle, Settings2, Plus, Zap, Activity, Clock } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -221,10 +222,10 @@ export default function VideoPage() {
             {generating && results.length === 0 && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center gap-4 h-64">
                 <div className="w-64 aspect-video rounded-2xl bg-white/[0.02] border border-white/5 animate-pulse" />
-                <p className="text-[13px] text-zinc-400 font-medium tracking-wide flex items-center gap-2">
+                <div className="text-[13px] text-zinc-400 font-medium tracking-wide flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                   {step}
-                </p>
+                </div>
               </motion.div>
             )}
 
