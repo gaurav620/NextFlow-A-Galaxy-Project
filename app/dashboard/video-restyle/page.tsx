@@ -23,6 +23,9 @@ export default function VideoRestylePage() {
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<{ url: string, meta: any } | null>(null);
   
+  const [activeModel, setActiveModel] = useState('NextFlow-Video-Gen');
+  const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDrop = (e: React.DragEvent) => {
@@ -87,16 +90,40 @@ export default function VideoRestylePage() {
       <div className="absolute inset-x-0 bottom-0 top-32 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-indigo-900/10 via-[#070708] to-[#070708] pointer-events-none" />
 
       {/* Header section (Model Dropdown) */}
-      <div className="absolute top-0 left-0 w-full p-4 flex items-center justify-between z-10 pointer-events-none">
-        <div className="flex items-center gap-2 text-sm text-zinc-400">
+      <div className="absolute top-0 left-0 w-full p-4 flex items-center justify-between z-40 pointer-events-none">
+        <div className="relative flex items-center gap-2 text-sm text-zinc-400">
           <span>Model</span>
-          <span className="text-zinc-200 hover:text-white bg-transparent outline-none border-none py-1 pointer-events-auto cursor-pointer transition flex items-center gap-1 font-medium">
-            NextFlow-Video-Gen <ChevronDownIcon className="w-4 h-4" />
-          </span>
+          <button 
+             onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+             className="text-zinc-200 hover:text-white bg-transparent outline-none border-none py-1 pointer-events-auto cursor-pointer transition flex items-center gap-1 font-medium"
+          >
+            {activeModel} <ChevronDownIcon className="w-4 h-4" />
+          </button>
+          
+          <AnimatePresence>
+             {isModelDropdownOpen && (
+                <motion.div 
+                   initial={{ opacity: 0, y: -5 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   exit={{ opacity: 0, y: -5 }}
+                   className="absolute top-full left-10 mt-2 min-w-[160px] bg-[#1a1a1c] border border-white/10 rounded-xl shadow-xl overflow-hidden pointer-events-auto z-50 flex flex-col p-1"
+                >
+                   {['NextFlow-Video-Gen', 'NextFlow-Video-Pro', 'NextFlow-Fast-Sync'].map((model) => (
+                      <button 
+                         key={model}
+                         onClick={() => { setActiveModel(model); setIsModelDropdownOpen(false); }}
+                         className={`w-full text-left px-3 py-2 text-xs font-medium rounded-lg transition-colors ${activeModel === model ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-zinc-200'}`}
+                      >
+                         {model}
+                      </button>
+                   ))}
+                </motion.div>
+             )}
+          </AnimatePresence>
         </div>
       </div>
 
-      <div className="w-full max-w-5xl mx-auto flex flex-col items-center z-10 p-6">
+      <div className="w-full max-w-5xl mx-auto flex flex-col items-center z-10 p-6 pt-12">
         
         {/* Title Badge Section */}
         <motion.div 
