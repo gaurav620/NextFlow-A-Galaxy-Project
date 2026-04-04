@@ -1,6 +1,6 @@
 'use client';
 
-import { Handle, Position, NodeProps } from 'reactflow';
+import { Handle, Position, NodeProps } from '@xyflow/react';
 import { Copy, Check, Loader2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useWorkflowStore } from '@/store/workflowStore';

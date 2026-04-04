@@ -60,7 +60,7 @@
     "react-dom": "19.2.4",
     "react-hook-form": "^7.54.1",
     "react-resizable-panels": "^2.1.7",
-    "reactflow": "^11.11.4",
+    "@xyflow/react": "^12.4.2",
     "recharts": "2.15.0",
     "sharp": "^0.34.5",
     "sonner": "^1.7.1",

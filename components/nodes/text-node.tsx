@@ -1,6 +1,6 @@
 'use client';
 
-import { Handle, Position, NodeProps } from 'reactflow';
+import { Handle, Position, NodeProps } from '@xyflow/react';
 import { Type } from 'lucide-react';
 import { useState } from 'react';
 

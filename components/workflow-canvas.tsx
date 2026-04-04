@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react'
-import ReactFlow, {
+import {
+  ReactFlow,
   Background,
   BackgroundVariant,
   Controls,
@@ -12,8 +13,8 @@ import ReactFlow, {
   MarkerType,
   ReactFlowInstance,
   Connection,
-} from 'reactflow'
-import 'reactflow/dist/style.css'
+} from '@xyflow/react'
+import '@xyflow/react/dist/style.css'
 
 import TextNode from '@/components/nodes/text-node'
 import ImageUploadNode from '@/components/nodes/image-upload-node'
