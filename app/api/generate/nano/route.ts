@@ -29,14 +29,11 @@ export async function POST(req: NextRequest) {
     // Nano uses faster, lower-count batches
     const batchCount = Math.min(body.count, 4);
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-fast-generate-002:predict?key=${apiKey}`;
-
+    // Try Imagen 4 Fast (paid) first
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-fast-generate-001:predict?key=${apiKey}`;
     const payload = {
       instances: [{ prompt: body.prompt }],
-      parameters: {
-        sampleCount: batchCount,
-        aspectRatio: aspectMap[body.aspectRatio] ?? '1:1',
-      },
+      parameters: { sampleCount: batchCount, aspectRatio: aspectMap[body.aspectRatio] ?? '1:1' },
     };
 
     const response = await fetch(url, {
@@ -45,31 +42,27 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify(payload),
     });
 
-    if (!response.ok) {
-      // Fallback to standard Imagen if fast model unavailable
-      const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
-      const fallbackRes = await fetch(fallbackUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!fallbackRes.ok) {
-        const err = await fallbackRes.text();
-        return NextResponse.json({ error: 'Generation failed', detail: err }, { status: fallbackRes.status });
-      }
-      const fallbackData = await fallbackRes.json();
-      const images: string[] = (fallbackData.predictions ?? []).map((p: any) =>
+    if (response.ok) {
+      const data = await response.json();
+      const images: string[] = (data.predictions ?? []).map((p: any) =>
         `data:${p.mimeType ?? 'image/png'};base64,${p.bytesBase64Encoded}`
       );
-      return NextResponse.json({ success: true, images });
+      if (images.length > 0) return NextResponse.json({ success: true, images });
     }
 
-    const data = await response.json();
-    const images: string[] = (data.predictions ?? []).map((p: any) =>
-      `data:${p.mimeType ?? 'image/png'};base64,${p.bytesBase64Encoded}`
-    );
+    // Free fallback: Pollinations AI (Flux Turbo)
+    const dimMap: Record<string, { w: number; h: number }> = {
+      '1:1': { w: 512, h: 512 }, '16:9': { w: 768, h: 432 },
+      '9:16': { w: 432, h: 768 }, '4:3': { w: 640, h: 480 }, '3:2': { w: 640, h: 427 },
+    };
+    const { w, h } = dimMap[body.aspectRatio] ?? { w: 512, h: 512 };
+    const params = new URLSearchParams({ width: w.toString(), height: h.toString(), nologo: 'true', model: 'turbo', enhance: 'true' });
+    const images = Array.from({ length: batchCount }).map(() => {
+      const seed = Math.floor(Math.random() * 1000000);
+      return `https://image.pollinations.ai/prompt/${encodeURIComponent(body.prompt)}?${params}&seed=${seed}`;
+    });
 
-    return NextResponse.json({ success: true, images });
+    return NextResponse.json({ success: true, images, fallback: true });
   } catch (error: any) {
     console.error('Nano generate error:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
