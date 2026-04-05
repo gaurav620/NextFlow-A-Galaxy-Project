@@ -74,6 +74,7 @@ function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [featuresOpen, setFeaturesOpen] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -81,9 +82,20 @@ function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  const handleMouseEnter = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setFeaturesOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    timeoutRef.current = setTimeout(() => {
+      setFeaturesOpen(false);
+    }, 150);
+  };
+
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 font-sans border-b ${scrolled ? 'bg-black/90 backdrop-blur-xl border-white/5' : 'bg-transparent border-transparent'}`}>
-      <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="max-w-[1400px] mx-auto px-6 h-[72px] flex items-center justify-between">
         
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 flex-shrink-0">
@@ -94,96 +106,189 @@ function Navbar() {
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden lg:flex items-center gap-7">
-          <Link href="/dashboard" className="text-[13px] text-zinc-300 hover:text-white transition-colors">App</Link>
+        <nav className="hidden lg:flex items-center gap-6">
+          <Link href="/dashboard" className="text-[13px] font-medium text-zinc-300 hover:text-white transition-colors">App</Link>
           
           <div 
-            className="relative h-16 flex items-center"
-            onMouseEnter={() => setFeaturesOpen(true)}
-            onMouseLeave={() => setFeaturesOpen(false)}
+            className="relative h-[72px] flex items-center"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           >
-            <button className={`text-[13px] flex items-center gap-1 transition-colors ${featuresOpen ? 'text-white' : 'text-zinc-300 hover:text-white'}`}>
-              Features <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${featuresOpen ? 'rotate-180' : ''}`} />
+            <button 
+              onClick={() => setFeaturesOpen(!featuresOpen)}
+              className={`text-[13px] font-medium flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors ${featuresOpen ? 'bg-white/[0.08] text-white' : 'bg-transparent text-white hover:bg-white/5 hover:text-white'}`}>
+              Features <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 opacity-70 ${featuresOpen ? 'rotate-180' : ''}`} />
             </button>
 
             <AnimatePresence>
                 {featuresOpen && (
                     <motion.div 
-                        initial={{ opacity: 0, y: 15 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.98, y: 10 }}
+                        initial={{ opacity: 0, scale: 0.98, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.98, y: 5 }}
                         transition={{ duration: 0.15, ease: "easeOut" }}
-                        className="absolute top-[60px] left-1/2 -translate-x-[40%] w-[850px] bg-[#f8f8f8] rounded-[24px] shadow-2xl border border-black/5 p-8 flex gap-8 z-50 overflow-hidden"
+                        className="absolute top-[72px] left-1/2 -translate-x-[45%] w-[1000px] bg-white rounded-3xl shadow-[0_30px_60px_-15px_rgba(0,0,0,0.4)] border border-black/5 p-8 flex gap-10 z-[100]"
                     >
                         {/* Links Columns */}
-                        <div className="flex-1 grid grid-cols-3 gap-6">
+                        <div className="flex-[2] grid grid-cols-3 gap-8">
+                            
                             {/* Column 1: Generate */}
-                            <div>
-                                <h4 className="text-[12px] font-semibold text-zinc-400 mb-4 tracking-wide">Generate</h4>
-                                <div className="flex flex-col gap-5">
+                            <div className="flex flex-col">
+                                <h4 className="text-[14px] font-medium text-zinc-400 mb-6">Generate</h4>
+                                <div className="flex flex-col gap-6">
+                                    {/* AI Image Generation */}
                                     <div>
-                                        <div className="flex items-center gap-2 text-black mb-1 font-medium"><ImageIcon className="w-4 h-4"/> AI Image Generation</div>
-                                        <Link href="/dashboard/image" className="block text-[13px] text-zinc-500 hover:text-black py-1">Text to Image <ChevronRight className="w-3 h-3 inline"/></Link>
-                                        <Link href="/dashboard/realtime" className="block text-[13px] text-zinc-500 hover:text-black py-1">Realtime Image <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <div className="flex items-center gap-3 text-black mb-3 font-semibold text-[14px]">
+                                            <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center border border-zinc-200/60 shadow-sm">
+                                                <ImageIcon className="w-[15px] h-[15px] text-zinc-600"/>
+                                            </div>
+                                            AI Image Generation
+                                        </div>
+                                        <div className="flex flex-col gap-2 pl-[44px]">
+                                            <Link href="/dashboard/image" className="group flex items-center text-[13px] font-medium text-zinc-500 hover:text-black transition-colors">
+                                                Text to Image <ChevronRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all ml-1 text-zinc-400"/>
+                                            </Link>
+                                            <Link href="/dashboard/realtime" className="group flex items-center text-[13px] font-medium text-zinc-500 hover:text-black transition-colors">
+                                                Realtime Image Generation <ChevronRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all ml-1 text-zinc-400"/>
+                                            </Link>
+                                        </div>
                                     </div>
+                                    {/* AI Video Generation */}
                                     <div>
-                                        <div className="flex items-center gap-2 text-black mb-1 font-medium"><Video className="w-4 h-4"/> AI Video Generation</div>
-                                        <Link href="/dashboard/video" className="block text-[13px] text-zinc-500 hover:text-black py-1">Text to Video <ChevronRight className="w-3 h-3 inline"/></Link>
-                                        <Link href="/dashboard/motion" className="block text-[13px] text-zinc-500 hover:text-black py-1">Motion Transfer <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <div className="flex items-center gap-3 text-black mb-3 font-semibold text-[14px]">
+                                            <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center border border-zinc-200/60 shadow-sm">
+                                                <Video className="w-[15px] h-[15px] text-zinc-600"/>
+                                            </div>
+                                            AI Video Generation
+                                        </div>
+                                        <div className="flex flex-col gap-2 pl-[44px]">
+                                            <Link href="/dashboard/video" className="group flex items-center text-[13px] font-medium text-zinc-500 hover:text-black transition-colors">
+                                                Text to Video <ChevronRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all ml-1 text-zinc-400"/>
+                                            </Link>
+                                            <Link href="/dashboard/motion" className="group flex items-center text-[13px] font-medium text-zinc-500 hover:text-black transition-colors">
+                                                Motion Transfer <ChevronRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all ml-1 text-zinc-400"/>
+                                            </Link>
+                                        </div>
                                     </div>
+                                    {/* AI 3D Generation */}
                                     <div>
-                                        <div className="flex items-center gap-2 text-black mb-1 font-medium"><Box className="w-4 h-4"/> AI 3D Generation</div>
-                                        <Link href="/dashboard/3d" className="block text-[13px] text-zinc-500 hover:text-black py-1">Text to 3D Object <ChevronRight className="w-3 h-3 inline"/></Link>
-                                        <Link href="/dashboard/3d" className="block text-[13px] text-zinc-500 hover:text-black py-1">Image to 3D Object <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <div className="flex items-center gap-3 text-black mb-3 font-semibold text-[14px]">
+                                            <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center border border-zinc-200/60 shadow-sm">
+                                                <Box className="w-[15px] h-[15px] text-zinc-600"/>
+                                            </div>
+                                            AI 3D Generation
+                                        </div>
+                                        <div className="flex flex-col gap-2 pl-[44px]">
+                                            <Link href="/dashboard/3d" className="group flex items-center text-[13px] font-medium text-zinc-500 hover:text-black transition-colors">
+                                                Text to 3D Object <ChevronRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all ml-1 text-zinc-400"/>
+                                            </Link>
+                                            <Link href="/dashboard/3d" className="group flex items-center text-[13px] font-medium text-zinc-500 hover:text-black transition-colors">
+                                                Image to 3D Object <ChevronRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all ml-1 text-zinc-400"/>
+                                            </Link>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            
                             {/* Column 2: Edit */}
-                            <div>
-                                <h4 className="text-[12px] font-semibold text-zinc-400 mb-4 tracking-wide">Edit</h4>
-                                <div className="flex flex-col gap-5">
+                            <div className="flex flex-col">
+                                <h4 className="text-[14px] font-medium text-zinc-400 mb-6">Edit</h4>
+                                <div className="flex flex-col gap-6">
+                                    {/* AI Image Enhancements */}
                                     <div>
-                                        <div className="flex items-center gap-2 text-black mb-1 font-medium"><Sparkles className="w-4 h-4"/> AI Image Enhancements</div>
-                                        <Link href="/dashboard/enhancer" className="block text-[13px] text-zinc-500 hover:text-black py-1">Upscaling <ChevronRight className="w-3 h-3 inline"/></Link>
-                                        <Link href="/dashboard/edit" className="block text-[13px] text-zinc-500 hover:text-black py-1">Generative Image Editing <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <div className="flex items-center gap-3 text-black mb-3 font-semibold text-[14px]">
+                                            <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center border border-zinc-200/60 shadow-sm">
+                                                <Sparkles className="w-[15px] h-[15px] text-zinc-600"/>
+                                            </div>
+                                            AI Image Enhancements
+                                        </div>
+                                        <div className="flex flex-col gap-2 pl-[44px]">
+                                            <Link href="/dashboard/enhancer" className="group flex items-center text-[13px] font-medium text-zinc-500 hover:text-black transition-colors">
+                                                Upscaling <ChevronRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all ml-1 text-zinc-400"/>
+                                            </Link>
+                                            <Link href="/dashboard/edit" className="group flex items-center text-[13px] font-medium text-zinc-500 hover:text-black transition-colors">
+                                                Generative Image Editing <ChevronRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all ml-1 text-zinc-400"/>
+                                            </Link>
+                                        </div>
                                     </div>
+                                    {/* AI Video Enhancements */}
                                     <div>
-                                        <div className="flex items-center gap-2 text-black mb-1 font-medium"><MonitorPlay className="w-4 h-4"/> AI Video Enhancements</div>
-                                        <Link href="/dashboard/video-restyle" className="block text-[13px] text-zinc-500 hover:text-black py-1">Frame Interpolation <ChevronRight className="w-3 h-3 inline"/></Link>
-                                        <Link href="/dashboard/video-restyle" className="block text-[13px] text-zinc-500 hover:text-black py-1">Video Style Transfer <ChevronRight className="w-3 h-3 inline"/></Link>
-                                        <Link href="/dashboard/enhancer" className="block text-[13px] text-zinc-500 hover:text-black py-1">Video Upscaling <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <div className="flex items-center gap-3 text-black mb-3 font-semibold text-[14px]">
+                                            <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center border border-zinc-200/60 shadow-sm">
+                                                <MonitorPlay className="w-[15px] h-[15px] text-zinc-600"/>
+                                            </div>
+                                            AI Video Enhancements
+                                        </div>
+                                        <div className="flex flex-col gap-2 pl-[44px]">
+                                            <Link href="/dashboard/video-restyle" className="group flex items-center text-[13px] font-medium text-zinc-500 hover:text-black transition-colors">
+                                                Frame Interpolation <ChevronRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all ml-1 text-zinc-400"/>
+                                            </Link>
+                                            <Link href="/dashboard/video-restyle" className="group flex items-center text-[13px] font-medium text-zinc-500 hover:text-black transition-colors">
+                                                Video Style Transfer <ChevronRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all ml-1 text-zinc-400"/>
+                                            </Link>
+                                            <Link href="/dashboard/enhancer" className="group flex items-center text-[13px] font-medium text-zinc-500 hover:text-black transition-colors">
+                                                Video Upscaling <ChevronRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all ml-1 text-zinc-400"/>
+                                            </Link>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            
                             {/* Column 3: Customize */}
-                            <div>
-                                <h4 className="text-[12px] font-semibold text-zinc-400 mb-4 tracking-wide">Customize</h4>
-                                <div className="flex flex-col gap-5">
+                            <div className="flex flex-col">
+                                <h4 className="text-[14px] font-medium text-zinc-400 mb-6">Customize</h4>
+                                <div className="flex flex-col gap-6">
+                                    {/* AI Finetuning */}
                                     <div>
-                                        <div className="flex items-center gap-2 text-black mb-1 font-medium"><Settings2 className="w-4 h-4"/> AI Finetuning</div>
-                                        <Link href="/dashboard/train" className="block text-[13px] text-zinc-500 hover:text-black py-1">Image LoRA Finetuning <ChevronRight className="w-3 h-3 inline"/></Link>
-                                        <Link href="/dashboard/train" className="block text-[13px] text-zinc-500 hover:text-black py-1">Video LoRA Finetuning <ChevronRight className="w-3 h-3 inline"/></Link>
-                                        <Link href="/dashboard/train" className="block text-[13px] text-zinc-500 hover:text-black py-1">LoRA Sharing <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <div className="flex items-center gap-3 text-black mb-3 font-semibold text-[14px]">
+                                            <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center border border-zinc-200/60 shadow-sm">
+                                                <Settings2 className="w-[15px] h-[15px] text-zinc-600"/>
+                                            </div>
+                                            AI Finetuning
+                                        </div>
+                                        <div className="flex flex-col gap-2 pl-[44px]">
+                                            <Link href="/dashboard/train" className="group flex items-center text-[13px] font-medium text-zinc-500 hover:text-black transition-colors">
+                                                Image LoRA Finetuning <ChevronRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all ml-1 text-zinc-400"/>
+                                            </Link>
+                                            <Link href="/dashboard/train" className="group flex items-center text-[13px] font-medium text-zinc-500 hover:text-black transition-colors">
+                                                Video LoRA Finetuning <ChevronRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all ml-1 text-zinc-400"/>
+                                            </Link>
+                                            <Link href="/dashboard/train" className="group flex items-center text-[13px] font-medium text-zinc-500 hover:text-black transition-colors">
+                                                LoRA Sharing <ChevronRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all ml-1 text-zinc-400"/>
+                                            </Link>
+                                        </div>
                                     </div>
+                                    {/* File Management */}
                                     <div>
-                                        <div className="flex items-center gap-2 text-black mb-1 font-medium"><FileBox className="w-4 h-4"/> File Management</div>
-                                        <Link href="/dashboard/assets" className="block text-[13px] text-zinc-500 hover:text-black py-1">NextFlow Asset Manager <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <div className="flex items-center gap-3 text-black mb-3 font-semibold text-[14px]">
+                                            <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center border border-zinc-200/60 shadow-sm">
+                                                <FileBox className="w-[15px] h-[15px] text-zinc-600"/>
+                                            </div>
+                                            File Management
+                                        </div>
+                                        <div className="flex flex-col gap-2 pl-[44px]">
+                                            <Link href="/dashboard/assets" className="group flex items-center text-[13px] font-medium text-zinc-500 hover:text-black transition-colors">
+                                                Krea Asset Manager <ChevronRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all ml-1 text-zinc-400"/>
+                                            </Link>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
                         {/* Right Panel Card */}
-                        <div className="w-[320px] rounded-2xl overflow-hidden relative group cursor-pointer bg-black flex-shrink-0 shadow-xl">
+                        <div className="w-[340px] rounded-[16px] overflow-hidden relative group cursor-pointer bg-[#0A0A0A] shrink-0 h-[430px] border border-black/80">
                             <img src="https://images.unsplash.com/photo-1542596594-649edbc13630?q=80&w=800&auto=format&fit=crop" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80" alt="card" />
-                            <div className="absolute top-4 left-4 flex items-center gap-2">
-                                <div className="w-5 h-5 rounded bg-white flex items-center justify-center"><span className="text-black font-extrabold text-[11px] font-sans tracking-tighter">N</span></div>
-                                <span className="text-white font-bold text-sm drop-shadow-md">NextFlow 1</span>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/30" />
+                            
+                            <div className="absolute top-5 left-5 flex items-center gap-2">
+                                <span className="text-white font-bold text-sm tracking-wide flex items-center gap-2"><div className="w-4 h-4 rounded bg-white flex items-center justify-center"><span className="text-black font-extrabold text-[10px] tracking-tighter">N</span></div> NextFlow 1</span>
                             </div>
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                            
                             <div className="absolute bottom-6 left-6 right-6">
-                                <p className="text-[10px] text-white/50 font-semibold tracking-wider mb-1 uppercase">Prompt</p>
-                                <p className="text-white font-serif text-[18px] leading-tight mb-4">"Cinematic photo of a person in a linen jacket"</p>
-                                <Link href="/dashboard" className="inline-flex px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md rounded-lg text-white text-xs font-semibold transition-colors">
+                                <p className="text-[10px] text-white/50 font-bold tracking-[0.15em] mb-3 uppercase">Prompt</p>
+                                <p className="text-white font-medium text-[20px] leading-tight mb-5 drop-shadow-sm">“Cinematic photo of a person in a linen jacket”</p>
+                                <Link href="/dashboard/image" className="inline-flex px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/10 backdrop-blur-md rounded-lg text-white text-[13px] font-semibold transition-colors">
                                     Generate image
                                 </Link>
                             </div>
@@ -193,24 +298,25 @@ function Navbar() {
             </AnimatePresence>
           </div>
 
-          <Link href="/dashboard/image" className="text-[13px] text-zinc-300 hover:text-white transition-colors">Image Generator</Link>
-          <Link href="/dashboard/video" className="text-[13px] text-zinc-300 hover:text-white transition-colors">Video Generator</Link>
-          <Link href="/dashboard/enhancer" className="text-[13px] text-zinc-300 hover:text-white transition-colors">Upscaler</Link>
-          <Link href="/dashboard/pricing" className="text-[13px] text-zinc-300 hover:text-white transition-colors">Pricing</Link>
-          <Link href="#" className="text-[13px] text-zinc-300 hover:text-white transition-colors">Enterprise</Link>
+          <Link href="/dashboard/image" className="text-[13px] font-medium text-zinc-300 hover:text-white transition-colors">Image Generator</Link>
+          <Link href="/dashboard/video" className="text-[13px] font-medium text-zinc-300 hover:text-white transition-colors">Video Generator</Link>
+          <Link href="/dashboard/enhancer" className="text-[13px] font-medium text-zinc-300 hover:text-white transition-colors">Upscaler</Link>
+          <Link href="/dashboard/workflows" className="text-[13px] font-medium text-zinc-300 hover:text-white transition-colors">API</Link>
+          <Link href="/dashboard/pricing" className="text-[13px] font-medium text-zinc-300 hover:text-white transition-colors">Pricing</Link>
+          <Link href="#" className="text-[13px] font-medium text-zinc-300 hover:text-white transition-colors">Enterprise</Link>
         </nav>
 
         {/* CTA Buttons */}
-        <div className="hidden lg:flex items-center gap-3">
+        <div className="hidden lg:flex items-center gap-4">
           <Link
             href="/sign-up"
-            className="px-4 py-1.5 text-[13px] font-medium text-white bg-white/10 border border-white/10 hover:bg-white/20 rounded-full transition-colors"
+            className="px-4 py-2 text-[13px] font-bold text-white bg-white/10 border border-white/10 hover:bg-white/20 rounded-full transition-colors"
           >
             Sign up for free
           </Link>
           <Link
             href="/dashboard"
-            className="px-4 py-1.5 text-[13px] font-medium text-black bg-white hover:bg-zinc-200 rounded-full transition-colors"
+            className="px-4 py-2 text-[13px] font-bold text-black bg-white hover:bg-zinc-200 rounded-full transition-colors"
           >
             Log in
           </Link>
