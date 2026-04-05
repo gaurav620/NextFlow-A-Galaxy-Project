@@ -1,8 +1,64 @@
+'use client';
+
 import Link from 'next/link';
+import { useState } from 'react';
+import Script from 'next/script';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function Pricing() {
+    const [loadingPack, setLoadingPack] = useState<string | null>(null);
+
+    const handlePayment = async (amount: number, packName: string) => {
+        setLoadingPack(packName);
+        try {
+            const response = await fetch('/api/razorpay/create-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount, packName })
+            });
+            const data = await response.json();
+            
+            if (!data.success) {
+                toast.error(data.error || 'Failed to create order');
+                setLoadingPack(null);
+                return;
+            }
+
+            const options = {
+                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                amount: data.order.amount,
+                currency: data.order.currency,
+                name: 'NextFlow',
+                description: `Purchase ${packName}`,
+                order_id: data.order.id,
+                theme: { color: '#000000' },
+                handler: function (response: any) {
+                    toast.success(`${packName} purchased successfully!`);
+                    console.log('Payment success', response);
+                },
+                modal: {
+                    ondismiss: function () {
+                        setLoadingPack(null);
+                    }
+                }
+            };
+            
+            const rzp = new (window as any).Razorpay(options);
+            rzp.on('payment.failed', function (response: any) {
+                toast.error('Payment failed: ' + response.error.description);
+            });
+            rzp.open();
+
+        } catch (error) {
+            toast.error('Payment initialization failed');
+            setLoadingPack(null);
+        }
+    };
+
     return (
         <section className="bg-black pt-32 pb-40 px-6 font-sans">
+            <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
             <div className="max-w-[1400px] mx-auto text-center">
                 <h2 className="text-[clamp(36px,5vw,64px)] font-bold tracking-tight leading-[1.05] text-white max-w-4xl mx-auto mb-20 text-balance">
                     Trusted by over 30,000,000 users. From 191 countries. We've got a plan for everybody.
@@ -18,7 +74,13 @@ export function Pricing() {
                         <div className="flex items-end gap-1 mb-8">
                             <span className="text-[40px] font-black text-white leading-none">US$10</span>
                         </div>
-                        <Link href="/sign-up" className="w-full py-3.5 bg-zinc-800 text-white font-semibold text-center rounded-xl hover:bg-zinc-700 transition">Buy now</Link>
+                        <button 
+                            disabled={loadingPack === 'Basic Pack'}
+                            onClick={() => handlePayment(10, 'Basic Pack')}
+                            className="w-full flex justify-center items-center py-3.5 bg-zinc-800 text-white font-semibold text-center rounded-xl hover:bg-zinc-700 transition disabled:opacity-50"
+                        >
+                            {loadingPack === 'Basic Pack' ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Buy now'}
+                        </button>
                         <p className="text-sm text-zinc-300 font-bold mt-6">+ 20,000 compute units</p>
                         <p className="text-xs text-zinc-500 font-medium mt-1">Never expires</p>
                     </div>
@@ -31,7 +93,13 @@ export function Pricing() {
                         <div className="flex items-end gap-1 mb-8">
                             <span className="text-[40px] font-black text-white leading-none">US$25</span>
                         </div>
-                        <Link href="/sign-up" className="w-full py-3.5 bg-zinc-800 text-white font-semibold text-center rounded-xl hover:bg-zinc-700 transition">Buy now</Link>
+                        <button 
+                            disabled={loadingPack === 'Creator Pack'}
+                            onClick={() => handlePayment(25, 'Creator Pack')}
+                            className="w-full flex justify-center items-center py-3.5 bg-zinc-800 text-white font-semibold text-center rounded-xl hover:bg-zinc-700 transition disabled:opacity-50"
+                        >
+                            {loadingPack === 'Creator Pack' ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Buy now'}
+                        </button>
                         <p className="text-sm text-zinc-300 font-bold mt-6">+ 60,000 compute units</p>
                         <p className="text-xs text-zinc-500 font-medium mt-1">Never expires</p>
                     </div>
@@ -45,7 +113,13 @@ export function Pricing() {
                         <div className="flex items-end gap-1 mb-8">
                             <span className="text-[40px] font-black text-white leading-none">US$70</span>
                         </div>
-                        <Link href="/sign-up" className="w-full py-3.5 bg-white text-black font-semibold text-center rounded-xl hover:bg-zinc-200 transition">Buy now</Link>
+                        <button 
+                            disabled={loadingPack === 'Pro Pack'}
+                            onClick={() => handlePayment(70, 'Pro Pack')}
+                            className="w-full flex justify-center items-center py-3.5 bg-white text-black font-semibold text-center rounded-xl hover:bg-zinc-200 transition disabled:opacity-50"
+                        >
+                            {loadingPack === 'Pro Pack' ? <Loader2 className="w-5 h-5 animate-spin text-black" /> : 'Buy now'}
+                        </button>
                         <p className="text-sm text-zinc-300 font-bold mt-6">+ 200,000 compute units</p>
                         <p className="text-xs text-zinc-500 font-medium mt-1">Never expires</p>
                     </div>
@@ -58,7 +132,13 @@ export function Pricing() {
                         <div className="flex items-end gap-1 mb-8">
                             <span className="text-[40px] font-black text-white leading-none">US$180</span>
                         </div>
-                        <Link href="/sign-up" className="w-full py-3.5 bg-zinc-800 text-white font-semibold text-center rounded-xl hover:bg-zinc-700 transition">Buy now</Link>
+                        <button 
+                            disabled={loadingPack === 'Studio Pack'}
+                            onClick={() => handlePayment(180, 'Studio Pack')}
+                            className="w-full flex justify-center items-center py-3.5 bg-zinc-800 text-white font-semibold text-center rounded-xl hover:bg-zinc-700 transition disabled:opacity-50"
+                        >
+                            {loadingPack === 'Studio Pack' ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Buy now'}
+                        </button>
                         <p className="text-sm text-zinc-300 font-bold mt-6">+ 600,000 compute units</p>
                         <p className="text-xs text-zinc-500 font-medium mt-1">Never expires</p>
                     </div>
