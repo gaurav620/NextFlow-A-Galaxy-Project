@@ -156,7 +156,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
 
           <AnimatePresence>
-            {!isCollapsed && showMoreTools && (
+            {showMoreTools && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
@@ -165,30 +165,43 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               >
                 {moreTools.map((item) => {
                   const Icon = item.icon;
+                  const active = isActive(item.href);
                   return (
-                    <Link
-                      key={item.label}
-                      href={item.href}
-                      className="flex items-center w-full h-10 px-3 rounded-lg gap-3 text-zinc-400 hover:text-white hover:bg-white/[0.04] transition-all duration-200"
-                    >
-                      <Icon className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={2} />
-                      <span className="text-[13.5px] font-medium tracking-wide">{item.label}</span>
-                    </Link>
+                    <div key={item.label} className="relative group w-full">
+                      <Link
+                        href={item.href}
+                        className={`flex items-center transition-all duration-200 ${
+                          isCollapsed 
+                            ? `w-[38px] h-[38px] rounded-xl justify-center ${active ? 'bg-[#1C1C1C] text-white shadow-inner' : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'}`
+                            : `w-full h-10 px-3 rounded-lg gap-3 ${active ? 'bg-[#1C1C1C] text-white shadow-inner' : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'}`
+                        }`}
+                      >
+                        <Icon className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={active ? 2.5 : 2} />
+                        {!isCollapsed && <span className="text-[13.5px] font-medium tracking-wide">{item.label}</span>}
+                      </Link>
+                      {isCollapsed && (
+                        <div className="fixed left-[64px] px-3 py-1.5 bg-[#1e1e1e] border border-white/10 text-white text-[12px] font-medium rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-[100] shadow-xl whitespace-nowrap">
+                          {item.label}
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </motion.div>
             )}
           </AnimatePresence>
 
-          {!isCollapsed && (
-             <button
-                onClick={() => setShowMoreTools(!showMoreTools)}
-                className="flex items-center w-full h-10 px-3 rounded-lg gap-3 text-zinc-500 hover:text-zinc-300 transition-colors mt-1"
-             >
-                <MoreHorizontal className="w-[18px] h-[18px] flex-shrink-0" />
-                <span className="text-[13.5px] font-medium">{showMoreTools ? 'Less' : 'More'}</span>
-             </button>
-          )}
+          <button
+            onClick={() => setShowMoreTools(!showMoreTools)}
+            className={`flex items-center transition-all duration-200 ${
+              isCollapsed 
+                ? 'w-[38px] h-[38px] rounded-xl justify-center text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.04]'
+                : 'w-full h-10 px-3 rounded-lg gap-3 text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.04] mt-1'
+            }`}
+          >
+            <MoreHorizontal className="w-[18px] h-[18px] flex-shrink-0" />
+            {!isCollapsed && <span className="text-[13.5px] font-medium">{showMoreTools ? 'Less' : 'More'}</span>}
+          </button>
         </nav>
       </div>
 
