@@ -138,7 +138,7 @@ const hoverSpring = {
 function ModelCard({ model, hasGenBtn, toolHref }: { model: Model; hasGenBtn?: boolean; toolHref?: string }) {
   return (
     <motion.div whileHover={hoverSpring}>
-      <Link href={toolHref || '/dashboard/image'} className="block bg-[#111] rounded-2xl overflow-hidden border border-white/[0.05] hover:border-white/[0.12] transition-colors duration-300 cursor-pointer group flex-shrink-0 shadow-xl">
+      <Link href={toolHref || '/dashboard/image'} className="block bg-[#111] rounded-[16px] overflow-hidden border border-white/[0.04] hover:border-white/[0.12] transition-all duration-300 cursor-pointer group flex-shrink-0 shadow-lg">
         {/* Thumbnail */}
         <div className="relative overflow-hidden" style={{ aspectRatio: '3/2' }}>
           <img
@@ -219,89 +219,50 @@ function SectionHeader({ title, hasSearch, onScrollLeft, onScrollRight }: {
 }
 
 /* ─── HERO BANNER ─────────────────────────────────────────── */
-function HeroBanner() {
+function BentoGridHero() {
   return (
-    <motion.div
-      variants={itemVariants}
-      className="relative w-full overflow-hidden rounded-[24px]"
-      style={{
-        height: 420,
-        background: 'linear-gradient(160deg, #111827 0%, #0c1220 25%, #080b15 60%, #030406 100%)',
-        border: '1px solid rgba(255,255,255,0.03)'
-      }}
-    >
-      {/* Animated gradient orbs */}
-      <div className="absolute inset-0 overflow-hidden">
-        <motion.div
-          animate={{ x: [0, 20, 0], y: [0, -20, 0] }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -top-24 -left-24 w-[420px] h-[420px] rounded-full opacity-30"
-          style={{ background: 'radial-gradient(circle, #3b82f6 0%, transparent 65%)', filter: 'blur(50px)' }}
-        />
-        <motion.div
-          animate={{ x: [0, -30, 0], y: [0, 30, 0] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -top-10 right-0 w-[340px] h-[340px] rounded-full opacity-25"
-          style={{ background: 'radial-gradient(circle, #8b5cf6 0%, transparent 65%)', filter: 'blur(60px)' }}
-        />
-        <motion.div
-           animate={{ scale: [1, 1.1, 1] }}
-           transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute bottom-0 left-1/4 w-[500px] h-48 opacity-20"
-          style={{ background: 'radial-gradient(ellipse, #3b82f6 0%, transparent 70%)', filter: 'blur(40px)' }}
-        />
-      </div>
+    <motion.section variants={itemVariants} className="grid grid-cols-1 md:grid-cols-12 gap-4">
+      {/* Large Featured Card (Video) */}
+      <Link href="/dashboard/video" className="md:col-span-8 group relative rounded-[16px] overflow-hidden border border-white/[0.05] shadow-xl block cursor-pointer transition-all hover:border-white/[0.15]" style={{ minHeight: '400px' }}>
+        <img src="/v-kling.png" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+        <div className="absolute bottom-6 left-6 flex flex-col gap-2 z-10">
+          <div className="flex items-center gap-2 mb-1">
+             <div className="bg-white/10 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/10 flex flex-center">
+                <span className="text-white text-[10px] font-bold tracking-widest uppercase">Video</span>
+             </div>
+             <span className="bg-orange-500/20 text-orange-300 border border-orange-500/30 px-2.5 py-1 rounded-md text-[10px] font-bold tracking-widest uppercase flex items-center gap-1.5"><Sparkles className="w-3 h-3"/> New</span>
+          </div>
+          <h2 className="text-white text-[32px] md:text-[40px] font-black tracking-tight leading-tight">NextFlow Video is here</h2>
+          <p className="text-zinc-300 text-[14px] font-medium max-w-md mt-1">The most advanced frontier model with native audio. Try the world-class video generation now.</p>
+        </div>
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+      </Link>
 
-      {/* Noise texture overlay */}
-      <div className="absolute inset-0 opacity-[0.03]"
-        style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }}
-      />
-
-      {/* Content */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-8">
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="text-white text-[42px] md:text-[52px] font-black tracking-tight text-center leading-tight max-w-3xl"
-          style={{ textShadow: '0 4px 40px rgba(59,130,246,0.3)' }}
-        >
-          Build and execute AI workflows seamlessly
-        </motion.h1>
-        
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="flex items-center gap-4"
-        >
-          <Link
-            href="/dashboard/workflows"
-            className="flex items-center gap-2.5 px-9 py-3.5 bg-white text-black text-[14px] font-bold rounded-full hover:bg-zinc-100 transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-white/10"
-          >
-            Open Node Canvas
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-          <Link
-            href="/dashboard/video"
-            className="flex items-center gap-2.5 px-9 py-3.5 bg-transparent text-white text-[14px] font-semibold rounded-full border border-white/20 hover:bg-white/10 hover:border-white/40 transition-all hover:scale-105 active:scale-95"
-          >
-            Generate Video
-            <Play className="w-4 h-4" />
-          </Link>
-        </motion.div>
+      {/* Right Column Stack */}
+      <div className="md:col-span-4 flex flex-col gap-4">
+        {/* Upscale Card */}
+        <Link href="/dashboard/enhancer" className="flex-1 group relative rounded-[16px] overflow-hidden border border-white/[0.05] shadow-xl block cursor-pointer transition-all hover:border-white/[0.15]">
+          <img src="/m-flux2.png" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
+          <div className="absolute bottom-5 left-5 z-10">
+            <h3 className="text-white text-[18px] font-bold tracking-tight mb-1">Enhance & Upscale</h3>
+            <p className="text-zinc-400 text-[13px] font-medium">Crystal clear clarity in seconds</p>
+          </div>
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+        </Link>
+        {/* Realtime Card */}
+        <Link href="/dashboard/realtime" className="flex-1 group relative rounded-[16px] overflow-hidden border border-white/[0.05] shadow-xl block cursor-pointer transition-all hover:border-white/[0.15]">
+          <img src="/bento-eye.png" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 grayscale opacity-80" />
+           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+          <div className="absolute bottom-5 left-5 z-10">
+            <h3 className="text-white text-[18px] font-bold tracking-tight mb-1 flex gap-2 items-center"><Zap className="w-4 h-4 fill-yellow-400 text-yellow-400"/> Realtime</h3>
+            <p className="text-zinc-400 text-[13px] font-medium">Draw and generate live</p>
+          </div>
+           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+        </Link>
       </div>
-
-      {/* Navigation arrows */}
-      <div className="absolute top-4 right-4 flex gap-2">
-        <button className="w-8 h-8 rounded-full bg-white/5 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/10 transition-colors border border-white/10">
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <button className="w-8 h-8 rounded-full bg-white/5 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/10 transition-colors border border-white/10">
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-    </motion.div>
+    </motion.section>
   );
 }
 
@@ -318,7 +279,7 @@ export default function DashboardHome() {
   return (
     <div
       className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden scroll-smooth"
-      style={{ background: '#0A0A0A' }}
+      style={{ background: '#000000' }}
     >
       <motion.div 
         variants={containerVariants}
@@ -328,44 +289,7 @@ export default function DashboardHome() {
       >
 
         {/* ── HERO BANNER ──────────────────────────────────────── */}
-        <HeroBanner />
-
-        {/* ── QUICK ACTIONS ───────────────────────────────────── */}
-        <motion.section variants={itemVariants}>
-          <div className="grid grid-cols-4 gap-5">
-            {quickActions.map((action) => (
-              <motion.div whileHover={hoverSpring} key={action.label}>
-                <Link
-                  href={action.href}
-                  className="group relative flex flex-col gap-0 cursor-pointer"
-                >
-                  {/* Image Card */}
-                  <div className="relative overflow-hidden rounded-[20px] w-full border border-white/[0.04] group-hover:border-white/[0.1] shadow-2xl transition-all" style={{ aspectRatio: '1/1' }}>
-                    <img
-                      src={action.image}
-                      alt={action.label}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                    />
-                    {/* overlay */}
-                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-500" />
-                    {/* Icon badge */}
-                    <div
-                      className="absolute top-4 right-4 w-9 h-9 rounded-xl flex items-center justify-center text-[16px] backdrop-blur-xl border border-white/10 shadow-lg"
-                      style={{ background: 'rgba(0,0,0,0.6)' }}
-                    >
-                      {action.icon}
-                    </div>
-                  </div>
-                  {/* Label BELOW card, outside */}
-                  <div className="mt-3.5 px-1 flex items-center justify-between">
-                    <p className="text-zinc-300 text-[14px] font-semibold group-hover:text-white transition-colors tracking-tight">{action.label}</p>
-                    <ArrowUpRight className="w-4 h-4 text-zinc-600 group-hover:text-white transition-colors opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0" />
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </motion.section>
+        <BentoGridHero />
 
         {/* ── UPGRADE BANNER ──────────────────────────────────── */}
         <motion.div

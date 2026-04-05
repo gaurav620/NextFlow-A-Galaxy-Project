@@ -77,7 +77,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const SidebarContent = () => (
-    <div className={`h-full flex flex-col pt-3 pb-5 bg-[#0A0A0A] z-[60] transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[64px] items-center px-1' : 'w-[240px] px-3'}`}>
+    <div className={`h-full flex flex-col pt-3 pb-5 bg-[#09090B] z-[60] transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[64px] items-center px-1' : 'w-[240px] px-3'}`}>
       
       {/* Top Toggle Button */}
       <div className={`flex items-center mb-6 mt-1 ${isCollapsed ? 'justify-center w-full' : 'px-3'}`}>
@@ -304,10 +304,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   );
 
   return (
-    <div className="flex w-screen h-screen bg-[#0A0A0A] overflow-hidden font-sans">
+    <div className="flex w-screen h-screen bg-[#000000] overflow-hidden font-sans">
       
       {/* ── DESKTOP SIDEBAR ── */}
-      <div className="hidden md:flex h-full border-r border-white/[0.08] shadow-2xl z-[60]">
+      <div className="hidden md:flex h-full border-r border-white/[0.03] shadow-2xl z-[60]">
          <SidebarContent />
       </div>
 
@@ -349,7 +349,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       {/* ── MAIN CONTENT ── */}
-      <div className="flex-1 w-full h-full relative overflow-y-auto bg-[#0A0A0A] md:pt-0 pt-14 flex flex-col">
+      <div className="flex-1 w-full h-full relative overflow-y-auto bg-[#000000] md:pt-0 pt-14 flex flex-col">
         {children}
       </div>
       
