@@ -8,25 +8,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: 'NextFlow — AI Workflow Builder',
-  description: 'Build powerful AI pipelines visually. Connect LLM nodes, process images, and automate workflows with drag and drop.',
-  generator: 'v0.app',
-  icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
-  },
+  description: 'NextFlow is the most powerful creative AI suite. Generate, enhance, and edit images, videos, or 3D meshes for free with AI.',
 }
 
 export default function RootLayout({
