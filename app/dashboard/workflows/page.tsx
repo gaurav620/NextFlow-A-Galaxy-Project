@@ -63,13 +63,62 @@ export default function WorkflowsPage() {
   const handleCreateWorkflow = async (name: string = 'Untitled Workflow') => {
     if (isCreating) return;
     setIsCreating(true);
+
+    let initialNodes: any[] = [];
+    let initialEdges: any[] = [];
+
+    // Utility to generate compact valid IDs
+    const n1 = "node_" + Math.random().toString(36).substring(2, 9);
+    const n2 = "node_" + Math.random().toString(36).substring(2, 9);
+    const n3 = "node_" + Math.random().toString(36).substring(2, 9);
+
+    if (name === 'Studio Product Shot' || name === 'B&W Fashion Portrait') {
+       initialNodes = [
+         { id: n1, type: 'imageUploadNode', position: { x: 100, y: 200 }, data: { label: 'Source Image' } },
+         { id: n2, type: 'llmNode', position: { x: 450, y: 200 }, data: { label: 'Prompt Generator', systemPrompt: name === 'Studio Product Shot' ? 'Describe a brilliant professional studio lighting setup for the provided object.' : 'Describe a moody, highly fashionable black and white portrait setup.' } },
+         { id: n3, type: 'imageGenNode', position: { x: 850, y: 200 }, data: { label: 'Final Output' } }
+       ];
+       initialEdges = [
+         { id: `edge_${n1}_${n2}`, source: n1, target: n2, sourceHandle: 'output', targetHandle: 'images', animated: true, style: { stroke: '#a855f7', strokeWidth: 2 } },
+         { id: `edge_${n2}_${n3}`, source: n2, target: n3, sourceHandle: 'output', targetHandle: 'prompt', animated: true, style: { stroke: '#0ea5e9', strokeWidth: 2 } }
+       ];
+    } else if (name === 'Multi-LoRA Chaining' || name === 'Anime Character') {
+       initialNodes = [
+         { id: n1, type: 'textNode', position: { x: 100, y: 200 }, data: { label: 'Subject Prompt', content: 'A brave adventurer looking into the distance' } },
+         { id: n2, type: 'textNode', position: { x: 100, y: 350 }, data: { label: 'Style Prompt', content: '1990s anime style, studio ghibli, high quality' } },
+         { id: n3, type: 'llmNode', position: { x: 400, y: 250 }, data: { label: 'Prompt Merger', systemPrompt: 'Combine the subject and style into a single high quality image generation prompt without adding unnecessary words.' } },
+         { id: "node_gen", type: 'imageGenNode', position: { x: 750, y: 250 }, data: { label: 'Anime Output' } }
+       ];
+       initialEdges = [
+         { id: `edge_${n1}_${n3}`, source: n1, target: n3, sourceHandle: 'output', targetHandle: 'user_message', animated: true, style: { stroke: '#a855f7', strokeWidth: 2 } },
+         { id: `edge_${n2}_${n3}`, source: n2, target: n3, sourceHandle: 'output', targetHandle: 'system_prompt', animated: true, style: { stroke: '#a855f7', strokeWidth: 2 } },
+         { id: `edge_${n3}_node_gen`, source: n3, target: "node_gen", sourceHandle: 'output', targetHandle: 'prompt', animated: true, style: { stroke: '#0ea5e9', strokeWidth: 2 } }
+       ];
+    } else if (name === 'Video Interpolation Flow' || name === 'Extract') {
+       initialNodes = [
+         { id: n1, type: 'videoUploadNode', position: { x: 100, y: 150 }, data: { label: 'Source Video' } },
+         { id: n2, type: 'extractFrameNode', position: { x: 450, y: 150 }, data: { label: 'Frame Extractor', timestamp: 0 } },
+       ];
+       initialEdges = [
+         { id: `edge_${n1}_${n2}`, source: n1, target: n2, sourceHandle: 'output', targetHandle: 'video_url', animated: true, style: { stroke: '#eab308', strokeWidth: 2 } },
+       ];
+    } else if (name !== 'Untitled Workflow') { // Fallback generic text to image for templates
+       initialNodes = [
+         { id: n1, type: 'textNode', position: { x: 200, y: 250 }, data: { content: `${name} aesthetic design` } },
+         { id: n2, type: 'imageGenNode', position: { x: 600, y: 250 }, data: { label: 'Generation' } }
+       ];
+       initialEdges = [
+         { id: `edge_${n1}_${n2}`, source: n1, target: n2, sourceHandle: 'output', targetHandle: 'prompt', animated: true, style: { stroke: '#0ea5e9', strokeWidth: 2 } }
+       ];
+    }
+
     try {
       const res = await fetch('/api/workflow', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name,
-          data: { nodes: [], edges: [] }
+          data: { nodes: initialNodes, edges: initialEdges }
         })
       });
       const data = await res.json();

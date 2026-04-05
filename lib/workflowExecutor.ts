@@ -145,6 +145,25 @@ export async function executeWorkflow(
             if (!data) throw new Error('Invalid JSON response from Extract API')
             if (!data.success) throw new Error(data.error || 'Extract failed')
             output = data.output
+          } else if (node.type === 'imageGenNode') {
+            const promptSourceId = getConnectedSourceNode(node.id, 'prompt', edges)
+            const promptValue = promptSourceId ? String(results.get(promptSourceId) || '') : node.data.prompt
+            
+            if (!promptValue) throw new Error('Prompt is required for Image Generation')
+
+            const res = await fetch('/api/generate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                prompt: promptValue,
+                model: 'fal-ai/flux/schnell' // Using the default from your api/generate
+              }),
+            })
+            if (!res.ok) throw new Error(`API Error: ${res.statusText}`)
+            const data = await res.json().catch(() => null)
+            if (!data) throw new Error('Invalid JSON response from Generation API')
+            if (!data.success) throw new Error(data.error || 'Image generation failed')
+            output = data.imageUrl
           }
 
           results.set(node.id, output)

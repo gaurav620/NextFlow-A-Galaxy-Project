@@ -22,6 +22,7 @@ import VideoUploadNode from '@/components/nodes/video-upload-node'
 import LLMNode from '@/components/nodes/llm-node'
 import CropImageNode from '@/components/nodes/crop-image-node'
 import ExtractFrameNode from '@/components/nodes/extract-frame-node'
+import ImageGenNode from '@/components/nodes/image-gen-node'
 import HistorySidebar from '@/components/history-sidebar'
 import { useWorkflowStore } from '@/store/workflowStore'
 import { executeWorkflow } from '@/lib/workflowExecutor'
@@ -58,6 +59,7 @@ const nodeTypes = {
   llmNode: LLMNode,
   cropImageNode: CropImageNode,
   extractFrameNode: ExtractFrameNode,
+  imageGenNode: ImageGenNode,
 }
 
 const nodeDefinitions = [
@@ -65,6 +67,7 @@ const nodeDefinitions = [
   { type: 'imageUploadNode', label: 'Upload Image', color: '#22c55e' },
   { type: 'videoUploadNode', label: 'Upload Video', color: '#f97316' },
   { type: 'llmNode', label: 'Run LLM', color: '#a855f7' },
+  { type: 'imageGenNode', label: 'Image Gen', color: '#0ea5e9' },
   { type: 'cropImageNode', label: 'Crop Image', color: '#ec4899' },
   { type: 'extractFrameNode', label: 'Extract Frame', color: '#eab308' },
 ]
