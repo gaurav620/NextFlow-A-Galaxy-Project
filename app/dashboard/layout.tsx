@@ -235,45 +235,53 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="mt-auto flex flex-col w-full relative z-50">
         
         {!isCollapsed && (
-          <div className="px-3 mb-4 mt-8 flex flex-col gap-3">
-             <div className="flex flex-col gap-1">
-                <span className="text-[11px] font-semibold text-zinc-600 uppercase tracking-widest">Sessions</span>
-                <span className="text-[13px] text-zinc-400 mt-2">Earn 3,000 Credits</span>
+          <div className="px-5 mb-2 mt-4 flex flex-col">
+             <div className="flex flex-col mb-4">
+                <span className="text-[13px] font-semibold text-zinc-600 mb-2 mt-4 tracking-tight">Sessions</span>
              </div>
-             <button className="w-full relative py-2.5 rounded-lg overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 opacity-90 group-hover:opacity-100 transition-opacity"></div>
-                <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-white/20 to-transparent"></div>
-                <span className="relative z-10 text-[13.5px] font-bold text-white tracking-wide">Upgrade</span>
-             </button>
+             
+             {/* Bottom Links */}
+             <div className="flex flex-col gap-3 mt-4">
+               <Link href="/dashboard/pricing" className="text-[13px] text-white hover:text-zinc-300 font-medium transition-colors w-max tracking-tight">
+                  Earn 3,000 Credits
+               </Link>
+               <Link href="/dashboard/pricing" className="w-full relative py-[10px] rounded-[10px] overflow-hidden group shadow-[0_4px_16px_rgba(0,85,255,0.2)] block active:scale-[0.98] transition-transform">
+                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-400 via-blue-600 to-blue-700 opacity-90 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="absolute top-0 inset-x-0 h-[1px] bg-white/40"></div>
+                  <span className="relative z-10 text-[14px] font-medium text-white tracking-wide text-center flex justify-center w-full drop-shadow-md">
+                    Upgrade
+                  </span>
+               </Link>
+             </div>
           </div>
         )}
 
         {/* Profile */}
-        <div className={`mt-2 mb-2 ${isCollapsed ? 'flex justify-center' : 'px-3'}`}>
+        <div className={`mt-2 mb-3 ${isCollapsed ? 'flex justify-center' : 'px-4'}`}>
           <button 
             onClick={() => setProfileOpen(!profileOpen)}
-            className={`flex items-center relative gap-3 rounded-xl hover:bg-white/[0.04] transition-colors ${
-               isCollapsed ? 'w-[38px] h-[38px] justify-center' : 'w-full p-2 justify-between'
+            className={`flex items-center relative gap-3 rounded-[12px] hover:bg-white/[0.04] transition-colors ${
+               isCollapsed ? 'w-[38px] h-[38px] justify-center' : 'w-full p-1.5 justify-between'
             }`}
           >
             <div className="flex items-center gap-3 overflow-hidden">
-               <div className="w-[30px] h-[30px] flex-shrink-0 rounded-full bg-zinc-800 flex items-center justify-center text-white border border-white/10 shadow-sm">
-                 <span className="text-[12px] font-bold">
-                   {user?.firstName ? user.firstName[0].toUpperCase() : 'N'}
+               <div className="w-[34px] h-[34px] flex-shrink-0 rounded-[8px] bg-[#222222] flex items-center justify-center text-[#cccccc]">
+                 <span className="text-[14px] font-medium">
+                   {user?.firstName ? user.firstName[0].toUpperCase() : 'P'}
                  </span>
                </div>
                {!isCollapsed && (
                   <div className="flex flex-col items-start overflow-hidden">
-                     <span className="text-[13px] text-zinc-200 font-medium whitespace-nowrap truncate w-full text-left">
-                        {user?.fullName || 'Nextflow User'}
+                     <span className="text-[13.5px] text-white font-medium whitespace-nowrap truncate w-full text-left tracking-tight">
+                        {user?.fullName || 'preciselovingseal'}
                      </span>
-                     <span className="text-[11px] text-zinc-500">Free</span>
+                     <span className="text-[12.5px] text-zinc-500 tracking-tight">Free</span>
                   </div>
                )}
             </div>
             
             {!isCollapsed && (
-               <MoreHorizontal className="w-4 h-4 text-zinc-500 flex-shrink-0" />
+               <div className="hidden" /> // No more-horizontal icon in krea's screenshot for profile
             )}
             
             {/* Tooltip for Profile in collapsed state */}
