@@ -6,31 +6,31 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Home, Image as ImageIcon, Video, Layers, Wand2, Zap, Menu, 
-  Database, Grid3x3, Folder, Mic, Activity, Box, Film, MoreHorizontal, PanelLeft
+  Home, Image as ImageIcon, Video, Clapperboard, PenTool, Wand2, Zap, Menu, 
+  Cpu, Network, Library, Folder, Mic, AudioLines, Activity, Box, Film, Palette, MoreHorizontal, PanelLeft
 } from 'lucide-react';
 
 const mainLinks = [
   { href: '/dashboard', label: 'Home', icon: Home },
-  { href: '/dashboard/train', label: 'Train Lora', icon: Database },
-  { href: '/dashboard/workflows', label: 'Node Editor', icon: Grid3x3 },
-  { href: '/dashboard/assets', label: 'Assets', icon: Folder },
+  { href: '/dashboard/train', label: 'Train Lora', icon: Cpu },
+  { href: '/dashboard/workflows', label: 'Node Editor', icon: Network },
+  { href: '/dashboard/assets', label: 'Assets', icon: Library },
 ];
 
 const defaultTools = [
   { href: '/dashboard/image', label: 'Image', icon: ImageIcon },
-  { href: '/dashboard/video', label: 'Video', icon: Video },
+  { href: '/dashboard/video', label: 'Video', icon: Clapperboard },
   { href: '/dashboard/enhancer', label: 'Enhancer', icon: Wand2 },
   { href: '#', label: 'Nano Banana', icon: SparklesIcon }, // defined inline
   { href: '/dashboard/realtime', label: 'Realtime', icon: Zap },
-  { href: '/dashboard/edit', label: 'Edit', icon: Layers },
+  { href: '/dashboard/edit', label: 'Edit', icon: PenTool },
 ];
 
 const moreTools = [
-  { href: '#', label: 'Video Lipsync', icon: Mic },
+  { href: '#', label: 'Video Lipsync', icon: AudioLines },
   { href: '#', label: 'Motion Transfer', icon: Activity },
   { href: '#', label: '3D Objects', icon: Box },
-  { href: '#', label: 'Video Restyle', icon: Film },
+  { href: '#', label: 'Video Restyle', icon: Palette },
 ];
 
 // Simple Sparkles Custom Icon
@@ -113,7 +113,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     : `w-full h-10 px-3 rounded-lg gap-3 ${active ? 'bg-[#1C1C1C] text-white shadow-inner' : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'}`
                 }`}
               >
-                <Icon className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={active ? 2.5 : 2} />
+                <Icon className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={active ? 2.5 : 1.75} />
                 {!isCollapsed && <span className="text-[13.5px] font-medium tracking-wide">{item.label}</span>}
               </Link>
               
@@ -147,7 +147,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       : `w-full h-10 px-3 rounded-lg gap-3 ${active ? 'bg-[#1C1C1C] text-white shadow-inner' : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'}`
                   }`}
                 >
-                  <Icon className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={active ? 2.5 : 2} />
+                  <Icon className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={active ? 2.5 : 1.75} />
                   {!isCollapsed && <span className="text-[13.5px] font-medium tracking-wide">{item.label}</span>}
                 </Link>
                 {isCollapsed && (
@@ -180,7 +180,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             : `w-full h-10 px-3 rounded-lg gap-3 ${active ? 'bg-[#1C1C1C] text-white shadow-inner' : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'}`
                         }`}
                       >
-                        <Icon className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={active ? 2.5 : 2} />
+                        <Icon className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={active ? 2.5 : 1.75} />
                         {!isCollapsed && <span className="text-[13.5px] font-medium tracking-wide">{item.label}</span>}
                       </Link>
                       {isCollapsed && (
