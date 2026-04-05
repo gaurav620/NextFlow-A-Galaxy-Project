@@ -123,12 +123,12 @@ function Navbar() {
                                 <div className="flex flex-col gap-5">
                                     <div>
                                         <div className="flex items-center gap-2 text-black mb-1 font-medium"><ImageIcon className="w-4 h-4"/> AI Image Generation</div>
-                                        <Link href="/dashboard" className="block text-[13px] text-zinc-500 hover:text-black py-1">Text to Image <ChevronRight className="w-3 h-3 inline"/></Link>
-                                        <Link href="/dashboard" className="block text-[13px] text-zinc-500 hover:text-black py-1">Realtime Image <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <Link href="/dashboard/image" className="block text-[13px] text-zinc-500 hover:text-black py-1">Text to Image <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <Link href="/dashboard/realtime" className="block text-[13px] text-zinc-500 hover:text-black py-1">Realtime Image <ChevronRight className="w-3 h-3 inline"/></Link>
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2 text-black mb-1 font-medium"><Video className="w-4 h-4"/> AI Video Generation</div>
-                                        <Link href="/dashboard/video-restyle" className="block text-[13px] text-zinc-500 hover:text-black py-1">Text to Video <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <Link href="/dashboard/video" className="block text-[13px] text-zinc-500 hover:text-black py-1">Text to Video <ChevronRight className="w-3 h-3 inline"/></Link>
                                         <Link href="/dashboard/motion" className="block text-[13px] text-zinc-500 hover:text-black py-1">Motion Transfer <ChevronRight className="w-3 h-3 inline"/></Link>
                                     </div>
                                     <div>
@@ -144,14 +144,14 @@ function Navbar() {
                                 <div className="flex flex-col gap-5">
                                     <div>
                                         <div className="flex items-center gap-2 text-black mb-1 font-medium"><Sparkles className="w-4 h-4"/> AI Image Enhancements</div>
-                                        <Link href="/dashboard" className="block text-[13px] text-zinc-500 hover:text-black py-1">Upscaling <ChevronRight className="w-3 h-3 inline"/></Link>
-                                        <Link href="/dashboard" className="block text-[13px] text-zinc-500 hover:text-black py-1">Generative Image Editing <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <Link href="/dashboard/enhancer" className="block text-[13px] text-zinc-500 hover:text-black py-1">Upscaling <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <Link href="/dashboard/edit" className="block text-[13px] text-zinc-500 hover:text-black py-1">Generative Image Editing <ChevronRight className="w-3 h-3 inline"/></Link>
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2 text-black mb-1 font-medium"><MonitorPlay className="w-4 h-4"/> AI Video Enhancements</div>
                                         <Link href="/dashboard/video-restyle" className="block text-[13px] text-zinc-500 hover:text-black py-1">Frame Interpolation <ChevronRight className="w-3 h-3 inline"/></Link>
                                         <Link href="/dashboard/video-restyle" className="block text-[13px] text-zinc-500 hover:text-black py-1">Video Style Transfer <ChevronRight className="w-3 h-3 inline"/></Link>
-                                        <Link href="/dashboard" className="block text-[13px] text-zinc-500 hover:text-black py-1">Video Upscaling <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <Link href="/dashboard/enhancer" className="block text-[13px] text-zinc-500 hover:text-black py-1">Video Upscaling <ChevronRight className="w-3 h-3 inline"/></Link>
                                     </div>
                                 </div>
                             </div>
@@ -161,13 +161,13 @@ function Navbar() {
                                 <div className="flex flex-col gap-5">
                                     <div>
                                         <div className="flex items-center gap-2 text-black mb-1 font-medium"><Settings2 className="w-4 h-4"/> AI Finetuning</div>
-                                        <Link href="/dashboard" className="block text-[13px] text-zinc-500 hover:text-black py-1">Image LoRA Finetuning <ChevronRight className="w-3 h-3 inline"/></Link>
-                                        <Link href="/dashboard" className="block text-[13px] text-zinc-500 hover:text-black py-1">Video LoRA Finetuning <ChevronRight className="w-3 h-3 inline"/></Link>
-                                        <Link href="/dashboard" className="block text-[13px] text-zinc-500 hover:text-black py-1">LoRA Sharing <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <Link href="/dashboard/train" className="block text-[13px] text-zinc-500 hover:text-black py-1">Image LoRA Finetuning <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <Link href="/dashboard/train" className="block text-[13px] text-zinc-500 hover:text-black py-1">Video LoRA Finetuning <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <Link href="/dashboard/train" className="block text-[13px] text-zinc-500 hover:text-black py-1">LoRA Sharing <ChevronRight className="w-3 h-3 inline"/></Link>
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2 text-black mb-1 font-medium"><FileBox className="w-4 h-4"/> File Management</div>
-                                        <Link href="/dashboard" className="block text-[13px] text-zinc-500 hover:text-black py-1">NextFlow Asset Manager <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <Link href="/dashboard/assets" className="block text-[13px] text-zinc-500 hover:text-black py-1">NextFlow Asset Manager <ChevronRight className="w-3 h-3 inline"/></Link>
                                     </div>
                                 </div>
                             </div>
@@ -193,11 +193,10 @@ function Navbar() {
             </AnimatePresence>
           </div>
 
-          <Link href="/dashboard" className="text-[13px] text-zinc-300 hover:text-white transition-colors">Image Generator</Link>
-          <Link href="/dashboard/video-restyle" className="text-[13px] text-zinc-300 hover:text-white transition-colors">Video Generator</Link>
-          <Link href="/dashboard" className="text-[13px] text-zinc-300 hover:text-white transition-colors">Upscaler</Link>
-          <Link href="/dashboard" className="text-[13px] text-zinc-300 hover:text-white transition-colors">API</Link>
-          <Link href="#" className="text-[13px] text-zinc-300 hover:text-white transition-colors">Pricing</Link>
+          <Link href="/dashboard/image" className="text-[13px] text-zinc-300 hover:text-white transition-colors">Image Generator</Link>
+          <Link href="/dashboard/video" className="text-[13px] text-zinc-300 hover:text-white transition-colors">Video Generator</Link>
+          <Link href="/dashboard/enhancer" className="text-[13px] text-zinc-300 hover:text-white transition-colors">Upscaler</Link>
+          <Link href="/dashboard/pricing" className="text-[13px] text-zinc-300 hover:text-white transition-colors">Pricing</Link>
           <Link href="#" className="text-[13px] text-zinc-300 hover:text-white transition-colors">Enterprise</Link>
         </nav>
 
@@ -505,19 +504,19 @@ function ExactFooter() {
               <h4 className="font-semibold text-lg mb-6">NextFlow</h4>
               <ul className="flex flex-col gap-4 text-zinc-500 font-medium">
                   <li><Link href="/dashboard" className="hover:text-white transition">Log In</Link></li>
-                  <li><Link href="#" className="hover:text-white transition">Pricing</Link></li>
+                  <li><Link href="/dashboard/pricing" className="hover:text-white transition">Pricing</Link></li>
                   <li><Link href="#" className="hover:text-white transition">Enterprise</Link></li>
-                  <li><Link href="#" className="hover:text-white transition">Gallery</Link></li>
+                  <li><Link href="/dashboard" className="hover:text-white transition">Gallery</Link></li>
               </ul>
           </div>
           <div>
               <h4 className="font-semibold text-lg mb-6">Products</h4>
               <ul className="flex flex-col gap-4 text-zinc-500 font-medium">
-                  <li><Link href="/dashboard" className="hover:text-white transition">Image Generator</Link></li>
-                  <li><Link href="/dashboard/video-restyle" className="hover:text-white transition">Video Generator</Link></li>
-                  <li><Link href="/dashboard" className="hover:text-white transition">Enhancer</Link></li>
-                  <li><Link href="/dashboard" className="hover:text-white transition">Realtime</Link></li>
-                  <li><Link href="/dashboard/motion" className="hover:text-white transition">Edit</Link></li>
+                  <li><Link href="/dashboard/image" className="hover:text-white transition">Image Generator</Link></li>
+                  <li><Link href="/dashboard/video" className="hover:text-white transition">Video Generator</Link></li>
+                  <li><Link href="/dashboard/enhancer" className="hover:text-white transition">Enhancer</Link></li>
+                  <li><Link href="/dashboard/realtime" className="hover:text-white transition">Realtime</Link></li>
+                  <li><Link href="/dashboard/edit" className="hover:text-white transition">Edit</Link></li>
               </ul>
           </div>
           <div>
@@ -526,8 +525,8 @@ function ExactFooter() {
                   <li><Link href="#" className="hover:text-white transition">Careers</Link></li>
                   <li><Link href="#" className="hover:text-white transition">Terms of Service</Link></li>
                   <li><Link href="#" className="hover:text-white transition">Privacy Policy</Link></li>
-                  <li><Link href="#" className="hover:text-white transition">API</Link></li>
-                  <li><Link href="#" className="hover:text-white transition">Documentation</Link></li>
+                  <li><Link href="/dashboard/workflows" className="hover:text-white transition">API</Link></li>
+                  <li><Link href="/dashboard" className="hover:text-white transition">Documentation</Link></li>
               </ul>
           </div>
           <div>

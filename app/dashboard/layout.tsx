@@ -6,386 +6,209 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Home,
-  Grid3x3,
-  Folder,
-  Gamepad2,
-  ChevronDown,
-  Plus,
-  Gift,
-  LogOut,
-  MoreHorizontal,
-  PanelLeftClose,
-  PanelLeftOpen
+  Home, Image as ImageIcon, Video, Layers, Wand2, Zap, Settings2, HelpCircle, MessageCircle, Grid3x3, Database, Folder, Menu, X
 } from 'lucide-react';
 
-const toolItems = [
-  { label: 'Image',          color: '#4B9FFF', href: '/dashboard/image',        icon: '🖼️' },
-  { label: 'Video',          color: '#FF8A4B', href: '/dashboard/video',         icon: '🎬' },
-  { label: 'Enhancer',       color: '#9CA3AF', href: '/dashboard/enhancer',      icon: '✨' },
-  { label: 'Nano Banana',    color: '#FFD93D', href: '/dashboard/nano',          icon: '⚡' },
-  { label: 'Realtime',       color: '#A78BFA', href: '/dashboard/realtime',      icon: '🔴' },
-  { label: 'Edit',           color: '#A78BFA', href: '/dashboard/edit',          icon: '✏️' },
-  { label: 'Video Lipsync',  color: '#22D3EE', href: '/dashboard/lipsync',       icon: '💬' },
-  { label: 'Motion Transfer',color: '#34D399', href: '/dashboard/motion',        icon: '🔄' },
-  { label: '3D Objects',     color: '#6B7280', href: '/dashboard/3d',            icon: '📦' },
-  { label: 'Video Restyle',  color: '#F472B6', href: '/dashboard/video-restyle', icon: '🎨' },
-];
-
-const mainItems = [
-  { id: 'home',   label: 'Home',        icon: Home,     href: '/dashboard' },
-  { id: 'train',  label: 'Train Lora',  icon: Gamepad2, href: '/dashboard/train' },
-  { id: 'nodes',  label: 'Node Editor', icon: Grid3x3,  href: '/dashboard/workflows' },
-  { id: 'assets', label: 'Assets',      icon: Folder,   href: '/dashboard/assets' },
+const sidebarLinks = [
+  { href: '/dashboard', label: 'Home', icon: Home },
+  { href: '/dashboard/image', label: 'Generate', icon: ImageIcon },
+  { href: '/dashboard/realtime', label: 'Realtime', icon: Zap },
+  { href: '/dashboard/video', label: 'Video', icon: Video },
+  { href: '/dashboard/enhancer', label: 'Enhance', icon: Wand2 },
+  { href: '/dashboard/edit', label: 'Edit', icon: Layers },
+  { href: '/dashboard/train', label: 'Train', icon: Database },
+  { href: '/dashboard/workflows', label: 'Workflows', icon: Grid3x3 },
+  { href: '/dashboard/assets', label: 'Assets', icon: Folder },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user } = useUser();
   const { signOut } = useClerk();
   const pathname = usePathname();
-  const [showAllTools, setShowAllTools] = useState(false);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [sessionsOpen, setSessionsOpen] = useState(true);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const sessions = [
-    { id: '1', label: 'Cyberpunk portrait series' },
-    { id: '2', label: 'Product mockup shoot' },
-    { id: '3', label: 'Logo variations v2' },
-  ];
-
+  // Close mobile menu on route change
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowProfileMenu(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Auto-collapse sidebar on mobile
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)');
-    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
-      setIsMobile(e.matches);
-      if (e.matches) setIsSidebarOpen(false);
-    };
-    handler(mq);
-    mq.addEventListener('change', handler as any);
-    return () => mq.removeEventListener('change', handler as any);
-  }, []);
-
-  const visibleTools = showAllTools ? toolItems : toolItems.slice(0, 6);
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard';
     return pathname.startsWith(href);
   };
 
-  const textAnimation = {
-    initial: { opacity: 0, width: 0, display: 'none' },
-    animate: { opacity: 1, width: 'auto', display: 'block', transition: { delay: 0.1 } },
-    exit: { opacity: 0, width: 0, display: 'none', transition: { duration: 0.1 } },
-  };
-
-  return (
-    <div className="flex h-screen w-screen overflow-hidden" style={{ background: '#0c0c0c', fontFamily: "'Inter', system-ui, sans-serif" }}>
-
-      {/* ── SIDEBAR ──────────────────────────────────────────── */}
-      <motion.div
-        animate={{ width: isSidebarOpen ? 220 : (isMobile ? 0 : 70) }}
-        transition={{ type: 'spring' as const, damping: 25, stiffness: 200 }}
-        className={`flex flex-col h-full flex-shrink-0 relative overflow-visible z-50 ${isMobile && !isSidebarOpen ? 'hidden' : ''} ${isMobile && isSidebarOpen ? 'absolute left-0 top-0 bottom-0 shadow-2xl' : ''}`}
-        style={{ background: '#0A0A0A', borderRight: '1px solid rgba(255,255,255,0.06)' }}
-      >
-
-        {/* Logo & Toggle */}
-        <div className={`px-4 pt-5 pb-3 flex items-center ${isSidebarOpen ? 'justify-between' : 'justify-center'} gap-2.5`}>
-          <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-6 h-6 rounded-md bg-white flex items-center justify-center flex-shrink-0 shadow-lg shadow-white/20">
-              <span className="text-black font-extrabold text-sm font-sans tracking-tighter">N</span>
-            </div>
-            <AnimatePresence>
-              {isSidebarOpen && (
-                <motion.span
-                  {...textAnimation}
-                  className="text-white text-[14px] font-semibold tracking-tight whitespace-nowrap"
-                >
-                  NextFlow
-                </motion.span>
-              )}
-            </AnimatePresence>
+  const SidebarContent = () => (
+    <>
+      <div className="w-[64px] h-full flex flex-col items-center py-5 bg-[#0c0c0c] z-[60]">
+        
+        {/* NextFlow Logo */}
+        <Link href="/" className="mb-6 relative group z-50">
+          <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+            <span className="text-black font-extrabold text-[15px] font-sans tracking-tighter">N</span>
           </div>
-          
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="text-zinc-500 hover:text-white transition-colors flex-shrink-0 p-1 rounded-md hover:bg-white/[0.05]"
-          >
-            {isSidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
-          </button>
-        </div>
+        </Link>
 
-        {/* Model Switcher Pill */}
-        <div className={`px-3 pb-3 flex justify-center ${!isSidebarOpen && 'mt-2'}`}>
-          <button
-            className={`flex items-center justify-between gap-2 py-1.5 rounded-full text-[12px] font-medium text-zinc-300 hover:text-white transition-all group ${isSidebarOpen ? 'w-full px-3' : 'w-auto px-1.5'}`}
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_6px_#60a5fa] mx-1" />
-              <AnimatePresence>
-                {isSidebarOpen && (
-                  <motion.span {...textAnimation} className="whitespace-nowrap">Model NextFlow</motion.span>
-                )}
-              </AnimatePresence>
-            </div>
-            {isSidebarOpen && <ChevronDown className="w-3 h-3 text-zinc-500 group-hover:text-zinc-300 transition-colors shrink-0" />}
-          </button>
-        </div>
-
-        {/* Main Nav */}
-        <div className="flex flex-col gap-1 px-3 pb-2 pt-1 border-t border-white/[0.04] mt-1">
-          {mainItems.map((item) => {
+        {/* Primary Tools */}
+        <nav className="flex flex-col gap-2 w-full px-2 mt-2 z-50">
+          {sidebarLinks.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
             return (
-              <div key={item.id} className="relative group">
+              <div key={item.label} className="relative group flex justify-center">
                 <Link
                   href={item.href}
-                  className={`flex items-center ${isSidebarOpen ? 'justify-start' : 'justify-center'} gap-3 px-3 py-2 rounded-xl transition-all duration-150 text-[13px] font-medium ${
-                    active
-                      ? 'bg-white/[0.08] text-white'
-                      : 'text-zinc-400 hover:bg-white/[0.04] hover:text-white'
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 relative ${
+                    active 
+                      ? 'bg-white/[0.12] text-white shadow-inner' 
+                      : 'text-zinc-500 hover:text-white hover:bg-white/[0.06]'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 flex-shrink-0 ${active ? 'text-white' : 'text-zinc-500 group-hover:text-white'}`} />
-                  <AnimatePresence>
-                    {isSidebarOpen && (
-                      <motion.span {...textAnimation} className="whitespace-nowrap">{item.label}</motion.span>
-                    )}
-                  </AnimatePresence>
+                  <Icon className="w-[18px] h-[18px]" strokeWidth={active ? 2.5 : 2} />
+                  {active && (
+                    <motion.div layoutId="activeInd" className="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-5 bg-white rounded-r-md" />
+                  )}
                 </Link>
-                {!isSidebarOpen && (
-                  <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-zinc-800 text-white text-[11px] rounded opacity-0 group-hover:opacity-100 pointer-events-none z-50 whitespace-nowrap shadow-xl">
-                    {item.label}
-                  </div>
-                )}
+                
+                {/* Framer Motion Tooltip */}
+                <div className="hidden md:block absolute left-[54px] top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#1e1e1e] border border-white/10 text-white text-[12px] font-medium rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-1 transition-all z-[100] shadow-xl whitespace-nowrap tracking-wide">
+                  {item.label}
+                </div>
               </div>
             );
           })}
-        </div>
+        </nav>
 
-        {/* Tools Section */}
-        <div className="flex-1 overflow-hidden flex flex-col px-3 mt-4">
-          <AnimatePresence>
-            {isSidebarOpen && (
-              <motion.div {...textAnimation} className="px-1 mb-2">
-                <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold">Studio</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div className="flex-1 overflow-y-auto flex flex-col gap-1 [&::-webkit-scrollbar]:hidden">
-            {visibleTools.map((tool, idx) => {
-              const active = isActive(tool.href);
-              return (
-                <div key={idx} className="relative group">
-                  <Link
-                    href={tool.href}
-                    className={`flex items-center ${isSidebarOpen ? 'justify-start' : 'justify-center'} gap-3 px-3 py-1.5 rounded-xl transition-all duration-150 text-[12.5px] font-medium ${
-                      active
-                        ? 'bg-white/[0.08] text-white'
-                        : 'text-zinc-400 hover:bg-white/[0.04] hover:text-white'
-                    }`}
-                  >
-                    <div
-                      className="w-5 h-5 rounded flex-shrink-0 flex items-center justify-center text-[10px]"
-                      style={{ background: `${tool.color}15`, border: `1px solid ${tool.color}33`, color: tool.color }}
-                    >
-                      <span className="opacity-80">{tool.icon}</span>
-                    </div>
-                    <AnimatePresence>
-                      {isSidebarOpen && (
-                        <motion.span {...textAnimation} className="truncate">{tool.label}</motion.span>
-                      )}
-                    </AnimatePresence>
-                  </Link>
-                  {!isSidebarOpen && (
-                    <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-zinc-800 text-white text-[11px] rounded opacity-0 group-hover:opacity-100 pointer-events-none z-50 whitespace-nowrap shadow-xl">
-                      {tool.label}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-            
-            {/* More / Less */}
-            <div className="relative group mt-1">
-              <button
-                onClick={() => setShowAllTools(!showAllTools)}
-                className={`flex items-center ${isSidebarOpen ? 'justify-start' : 'justify-center'} gap-3 text-[12px] text-zinc-500 hover:text-white px-3 py-1.5 transition-colors w-full rounded-xl hover:bg-white/[0.03]`}
-              >
-                <MoreHorizontal className="w-4 h-4 shrink-0" />
-                <AnimatePresence>
-                  {isSidebarOpen && (
-                    <motion.span {...textAnimation} className="whitespace-nowrap">{showAllTools ? 'Show Less' : 'Explore More'}</motion.span>
-                  )}
-                </AnimatePresence>
-              </button>
+        {/* Bottom Tools */}
+        <div className="mt-auto flex flex-col items-center gap-2 w-full px-2 z-50">
+          <div className="w-6 h-[1px] bg-white/[0.06] my-2" />
+          
+          <div className="relative group flex justify-center">
+            <button className="w-10 h-10 rounded-xl flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/[0.06] transition-colors">
+              <MessageCircle className="w-[18px] h-[18px]" strokeWidth={2} />
+            </button>
+            <div className="hidden md:block absolute left-[54px] top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#1e1e1e] border border-white/10 text-white text-[12px] font-medium rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-1 transition-all z-[100] shadow-xl whitespace-nowrap">
+              Community
             </div>
           </div>
-        </div>
 
-        {/* Sessions Section */}
-        <AnimatePresence>
-          {isSidebarOpen && (
-            <motion.div {...textAnimation} className="px-3 mt-4 border-t border-white/[0.04] pt-4">
-              <div className="px-1 mb-2 flex items-center justify-between">
-                <button
-                  onClick={() => setSessionsOpen(!sessionsOpen)}
-                  className="flex items-center gap-1.5 group"
-                >
-                  <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold group-hover:text-zinc-400 transition-colors">Sessions</span>
-                  <ChevronDown className={`w-3 h-3 text-zinc-700 group-hover:text-zinc-500 transition-all ${sessionsOpen ? '' : '-rotate-90'}`} />
-                </button>
-                <button
-                  className="w-5 h-5 rounded flex items-center justify-center hover:bg-white/[0.07] text-zinc-600 hover:text-white transition-all"
-                >
-                  <Plus className="w-3 h-3" />
-                </button>
-              </div>
+          <div className="relative group flex justify-center">
+            <button className="w-10 h-10 rounded-xl flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/[0.06] transition-colors">
+              <HelpCircle className="w-[18px] h-[18px]" strokeWidth={2} />
+            </button>
+            <div className="hidden md:block absolute left-[54px] top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#1e1e1e] border border-white/10 text-white text-[12px] font-medium rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-1 transition-all z-[100] shadow-xl whitespace-nowrap">
+              Help
+            </div>
+          </div>
 
-              {sessionsOpen && (
-                <div className="flex flex-col gap-0.5">
-                  {sessions.map(session => (
-                    <button
-                      key={session.id}
-                      className="flex items-center gap-2 px-3 py-[6px] rounded-lg hover:bg-white/[0.04] text-zinc-500 hover:text-zinc-200 text-[12px] w-full transition-all text-left truncate"
-                    >
-                      <div className="w-1.5 h-1.5 rounded-full bg-zinc-800 flex-shrink-0" />
-                      <span className="truncate">{session.label}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+          <div className="relative group flex justify-center">
+            <button className="w-10 h-10 rounded-xl flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/[0.06] transition-colors">
+              <Settings2 className="w-[18px] h-[18px]" strokeWidth={2} />
+            </button>
+            <div className="hidden md:block absolute left-[54px] top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#1e1e1e] border border-white/10 text-white text-[12px] font-medium rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-1 transition-all z-[100] shadow-xl whitespace-nowrap">
+              Settings
+            </div>
+          </div>
 
-        {/* Bottom: Credits + Profile */}
-        <div className="px-3 pt-4 pb-4 mt-auto flex flex-col gap-3 border-t border-white/[0.04]" ref={menuRef}>
-          
-          <AnimatePresence>
-            {isSidebarOpen && (
-              <motion.div {...textAnimation} className="flex flex-col gap-2">
-                {/* Earn Credits */}
-                <div className="flex items-center justify-center gap-1.5 px-2 py-1.5 bg-gradient-to-r from-zinc-800/20 to-zinc-900/20 rounded-lg border border-white/[0.02] cursor-pointer hover:border-white/[0.08] transition-colors">
-                  <Gift className="w-3.5 h-3.5 text-pink-400" />
-                  <span className="text-[11px] font-medium text-zinc-400">Earn 3,000 Credits</span>
-                </div>
-
-                {/* Upgrade Button */}
-                <Link
-                  href="/dashboard/pricing"
-                  className="w-full py-2 rounded-xl text-white text-[12px] font-semibold text-center transition-all hover:opacity-90 active:scale-[0.98] block shadow-lg shadow-blue-900/10"
-                  style={{ background: 'linear-gradient(135deg, #2563EB 0%, #3b82f6 50%, #1D4ED8 100%)' }}
-                >
-                  Upgrade
-                </Link>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* User Profile Toggle */}
-          <div className="relative">
-            <button
-              onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className={`flex w-full items-center ${isSidebarOpen ? 'justify-start' : 'justify-center'} gap-2.5 px-2 py-2 rounded-xl border border-transparent transition-all group ${
-                showProfileMenu ? 'bg-white/[0.07] border-white/10' : 'hover:bg-white/[0.04]'
-              }`}
+          {/* User Profile */}
+          <div className="relative mt-2">
+            <button 
+              onClick={() => setProfileOpen(!profileOpen)}
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 border-[2px] border-[#0c0c0c] ring-2 ring-transparent hover:ring-white/10 transition-all shadow-md group"
             >
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-800 flex items-center justify-center flex-shrink-0 shadow border border-white/[0.05]">
-                <span className="text-[11px] font-bold text-white">
-                  {user?.firstName ? user.firstName[0].toUpperCase() : 'N'}
-                </span>
-              </div>
-              <AnimatePresence>
-                {isSidebarOpen && (
-                  <motion.div {...textAnimation} className="flex-1 min-w-0 text-left">
-                    <div className="text-[12px] text-zinc-300 truncate font-semibold group-hover:text-white transition-colors">
-                      {user?.firstName ? `${user.firstName}` : 'nextflow'}
-                    </div>
-                    <div className="text-[10px] text-zinc-500 font-medium">Free plan</div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <span className="text-[13px] font-bold text-white group-hover:scale-105 transition-transform">
+                {user?.firstName ? user.firstName[0].toUpperCase() : 'N'}
+              </span>
             </button>
 
-            {/* Floating Profile Menu */}
             <AnimatePresence>
-              {showProfileMenu && (
+              {profileOpen && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                  transition={{ duration: 0.15, ease: "easeOut" }}
-                  className="absolute bottom-full mb-3 left-0 w-[270px] bg-[#111] border border-white/[0.06] rounded-2xl z-[9999] flex flex-col p-1.5 shadow-2xl overflow-hidden"
-                  style={{ boxShadow: '0 24px 64px rgba(0,0,0,0.8)' }}
+                  initial={{ opacity: 0, scale: 0.95, x: -10 }}
+                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, x: -10 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute bottom-0 left-[60px] md:left-[60px] max-md:-left-[240px] w-[240px] bg-[#111] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden z-[9999]"
                 >
-                  {/* Workspace */}
-                  <div className="px-3 pt-2 pb-1.5">
-                    <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">Workspace</span>
+                  <div className="p-4 flex items-center gap-3 border-b border-white/[0.04]">
+                     <div className="w-9 h-9 rounded-full bg-zinc-800 flex items-center justify-center text-white font-bold text-[13px]">
+                        {user?.firstName ? user.firstName[0].toUpperCase() : 'N'}
+                     </div>
+                     <div className="flex flex-col">
+                        <span className="text-[13px] text-white font-medium">{user?.fullName || 'Nextflow User'}</span>
+                        <span className="text-[12px] text-zinc-500">Free plan</span>
+                     </div>
                   </div>
-                  <div className="px-1 flex flex-col gap-1 mb-1">
-                    <div className="flex w-full items-center gap-3 px-2 py-2 rounded-xl bg-white/[0.05] border border-white/[0.07] text-left">
-                      <div className="w-6 h-6 rounded-lg border border-zinc-700 bg-zinc-800 flex items-center justify-center shrink-0">
-                        <span className="text-[10px] font-bold text-zinc-300">D</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[12px] font-semibold text-white truncate">Default Workspace</div>
-                        <div className="text-[10px] text-zinc-500">Free plan</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="h-px w-full bg-white/[0.06] my-1" />
-                  <div className="px-1 pb-1 pt-1">
-                    <button
-                      onClick={() => signOut()}
-                      className="flex w-full items-center gap-3 px-3 py-2 rounded-xl hover:bg-red-500/10 transition-colors text-left group"
-                    >
-                      <LogOut className="w-3.5 h-3.5 text-zinc-500 shrink-0 group-hover:text-red-400 transition-colors" />
-                      <span className="text-[12px] font-medium text-zinc-400 group-hover:text-red-400 transition-colors">Log out</span>
-                    </button>
+                  <div className="p-2 flex flex-col gap-1">
+                     <Link href="/dashboard/pricing" onClick={() => setProfileOpen(false)} className="px-3 py-2 text-[12px] text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors">
+                       Upgrade to Pro
+                     </Link>
+                     <button className="px-3 py-2 text-[12px] text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors text-left">
+                       Manage Subscription
+                     </button>
+                     <div className="h-px bg-white/[0.04] my-1" />
+                     <button onClick={() => { signOut(); setProfileOpen(false); }} className="px-3 py-2 text-[12px] text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl transition-colors text-left font-medium">
+                       Log out
+                     </button>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         </div>
-      </motion.div>
+      </div>
+    </>
+  );
 
-      {/* Mobile sidebar backdrop overlay */}
-      {isMobile && isSidebarOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setIsSidebarOpen(false)} />
-      )}
+  return (
+    <div className="flex w-screen h-screen bg-[#0A0A0A] overflow-hidden font-sans">
+      
+      {/* ── DESKTOP MINIMALIST SIDEBAR ── */}
+      <div className="hidden md:flex h-full border-r border-white/[0.04] shadow-md z-[60]">
+         <SidebarContent />
+      </div>
 
-      {/* Mobile sidebar toggle button (floating) */}
-      {isMobile && !isSidebarOpen && (
-        <button
-          onClick={() => setIsSidebarOpen(true)}
-          className="fixed top-3 left-3 z-50 w-9 h-9 rounded-xl bg-[#1a1a1a] border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-all shadow-lg"
-        >
-          <PanelLeftOpen className="w-4 h-4" />
-        </button>
-      )}
+      {/* ── MOBILE OVERLAY MENU ── */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 z-[50] md:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <motion.div 
+              initial={{ x: -100 }}
+              animate={{ x: 0 }}
+              exit={{ x: -100 }}
+              className="h-full border-r border-white/[0.04]"
+              onClick={(e) => e.stopPropagation()}
+            >
+               <SidebarContent />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* ── MAIN CONTENT ─────────────────────────────────────── */}
-      <div className="flex-1 relative flex flex-col overflow-hidden" style={{ background: '#0A0A0A' }}>
+      {/* ── MOBILE NAVBAR TOP ── */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[#0c0c0c]/90 backdrop-blur border-b border-white/[0.04] z-[40] flex items-center justify-between px-4">
+         <div className="flex items-center gap-3">
+             <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center">
+                 <span className="text-black font-bold text-xs tracking-tighter">N</span>
+             </div>
+             <span className="text-white font-medium text-sm">NextFlow App</span>
+         </div>
+         <button onClick={() => setMobileMenuOpen(true)} className="text-white p-2">
+            <Menu className="w-5 h-5" />
+         </button>
+      </div>
+
+      {/* ── MAIN CONTENT ── */}
+      <div className="flex-1 w-full h-full relative overflow-y-auto bg-[#0A0A0A] md:pt-0 pt-14 flex flex-col">
         {children}
       </div>
+      
     </div>
   );
 }

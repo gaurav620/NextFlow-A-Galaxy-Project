@@ -525,23 +525,47 @@ export default function DashboardHome() {
         {/* ── FOOTER ───────────────────────────────────────────── */}
         <motion.footer variants={itemVariants} style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }} className="pt-12 pb-10">
           <div className="grid grid-cols-4 gap-8 mb-12">
-            {[
-              { heading: 'NextFlow', links: ['Log In', 'Pricing', 'Plans', 'Terms of Service', 'Enterprise', 'Gallery'] },
-              { heading: 'Products', links: ['Image', 'Video', 'Enhancer', 'Realtime', 'Edit', 'Chat', 'Stage', 'Animator', 'Train'] },
-              { heading: 'Resources', links: ['Pricing', 'Careers', 'Terms', 'Privacy', 'Documentation', 'Models'] },
-              { heading: 'About', links: ['Blog', 'Discord', 'Articles'] },
-            ].map((col) => (
-              <div key={col.heading}>
-                <p className="text-white text-[11px] font-bold uppercase tracking-widest mb-5 opacity-90">{col.heading}</p>
-                <ul className="space-y-3.5">
-                  {col.links.map(link => (
-                    <li key={link}>
-                      <a href="#" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">{link}</a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+            <div>
+              <p className="text-white text-[11px] font-bold uppercase tracking-widest mb-5 opacity-90">NextFlow</p>
+              <ul className="space-y-3.5 flex flex-col">
+                <li><Link href="/dashboard" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">Log In</Link></li>
+                <li><Link href="/dashboard/pricing" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">Pricing</Link></li>
+                <li><Link href="/dashboard/pricing" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">Plans</Link></li>
+                <li><Link href="#" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">Terms of Service</Link></li>
+                <li><Link href="#" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">Enterprise</Link></li>
+                <li><Link href="/dashboard" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">Gallery</Link></li>
+              </ul>
+            </div>
+            <div>
+              <p className="text-white text-[11px] font-bold uppercase tracking-widest mb-5 opacity-90">Products</p>
+              <ul className="space-y-3.5 flex flex-col">
+                <li><Link href="/dashboard/image" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">Image</Link></li>
+                <li><Link href="/dashboard/video" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">Video</Link></li>
+                <li><Link href="/dashboard/enhancer" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">Enhancer</Link></li>
+                <li><Link href="/dashboard/realtime" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">Realtime</Link></li>
+                <li><Link href="/dashboard/edit" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">Edit</Link></li>
+                <li><Link href="/dashboard/train" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">Train LoRA</Link></li>
+              </ul>
+            </div>
+            <div>
+              <p className="text-white text-[11px] font-bold uppercase tracking-widest mb-5 opacity-90">Resources</p>
+              <ul className="space-y-3.5 flex flex-col">
+                <li><Link href="/dashboard/pricing" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">Pricing</Link></li>
+                <li><Link href="#" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">Careers</Link></li>
+                <li><Link href="#" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">Terms of Service</Link></li>
+                <li><Link href="#" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/dashboard/workflows" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">API</Link></li>
+                <li><Link href="/dashboard" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">Documentation</Link></li>
+              </ul>
+            </div>
+            <div>
+              <p className="text-white text-[11px] font-bold uppercase tracking-widest mb-5 opacity-90">About</p>
+              <ul className="space-y-3.5 flex flex-col">
+                <li><Link href="#" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">Blog</Link></li>
+                <li><Link href="#" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">Discord</Link></li>
+                <li><Link href="#" className="text-zinc-400 hover:text-white font-medium text-[13px] transition-colors">Articles</Link></li>
+              </ul>
+            </div>
           </div>
           <div className="flex items-center justify-between border-t border-white/[0.04] pt-6">
             <p className="text-zinc-500 font-medium text-[12px]">© 2026 NextFlow AI • Made with ❤️</p>
