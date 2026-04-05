@@ -127,7 +127,7 @@ export default function EnhancerPage() {
 
   return (
     <div 
-      className="flex w-full h-full text-white bg-[#0f0f0f] relative overflow-hidden font-sans"
+      className="flex w-full h-full text-white bg-black relative overflow-hidden font-sans"
       onDragOver={e => e.preventDefault()}
       onDrop={handleImageDrop}
     >
@@ -263,7 +263,7 @@ export default function EnhancerPage() {
           </div>
 
           {/* Right Sidebar: Settings & Workflow */}
-          <div className="w-[320px] bg-[#141414] border-l border-white/5 flex flex-col shadow-2xl relative z-10 rounded-tl-3xl">
+          <div className="w-[320px] bg-[#09090b] border-l border-white/[0.04] flex flex-col shadow-2xl relative z-10">
             <div className="h-14 flex items-center px-6 border-b border-white/[0.05] gap-2">
               <Settings2 className="w-4 h-4 text-zinc-400" />
               <span className="text-[14px] font-semibold tracking-wide">Enhance Settings</span>

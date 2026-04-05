@@ -147,7 +147,7 @@ export default function RealtimePage() {
   };
 
   return (
-    <div className="flex w-full h-full text-white bg-[#0f0f0f] relative overflow-hidden font-sans">
+    <div className="flex w-full h-full text-white bg-black relative overflow-hidden font-sans">
       
       {/* GLOBAL STATUS CORNERS */}
       <div className="absolute bottom-6 left-6 z-50 flex items-center gap-3">
@@ -181,7 +181,7 @@ export default function RealtimePage() {
       {/* SPLIT SCREEN WORKSPACE */}
       <div className="flex w-full h-full pb-32">
         {/* Left Side: Input Canvas */}
-        <div className="flex-1 border-r border-[#222] relative flex flex-col items-center justify-center bg-[#000] p-8">
+        <div className="flex-1 border-r border-white/[0.04] relative flex flex-col items-center justify-center bg-black p-8">
            <div className={`relative aspect-square w-full max-w-[70vh] bg-[#1c1c1c] rounded-lg overflow-hidden shadow-2xl transition-opacity ${drawEnabled ? 'opacity-100' : 'opacity-40'}`}>
               <canvas
                 ref={canvasRef}
@@ -197,7 +197,7 @@ export default function RealtimePage() {
         </div>
 
         {/* Right Side: Output Preview */}
-        <div className="flex-1 relative flex flex-col items-center justify-center bg-[#0u0u0u] p-8">
+        <div className="flex-1 relative flex flex-col items-center justify-center bg-black p-8">
            <div className="relative aspect-square w-full max-w-[70vh] bg-[#111] rounded-lg overflow-hidden shadow-2xl border border-white/5">
               {generating && (
                 <div className="absolute inset-0 bg-white/5 z-10 flex items-center justify-center">
@@ -261,7 +261,7 @@ export default function RealtimePage() {
         )}
 
         {/* Floating Prompt Pill */}
-        <div className="bg-[#1a1c23] border border-white/10 rounded-3xl p-2.5 flex flex-col gap-2 shadow-[0_15px_60px_rgba(0,0,0,0.6)] w-full">
+        <div className="bg-[#1c1c1c] border border-white/[0.04] rounded-3xl p-2.5 flex flex-col gap-2 shadow-[0_15px_60px_rgba(0,0,0,0.8)] w-full transition-all hover:border-white/10">
           
           <div className="px-4 pt-2">
              <textarea

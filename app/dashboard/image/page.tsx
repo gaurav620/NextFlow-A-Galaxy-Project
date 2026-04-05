@@ -173,8 +173,7 @@ export default function ImagePage() {
 
   return (
     <div
-      className="relative flex h-full w-full overflow-hidden text-white"
-      style={{ background: "radial-gradient(80% 80% at 50% 20%, #0f1014 0%, #07080a 65%, #050607 100%)" }}
+      className="relative flex h-full w-full overflow-hidden text-white bg-black"
       onClick={closeMenus}
     >
       <div className="flex-1 px-5 pb-8 pt-4 md:px-8">
@@ -276,10 +275,10 @@ export default function ImagePage() {
           )}
         </div>
 
-        <div className="mx-auto mt-4 w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
-          {error && <p className="mb-2 text-sm text-red-400">{error}</p>}
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-full max-w-[760px] px-4 z-40" onClick={() => closeMenus()}>
+          {error && <p className="mb-2 text-sm text-red-400 text-center">{error}</p>}
 
-          <div className="rounded-3xl border border-white/10 bg-[#1a1c22]/95 p-4 shadow-2xl backdrop-blur-2xl">
+          <div className="w-full bg-[#1c1c1c] border border-white/10 rounded-3xl overflow-hidden shadow-2xl transition-all hover:border-white/20 p-4" onClick={(e) => e.stopPropagation()}>
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -408,7 +407,7 @@ export default function ImagePage() {
       </div>
 
       {showRightPanel && (
-        <aside className="w-[280px] border-l border-white/10 bg-[#0f1015]/95 p-4 backdrop-blur-xl">
+        <aside className="w-[280px] border-l border-white/[0.04] bg-[#09090b] p-4 flex-shrink-0 z-10 transition-all">
           <div className="mb-4 flex items-center gap-2">
             <Layers className="h-4 w-4 text-zinc-400" />
             <h3 className="text-sm font-semibold text-zinc-200">Image settings</h3>
