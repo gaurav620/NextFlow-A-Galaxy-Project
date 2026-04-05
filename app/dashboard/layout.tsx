@@ -21,16 +21,16 @@ const defaultTools = [
   { href: '/dashboard/image', label: 'Image', icon: ImageIcon },
   { href: '/dashboard/video', label: 'Video', icon: Clapperboard },
   { href: '/dashboard/enhancer', label: 'Enhancer', icon: Wand2 },
-  { href: '#', label: 'Nano Banana', icon: SparklesIcon }, // defined inline
+  { href: '/dashboard/nano', label: 'Nano Banana', icon: SparklesIcon }, // defined inline
   { href: '/dashboard/realtime', label: 'Realtime', icon: Zap },
   { href: '/dashboard/edit', label: 'Edit', icon: PenTool },
 ];
 
 const moreTools = [
-  { href: '#', label: 'Video Lipsync', icon: AudioLines },
-  { href: '#', label: 'Motion Transfer', icon: Activity },
-  { href: '#', label: '3D Objects', icon: Box },
-  { href: '#', label: 'Video Restyle', icon: Palette },
+  { href: '/dashboard/lipsync', label: 'Video Lipsync', icon: AudioLines },
+  { href: '/dashboard/motion', label: 'Motion Transfer', icon: Activity },
+  { href: '/dashboard/3d', label: '3D Objects', icon: Box },
+  { href: '/dashboard/video-restyle', label: 'Video Restyle', icon: Palette },
 ];
 
 // Simple Sparkles Custom Icon
