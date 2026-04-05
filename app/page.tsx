@@ -1,51 +1,79 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   ChevronDown,
-  ArrowRight,
   Workflow,
   Menu,
   X,
-  Wand2,
   Image as ImageIcon,
   Video,
   Box,
   MonitorPlay,
-  Sparkles
+  Zap,
+  Layout,
+  UploadCloud,
+  FileBox,
+  Sparkles,
+  RefreshCcw,
+  Settings2,
+  ChevronRight
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 
-/* ─── SHOWCASE HIGHLIGHTS ──────────────────────────────────── */
+/* ─── KREA-CLONE COMPONENT DATA ───────────────────────────── */
+
 const showcaseFeatures = [
     {
         id: 'image',
-        title: 'Image Generation',
-        desc: 'Generate high quality images in milliseconds.',
+        title: 'AI Image Generation',
+        subtitle: '1000+ Styles',
+        desc: 'Focus on simple text descriptions or your imagination.',
         imgUrl: 'https://images.unsplash.com/photo-1620641788421-7a1c34a26020?q=80&w=800&auto=format&fit=crop'
     },
     {
-        id: 'video',
-        title: 'Video Generation',
-        desc: 'State of the art video rendering and motion processing.',
-        imgUrl: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=800&auto=format&fit=crop'
+        id: 'upscale',
+        title: 'Image Upscaling',
+        subtitle: '22K Resolution',
+        desc: 'Enhancing fuzzy photos and low-res generations to flawless fidelity.',
+        imgUrl: 'https://images.unsplash.com/photo-1634153037059-d88d266d71b3?q=80&w=800&auto=format&fit=crop'
     },
     {
-        id: '3d',
-        title: '3D Objects',
-        desc: 'Turn any image or text prompt into a rich 3D mesh.',
+        id: 'realtime',
+        title: 'Real-time Rendering',
+        subtitle: '50ms Latency',
+        desc: 'Instant generation at the edge. The future of creative flow.',
         imgUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop'
     },
     {
-        id: 'restyle',
-        title: 'Video Restyle',
-        desc: 'Apply diverse visual aesthetics seamlessly to your videos.',
+        id: 'video',
+        title: 'AI Video Generation',
+        subtitle: 'Veo 3.1 & More',
+        desc: 'Generate seamless motion, retarget characters, and interpolate frames.',
+        imgUrl: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=800&auto=format&fit=crop'
+    },
+    {
+        id: 'lora',
+        title: 'LoRA Fine-tuning',
+        subtitle: 'Custom Models',
+        desc: 'Train bespoke models on your exact dataset within minutes.',
         imgUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop'
     }
 ];
 
-/* ─── NAVBAR ─────────────────────────────────────────────────  */
+const models = [
+    { name: 'Veo 3.1', icon: '🌀' },
+    { name: 'Ideogram', icon: '❄' },
+    { name: 'Runway', icon: 'ℜ' },
+    { name: 'Luma', icon: 'L' },
+    { name: 'Flux', icon: '▴' },
+    { name: 'Gemini', icon: '✨' },
+    { name: 'NextFlow 1', icon: '⬡' }
+];
+
+/* ─── EXACT HEADER & MEGA MENU ────────────────────────────── */
+
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -58,87 +86,136 @@ function Navbar() {
   }, []);
 
   return (
-    <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 font-sans ${
-        scrolled ? 'bg-white/80 backdrop-blur-xl shadow-sm' : 'bg-transparent'
-      }`}
-    >
-      <div className="max-w-[1400px] mx-auto px-6 h-[72px] flex items-center justify-between">
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 font-sans border-b ${scrolled ? 'bg-black/90 backdrop-blur-xl border-white/5' : 'bg-transparent border-transparent'}`}>
+      <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
         
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-          <div className="w-8 h-8 rounded-xl bg-black flex items-center justify-center">
-            <Workflow className="w-5 h-5 text-white" />
+          <div className="w-6 h-6 rounded-md bg-white flex items-center justify-center">
+            <Workflow className="w-4 h-4 text-black" />
           </div>
-          <span className="text-black font-bold text-[18px] tracking-tight">NextFlow</span>
+          <span className={`font-semibold text-lg tracking-tight ${scrolled ? 'text-white' : 'text-white'}`}>NextFlow</span>
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden lg:flex items-center gap-6">
-          <Link href="/dashboard" className="text-[14px] font-medium text-zinc-600 hover:text-black transition-colors">App</Link>
+        <nav className="hidden lg:flex items-center gap-7">
+          <Link href="/dashboard" className="text-[13px] text-zinc-300 hover:text-white transition-colors">App</Link>
           
           <div 
-            className="relative h-[72px] flex items-center"
+            className="relative h-16 flex items-center"
             onMouseEnter={() => setFeaturesOpen(true)}
             onMouseLeave={() => setFeaturesOpen(false)}
           >
-            <button className="text-[14px] font-medium text-zinc-600 hover:text-black transition-colors flex items-center gap-1">
+            <button className={`text-[13px] flex items-center gap-1 transition-colors ${featuresOpen ? 'text-white' : 'text-zinc-300 hover:text-white'}`}>
               Features <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${featuresOpen ? 'rotate-180' : ''}`} />
             </button>
 
             <AnimatePresence>
                 {featuresOpen && (
                     <motion.div 
-                        initial={{ opacity: 0, y: 10 }}
+                        initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute top-full left-1/2 -translate-x-1/2 mt-0 w-[500px] bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-black/5 p-4 grid grid-cols-2 gap-2"
+                        exit={{ opacity: 0, scale: 0.98, y: 10 }}
+                        transition={{ duration: 0.15, ease: "easeOut" }}
+                        className="absolute top-[60px] left-1/2 -translate-x-[40%] w-[850px] bg-[#f8f8f8] rounded-[24px] shadow-2xl border border-black/5 p-8 flex gap-8 z-50 overflow-hidden"
                     >
-                        <div className="flex flex-col gap-1">
-                            <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2 px-3">Generate</h4>
-                            <Link href="/dashboard/motion" className="flex items-center gap-3 p-3 rounded-2xl hover:bg-zinc-50 transition">
-                                <div className="w-10 h-10 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center"><MonitorPlay className="w-5 h-5 text-blue-600" /></div>
-                                <div><p className="text-sm font-semibold text-black">Motion Transfer</p><p className="text-xs text-zinc-500">Video character retargeting</p></div>
-                            </Link>
-                            <Link href="/dashboard/3d" className="flex items-center gap-3 p-3 rounded-2xl hover:bg-zinc-50 transition">
-                                <div className="w-10 h-10 rounded-full bg-purple-50 border border-purple-100 flex items-center justify-center"><Box className="w-5 h-5 text-purple-600" /></div>
-                                <div><p className="text-sm font-semibold text-black">3D Objects</p><p className="text-xs text-zinc-500">Image & text to 3D mesh</p></div>
-                            </Link>
+                        {/* Links Columns */}
+                        <div className="flex-1 grid grid-cols-3 gap-6">
+                            {/* Column 1: Generate */}
+                            <div>
+                                <h4 className="text-[12px] font-semibold text-zinc-400 mb-4 tracking-wide">Generate</h4>
+                                <div className="flex flex-col gap-5">
+                                    <div>
+                                        <div className="flex items-center gap-2 text-black mb-1 font-medium"><ImageIcon className="w-4 h-4"/> AI Image Generation</div>
+                                        <Link href="/dashboard" className="block text-[13px] text-zinc-500 hover:text-black py-1">Text to Image <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <Link href="/dashboard" className="block text-[13px] text-zinc-500 hover:text-black py-1">Realtime Image <ChevronRight className="w-3 h-3 inline"/></Link>
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2 text-black mb-1 font-medium"><Video className="w-4 h-4"/> AI Video Generation</div>
+                                        <Link href="/dashboard/video-restyle" className="block text-[13px] text-zinc-500 hover:text-black py-1">Text to Video <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <Link href="/dashboard/motion" className="block text-[13px] text-zinc-500 hover:text-black py-1">Motion Transfer <ChevronRight className="w-3 h-3 inline"/></Link>
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2 text-black mb-1 font-medium"><Box className="w-4 h-4"/> AI 3D Generation</div>
+                                        <Link href="/dashboard/3d" className="block text-[13px] text-zinc-500 hover:text-black py-1">Text to 3D Object <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <Link href="/dashboard/3d" className="block text-[13px] text-zinc-500 hover:text-black py-1">Image to 3D Object <ChevronRight className="w-3 h-3 inline"/></Link>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* Column 2: Edit */}
+                            <div>
+                                <h4 className="text-[12px] font-semibold text-zinc-400 mb-4 tracking-wide">Edit</h4>
+                                <div className="flex flex-col gap-5">
+                                    <div>
+                                        <div className="flex items-center gap-2 text-black mb-1 font-medium"><Sparkles className="w-4 h-4"/> AI Image Enhancements</div>
+                                        <Link href="/dashboard" className="block text-[13px] text-zinc-500 hover:text-black py-1">Upscaling <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <Link href="/dashboard" className="block text-[13px] text-zinc-500 hover:text-black py-1">Generative Image Editing <ChevronRight className="w-3 h-3 inline"/></Link>
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2 text-black mb-1 font-medium"><MonitorPlay className="w-4 h-4"/> AI Video Enhancements</div>
+                                        <Link href="/dashboard/video-restyle" className="block text-[13px] text-zinc-500 hover:text-black py-1">Frame Interpolation <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <Link href="/dashboard/video-restyle" className="block text-[13px] text-zinc-500 hover:text-black py-1">Video Style Transfer <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <Link href="/dashboard" className="block text-[13px] text-zinc-500 hover:text-black py-1">Video Upscaling <ChevronRight className="w-3 h-3 inline"/></Link>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* Column 3: Customize */}
+                            <div>
+                                <h4 className="text-[12px] font-semibold text-zinc-400 mb-4 tracking-wide">Customize</h4>
+                                <div className="flex flex-col gap-5">
+                                    <div>
+                                        <div className="flex items-center gap-2 text-black mb-1 font-medium"><Settings2 className="w-4 h-4"/> AI Finetuning</div>
+                                        <Link href="/dashboard" className="block text-[13px] text-zinc-500 hover:text-black py-1">Image LoRA Finetuning <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <Link href="/dashboard" className="block text-[13px] text-zinc-500 hover:text-black py-1">Video LoRA Finetuning <ChevronRight className="w-3 h-3 inline"/></Link>
+                                        <Link href="/dashboard" className="block text-[13px] text-zinc-500 hover:text-black py-1">LoRA Sharing <ChevronRight className="w-3 h-3 inline"/></Link>
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2 text-black mb-1 font-medium"><FileBox className="w-4 h-4"/> File Management</div>
+                                        <Link href="/dashboard" className="block text-[13px] text-zinc-500 hover:text-black py-1">NextFlow Asset Manager <ChevronRight className="w-3 h-3 inline"/></Link>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div className="flex flex-col gap-1">
-                            <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2 px-3">Edit</h4>
-                            <Link href="/dashboard/video-restyle" className="flex items-center gap-3 p-3 rounded-2xl hover:bg-zinc-50 transition">
-                                <div className="w-10 h-10 rounded-full bg-orange-50 border border-orange-100 flex items-center justify-center"><Video className="w-5 h-5 text-orange-600" /></div>
-                                <div><p className="text-sm font-semibold text-black">Video Restyle</p><p className="text-xs text-zinc-500">AI style transfer</p></div>
-                            </Link>
-                            <Link href="/dashboard" className="flex items-center gap-3 p-3 rounded-2xl hover:bg-zinc-50 transition">
-                                <div className="w-10 h-10 rounded-full bg-pink-50 border border-pink-100 flex items-center justify-center"><ImageIcon className="w-5 h-5 text-pink-600" /></div>
-                                <div><p className="text-sm font-semibold text-black">Image Generator</p><p className="text-xs text-zinc-500">AI generation</p></div>
-                            </Link>
+                        {/* Right Panel Card */}
+                        <div className="w-[320px] rounded-2xl overflow-hidden relative group cursor-pointer bg-black flex-shrink-0 shadow-xl">
+                            <img src="https://images.unsplash.com/photo-1542596594-649edbc13630?q=80&w=800&auto=format&fit=crop" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80" alt="card" />
+                            <div className="absolute top-4 left-4 flex items-center gap-2">
+                                <div className="w-5 h-5 rounded bg-white flex items-center justify-center"><Workflow className="w-3 h-3 text-black"/></div>
+                                <span className="text-white font-bold text-sm drop-shadow-md">NextFlow 1</span>
+                            </div>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                            <div className="absolute bottom-6 left-6 right-6">
+                                <p className="text-[10px] text-white/50 font-semibold tracking-wider mb-1 uppercase">Prompt</p>
+                                <p className="text-white font-serif text-[18px] leading-tight mb-4">"Cinematic photo of a person in a linen jacket"</p>
+                                <Link href="/dashboard" className="inline-flex px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md rounded-lg text-white text-xs font-semibold transition-colors">
+                                    Generate image
+                                </Link>
+                            </div>
                         </div>
                     </motion.div>
                 )}
             </AnimatePresence>
           </div>
 
-          <Link href="/dashboard" className="text-[14px] font-medium text-zinc-600 hover:text-black transition-colors">Image Generator</Link>
-          <Link href="/dashboard/video-restyle" className="text-[14px] font-medium text-zinc-600 hover:text-black transition-colors">Video Generator</Link>
-          <Link href="/dashboard" className="text-[14px] font-medium text-zinc-600 hover:text-black transition-colors">API</Link>
-          <Link href="#" className="text-[14px] font-medium text-zinc-600 hover:text-black transition-colors">Pricing</Link>
+          <Link href="/dashboard" className="text-[13px] text-zinc-300 hover:text-white transition-colors">Image Generator</Link>
+          <Link href="/dashboard/video-restyle" className="text-[13px] text-zinc-300 hover:text-white transition-colors">Video Generator</Link>
+          <Link href="/dashboard" className="text-[13px] text-zinc-300 hover:text-white transition-colors">Upscaler</Link>
+          <Link href="/dashboard" className="text-[13px] text-zinc-300 hover:text-white transition-colors">API</Link>
+          <Link href="#" className="text-[13px] text-zinc-300 hover:text-white transition-colors">Pricing</Link>
+          <Link href="#" className="text-[13px] text-zinc-300 hover:text-white transition-colors">Enterprise</Link>
         </nav>
 
         {/* CTA Buttons */}
         <div className="hidden lg:flex items-center gap-3">
           <Link
             href="/sign-up"
-            className="px-5 py-2 text-[14px] font-semibold text-black border border-black/10 hover:bg-black/5 rounded-full transition-colors"
+            className="px-4 py-1.5 text-[13px] font-medium text-white bg-white/10 border border-white/10 hover:bg-white/20 rounded-full transition-colors"
           >
             Sign up for free
           </Link>
           <Link
             href="/dashboard"
-            className="px-5 py-2 text-[14px] font-semibold text-white bg-black hover:bg-black/80 rounded-full transition-colors shadow-lg"
+            className="px-4 py-1.5 text-[13px] font-medium text-black bg-white hover:bg-zinc-200 rounded-full transition-colors"
           >
             Log in
           </Link>
@@ -146,136 +223,216 @@ function Navbar() {
 
         {/* Mobile hamburger */}
         <button
-          className="lg:hidden text-black"
+          className="lg:hidden text-white"
           onClick={() => setMobileOpen(!mobileOpen)}
         >
           {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
-
-      {/* Mobile Menu */}
-      {mobileOpen && (
-        <div className="lg:hidden bg-white border-b border-black/5 px-6 py-4 flex flex-col gap-4 shadow-xl">
-            <Link href="/dashboard" className="text-[15px] font-medium text-black py-2">App</Link>
-            <Link href="/dashboard/motion" className="text-[15px] font-medium text-black py-2">Motion Transfer</Link>
-            <Link href="/dashboard/3d" className="text-[15px] font-medium text-black py-2">3D Objects</Link>
-            <Link href="/dashboard/video-restyle" className="text-[15px] font-medium text-black py-2">Video Restyle</Link>
-          <div className="flex gap-3 pt-4 border-t border-black/5">
-            <Link href="/sign-up" className="flex-1 text-center py-3 text-[14px] font-bold text-black border border-black/10 rounded-xl">Sign up</Link>
-            <Link href="/dashboard" className="flex-1 text-center py-3 text-[14px] font-bold text-white bg-black rounded-xl">Log in</Link>
-          </div>
-        </div>
-      )}
     </header>
   );
 }
 
-/* ─── LOGO MARQUEE ───────────────────────────────────────────  */
-function Logos() {
-    return (
-        <div className="w-full flex justify-center py-8 opacity-40 grayscale">
-            <div className="flex items-center gap-12 max-w-4xl overflow-hidden px-6">
-                <span className="text-xl font-bold font-serif italic">NIKE</span>
-                <span className="text-xl font-black">SAMSUNG</span>
-                <span className="text-xl font-semibold tracking-tighter">Microsoft</span>
-                <span className="text-xl font-bold tracking-tight">shopify</span>
-                <span className="text-xl font-black text-red-600">LEGO</span>
-            </div>
-        </div>
-    )
-}
+/* ─── DARK HERO SECTION ────────────────────────────────────── */
 
-/* ─── HERO & DEMO INTERFACE ──────────────────────────────────  */
-function Hero() {
+function DarkHero() {
   return (
-    <section className="relative pt-[180px] pb-24 bg-[#f3f3f5] flex flex-col items-center text-center overflow-hidden font-sans">
-      <div className="relative z-10 max-w-4xl mx-auto px-6 flex flex-col items-center">
-        <h1 className="text-[clamp(48px,8vw,88px)] font-bold tracking-[-0.04em] text-black leading-[1.05] mb-6">
-          Dead simple UI.<br />No tutorials needed.
+    <section className="relative min-h-screen bg-black flex flex-col items-center pt-[150px] pb-10 overflow-hidden font-sans">
+      <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-blue-900/30 rounded-full blur-[150px]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-[600px] h-[500px] bg-purple-900/20 rounded-full blur-[150px]" />
+      </div>
+
+      <div className="relative z-10 w-full max-w-[1000px] mx-auto px-6 text-center flex flex-col items-center">
+        <h1 className="text-[clamp(40px,7vw,72px)] font-bold tracking-tight text-white leading-[1.1] mb-6">
+          NextFlow is the world's most<br/>powerful creative AI suite.
         </h1>
-        <p className="text-[clamp(16px,2vw,20px)] text-zinc-600 mb-12 max-w-2xl leading-relaxed font-medium">
-          NextFlow offers the simplest interfaces. Skip dry tutorials and get right into your creative flow with minimal distraction, even if you or your team has never worked with AI tools before.
+        <p className="text-[clamp(16px,2vw,20px)] text-zinc-400 mb-10 max-w-2xl font-medium">
+          Generate, enhance, and edit images, videos, or 3D meshes for free with AI.
         </p>
 
-        {/* Central Dashboard Mockup Simulation */}
-        <div className="w-full max-w-3xl bg-[#e5e5e5] rounded-[2rem] p-6 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15)] flex flex-col gap-4 border border-white/50">
-            <div className="w-full h-[180px] bg-[#d4d4d4] rounded-2xl flex flex-col p-6 items-start">
-               <p className="text-zinc-500 font-medium text-left">Describe any visual you want to create. NextFlow will generate it instantly for free. You can write in any language.</p>
-               
-               <div className="mt-auto w-full flex items-center justify-between">
-                   <div className="flex items-center gap-2">
-                       <span className="bg-white/50 px-3 py-1.5 rounded-xl text-xs font-bold text-zinc-600 flex items-center gap-1"><MonitorPlay className="w-3 h-3"/> 16:9</span>
-                       <span className="bg-white/50 px-3 py-1.5 rounded-xl text-xs font-bold text-zinc-600 flex items-center gap-1"><Sparkles className="w-3 h-3"/> Style</span>
-                   </div>
-                   <Link href="/dashboard" className="bg-white px-5 py-2.5 rounded-xl font-bold text-black flex items-center gap-2 shadow-sm hover:scale-105 transition-transform">
-                       <Wand2 className="w-4 h-4" /> Generate
-                   </Link>
-               </div>
-            </div>
+        <div className="flex items-center gap-4 mb-20">
+          <Link href="/sign-up" className="px-8 py-3.5 bg-white text-black font-semibold text-[15px] rounded-full hover:bg-zinc-200 transition-colors">
+            Start for free
+          </Link>
+          <Link href="/dashboard" className="px-8 py-3.5 bg-white/5 border border-white/10 text-white font-semibold text-[15px] rounded-full hover:bg-white/10 transition-colors">
+            Launch App
+          </Link>
         </div>
 
+        {/* iMac Dashboard Mockup */}
+        <div className="relative w-full max-w-[900px] aspect-[16/10] mt-4">
+            <div className="absolute inset-0 bg-[#1e1e1e] rounded-[32px] border-[12px] border-[#111] shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden shadow-black flex flex-col">
+                <div className="w-full h-8 bg-[#2a2a2a] flex items-center px-4 gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                    <div className="w-3 h-3 rounded-full bg-green-500" />
+                </div>
+                <div className="flex-1 bg-[#111] relative p-6 flex flex-col">
+                    <div className="absolute top-4 right-4 flex gap-2">
+                        <div className="w-8 h-8 rounded bg-white/5" />
+                        <div className="w-8 h-8 rounded bg-white/5" />
+                    </div>
+                    {/* Simulated App inside Monitor */}
+                    <div className="flex-1 flex flex-col items-center justify-center mt-4">
+                        <div className="w-full max-w-lg aspect-[21/9] rounded-xl bg-gradient-to-br from-orange-400/20 to-pink-500/20 border border-white/10 flex items-center justify-center mb-6 relative overflow-hidden">
+                            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542596594-649edbc13630?q=80&w=600')] bg-cover bg-center opacity-30 mix-blend-overlay" />
+                            <span className="text-white/60 font-medium z-10 text-lg">Let's create something</span>
+                        </div>
+                        <div className="flex gap-4">
+                             <div className="w-40 h-24 rounded-xl bg-white/5 border border-white/10 flex items-end p-3"><span className="text-xs text-white">Generate Image</span></div>
+                             <div className="w-40 h-24 rounded-xl bg-white/5 border border-white/10 flex items-end p-3"><span className="text-xs text-white">Generate Video</span></div>
+                             <div className="w-40 h-24 rounded-xl bg-white/5 border border-white/10 flex items-end p-3"><span className="text-xs text-white">Realtime Rendering</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {/* iMac Stand */}
+            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-[160px] h-8 bg-zinc-800 rounded-b-xl" style={{ clipPath: 'polygon(10% 0, 90% 0, 100% 100%, 0 100%)' }} />
+        </div>
       </div>
     </section>
   );
 }
 
-/* ─── INTERACTIVE SHOWCASE ───────────────────────────────────  */
-function InteractiveShowcase() {
+/* ─── LIGHT LOGOS AND BENTO GRID ───────────────────────────── */
+
+function BentoGrid() {
+    return (
+        <section className="bg-[#f3f4f6] pt-16 pb-32 font-sans overflow-hidden">
+            <div className="max-w-[1400px] mx-auto px-6">
+                
+                {/* Marquee Logos */}
+                <div className="flex items-center justify-between opacity-50 grayscale mb-16 px-4">
+                    {models.map(m => (
+                        <div key={m.name} className="flex items-center gap-2 text-2xl font-bold text-zinc-900 tracking-tight">
+                            <span>{m.icon}</span> {m.name}
+                        </div>
+                    ))}
+                </div>
+
+                {/* Grid Container */}
+                <div className="grid grid-cols-12 gap-5 auto-rows-[250px]">
+                    
+                    {/* Industry Leading Speed */}
+                    <div className="col-span-12 md:col-span-5 rounded-3xl overflow-hidden relative shadow-sm group">
+                        <img src="https://images.unsplash.com/photo-1620641788421-7a1c34a26020?q=80&w=800" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt="Speed" />
+                        <div className="absolute inset-0 bg-black/40" />
+                        <h3 className="absolute inset-x-8 top-[35%] -translate-y-1/2 text-white font-bold text-4xl leading-tight text-center drop-shadow-md">Industry-leading<br/>inference speed</h3>
+                    </div>
+
+                    {/* 22K Pixels */}
+                    <div className="col-span-12 sm:col-span-6 md:col-span-3 bg-[#e5e7eb] rounded-3xl p-8 flex flex-col justify-center items-center text-center border border-zinc-200">
+                        <p className="text-[72px] font-black text-black leading-none tracking-tighter mb-2">22K</p>
+                        <p className="font-semibold text-zinc-800">Pixels upscaling</p>
+                    </div>
+
+                    {/* Train */}
+                    <div className="col-span-12 sm:col-span-6 md:col-span-4 bg-[#e5e7eb] rounded-3xl p-8 flex flex-col justify-center items-center text-center border border-zinc-200">
+                        <p className="text-[72px] font-black text-black leading-none tracking-tighter mb-2">Train</p>
+                        <p className="font-semibold text-zinc-800">Fine-tune models with your own data</p>
+                    </div>
+
+                    {/* 4K Native */}
+                    <div className="col-span-12 sm:col-span-6 md:col-span-4 rounded-3xl overflow-hidden relative shadow-sm">
+                        <img src="https://images.unsplash.com/photo-1542596594-649edbc13630?q=80&w=800&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover" alt="4K" />
+                        <div className="absolute inset-0 bg-black/40" />
+                        <div className="absolute bottom-8 left-8">
+                            <p className="text-[64px] font-black text-white leading-none tracking-tighter mb-1">4K</p>
+                            <p className="font-semibold text-white/90 text-lg">Native image generation</p>
+                        </div>
+                    </div>
+
+                    {/* NextFlow 1 vertical */}
+                    <div className="col-span-12 sm:col-span-6 md:col-span-6 row-span-2 rounded-3xl overflow-hidden relative shadow-sm group">
+                        <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt="NextFlow 1" />
+                        <div className="absolute inset-0 bg-black/20" />
+                        <div className="absolute bottom-10 left-0 right-0 text-center">
+                            <p className="text-[72px] font-black text-white leading-none tracking-tighter drop-shadow-lg mb-2">NextFlow 1</p>
+                        </div>
+                    </div>
+
+                    {/* Right column stack */}
+                    <div className="col-span-12 md:col-span-2 flex flex-col gap-5 row-span-2">
+                        <div className="flex-1 bg-[#e5e7eb] rounded-3xl p-6 flex flex-col justify-center items-center text-center border border-zinc-200">
+                            <p className="text-[32px] font-bold text-black leading-none tracking-tight mb-2">Do not train</p>
+                            <p className="font-medium text-zinc-700 text-sm">Safely generate proprietary data</p>
+                        </div>
+                        <div className="flex-1 bg-[#e5e7eb] rounded-3xl p-6 flex flex-col justify-center items-center text-center border border-zinc-200">
+                            <p className="text-[64px] font-black text-black leading-none tracking-tighter mb-2">64+</p>
+                            <p className="font-bold text-zinc-800 text-lg">Models</p>
+                        </div>
+                    </div>
+
+                    {/* Minimalist UI */}
+                    <div className="col-span-12 md:col-span-4 rounded-3xl overflow-hidden relative bg-black shadow-sm flex items-end p-8">
+                         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800')] bg-cover opacity-30" />
+                         <p className="text-[32px] font-bold text-white relative z-10 tracking-tight">Minimalist UI</p>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+    );
+}
+
+/* ─── INTERACTIVE SHOWCASE (SPLIT VIEW) ────────────────────── */
+
+function FeatureSwitcher() {
     const [activeId, setActiveId] = useState(showcaseFeatures[0].id);
 
     return (
-        <section className="py-32 bg-black text-white px-6">
+        <section className="bg-black text-white font-sans pt-32 pb-40 px-6 border-b border-zinc-900">
             <div className="max-w-[1400px] mx-auto">
-                <div className="mb-16">
-                    <h2 className="text-[clamp(36px,5vw,56px)] font-bold tracking-tight leading-[1.05] max-w-2xl">
-                        Generate or edit high quality images, videos, and 3D objects with AI
-                    </h2>
-                </div>
+                <h2 className="text-[clamp(32px,4vw,56px)] font-bold tracking-tight leading-[1.1] max-w-3xl mb-24">
+                    Generate or edit high quality images, videos, and 3D objects with AI
+                </h2>
 
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-12 min-h-[600px]">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-16 min-h-[700px]">
                     <div className="md:col-span-4 flex flex-col gap-2">
                         {showcaseFeatures.map((feat) => (
                             <button
                                 key={feat.id}
                                 onClick={() => setActiveId(feat.id)}
-                                className={`text-left p-6 rounded-3xl transition-all duration-300 relative overflow-hidden focus:outline-none ${
+                                className={`text-left p-6 rounded-3xl transition-all duration-300 relative focus:outline-none ${
                                     activeId === feat.id 
-                                        ? 'bg-zinc-900 border border-white/10' 
-                                        : 'bg-transparent hover:bg-zinc-950 border border-transparent'
+                                        ? 'bg-[#111] border border-white/5' 
+                                        : 'bg-transparent border border-transparent hover:bg-zinc-900/50'
                                 }`}
                             >
-                                <h3 className={`text-2xl font-bold tracking-tight mb-2 ${activeId === feat.id ? 'text-white' : 'text-zinc-500'}`}>{feat.title}</h3>
+                                <h3 className={`text-2xl font-bold tracking-tight mb-2 ${activeId === feat.id ? 'text-white' : 'text-zinc-600'}`}>{feat.title}</h3>
+                                
+                                <AnimatePresence>
                                 {activeId === feat.id && (
-                                    <motion.p 
+                                    <motion.div 
                                         initial={{ opacity: 0, height: 0 }}
                                         animate={{ opacity: 1, height: 'auto' }}
-                                        className="text-zinc-400 leading-relaxed font-medium"
+                                        exit={{ opacity: 0, height: 0 }}
+                                        className="overflow-hidden"
                                     >
-                                        {feat.desc}
-                                    </motion.p>
+                                        <p className="text-zinc-400 leading-relaxed font-medium mt-2">{feat.desc}</p>
+                                        <Link href="/dashboard" className="inline-flex items-center gap-2 mt-6 text-white text-sm font-semibold hover:gap-3 transition-all">
+                                            Try it now <ArrowRight className="w-4 h-4"/>
+                                        </Link>
+                                    </motion.div>
                                 )}
+                                </AnimatePresence>
                             </button>
                         ))}
                     </div>
 
-                    <div className="md:col-span-8 relative rounded-[2.5rem] overflow-hidden border border-white/10 bg-zinc-900 shadow-2xl">
+                    <div className="md:col-span-8 bg-[#111] border border-white/10 rounded-[40px] overflow-hidden relative shadow-2xl min-h-[500px]">
                         <AnimatePresence mode="wait">
                             <motion.img 
                                 key={activeId}
                                 src={showcaseFeatures.find(f => f.id === activeId)?.imgUrl}
-                                initial={{ opacity: 0, scale: 1.05 }}
-                                animate={{ opacity: 1, scale: 1 }}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                transition={{ duration: 0.5 }}
+                                transition={{ duration: 0.3 }}
                                 className="w-full h-full object-cover absolute inset-0"
                             />
                         </AnimatePresence>
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                            <Link href="/dashboard" className="px-8 py-3.5 bg-white text-black font-bold text-[15px] rounded-full hover:scale-105 transition-transform shadow-2xl">
-                                Try it now
-                            </Link>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -283,134 +440,146 @@ function InteractiveShowcase() {
     )
 }
 
-/* ─── PRICING PREVIEW ─────────────────────────────────────────  */
-function PricingSection() {
+/* ─── PRICING DETAILS ──────────────────────────────────────── */
+function ExactPricing() {
     return (
-        <section className="py-32 bg-white px-6">
-            <div className="max-w-[1400px] mx-auto text-center flex flex-col items-center">
-                <h2 className="text-[clamp(36px,5vw,56px)] font-bold tracking-tight leading-[1.05] text-black max-w-3xl mb-4">
+        <section className="bg-black pt-32 pb-40 px-6 font-sans">
+            <div className="max-w-[1400px] mx-auto text-center">
+                <h2 className="text-[clamp(36px,5vw,64px)] font-bold tracking-tight leading-[1.05] text-white max-w-4xl mx-auto mb-20 text-balance">
                     Trusted by over 30,000,000 users. From 191 countries. We've got a plan for everybody.
                 </h2>
                 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 w-full mt-16">
-                    <div className="p-8 rounded-[2.5rem] border border-zinc-200 bg-zinc-50 text-left flex flex-col">
-                        <h3 className="text-xl font-bold mb-2 text-black">Free</h3>
-                        <p className="text-4xl font-black mb-8 text-black">$0 <span className="text-lg text-zinc-400 font-medium">/mo</span></p>
-                        <Link href="/sign-up" className="w-full py-3 bg-black text-white text-center rounded-xl font-bold hover:bg-zinc-800 transition">Get Started</Link>
-                        <ul className="mt-8 flex flex-col gap-3 text-sm text-zinc-600 font-medium">
-                            <li>• Basic Generations</li>
-                            <li>• Limited queue priority</li>
-                            <li>• Community Support</li>
-                        </ul>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    {/* Free */}
+                    <div className="bg-[#111] border border-zinc-800 rounded-3xl p-8 text-left flex flex-col">
+                        <h3 className="text-xl font-bold text-white mb-2">Free</h3>
+                        <div className="flex items-end gap-1 mb-8">
+                            <span className="text-[40px] font-black text-white leading-none">$0</span>
+                            <span className="text-zinc-500 font-medium mb-1">/month</span>
+                        </div>
+                        <Link href="/sign-up" className="w-full py-3.5 bg-white text-black font-semibold text-center rounded-xl hover:bg-zinc-200 transition">Get Started</Link>
+                        <p className="text-sm text-zinc-500 font-medium mt-6">Includes 100 compute units/day</p>
                     </div>
-
-                    <div className="p-8 rounded-[2.5rem] border border-black bg-black text-white text-left flex flex-col relative transform md:-translate-y-4 shadow-2xl shadow-black/20">
-                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-xs font-bold px-4 py-1.5 rounded-full">MOST POPULAR</div>
-                        <h3 className="text-xl font-bold mb-2">Pro</h3>
-                        <p className="text-4xl font-black mb-8">$35 <span className="text-lg text-zinc-400 font-medium">/mo</span></p>
-                        <Link href="/sign-up" className="w-full py-3 bg-white text-black text-center rounded-xl font-bold hover:bg-zinc-200 transition">Subscribe</Link>
-                        <ul className="mt-8 flex flex-col gap-3 text-sm text-zinc-300 font-medium">
-                            <li>• Unlimited Generations</li>
-                            <li>• Fast queue priority</li>
-                            <li>• Private mode</li>
-                            <li>• All features access</li>
-                        </ul>
+                    {/* Basic */}
+                    <div className="bg-[#111] border border-zinc-800 rounded-3xl p-8 text-left flex flex-col">
+                        <h3 className="text-xl font-bold text-white mb-2">Basic</h3>
+                        <div className="flex items-end gap-1 mb-8">
+                            <span className="text-[40px] font-black text-white leading-none">US$9</span>
+                            <span className="text-zinc-500 font-medium mb-1">/month</span>
+                        </div>
+                        <Link href="/sign-up" className="w-full py-3.5 bg-zinc-800 text-white font-semibold text-center rounded-xl hover:bg-zinc-700 transition">Subscribe</Link>
+                        <p className="text-sm text-zinc-500 font-medium mt-6">Includes 5,000 compute units/month</p>
                     </div>
-
-                    <div className="p-8 rounded-[2.5rem] border border-zinc-200 bg-zinc-50 text-left flex flex-col">
-                        <h3 className="text-xl font-bold mb-2 text-black">Basic</h3>
-                        <p className="text-4xl font-black mb-8 text-black">$9 <span className="text-lg text-zinc-400 font-medium">/mo</span></p>
-                        <Link href="/sign-up" className="w-full py-3 bg-zinc-200 text-black text-center rounded-xl font-bold hover:bg-zinc-300 transition">Subscribe</Link>
-                        <ul className="mt-8 flex flex-col gap-3 text-sm text-zinc-600 font-medium">
-                            <li>• Increased Generations</li>
-                            <li>• Standard queue</li>
-                            <li>• Private mode</li>
-                        </ul>
+                    {/* Pro */}
+                    <div className="bg-[#111] border border-zinc-700 rounded-3xl p-8 text-left flex flex-col relative transform md:-translate-y-4">
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-blue-500 text-white text-[11px] font-bold px-3 py-1 rounded-full tracking-wide">MOST POPULAR</div>
+                        <h3 className="text-xl font-bold text-white mb-2">Pro</h3>
+                        <div className="flex items-end gap-1 mb-8">
+                            <span className="text-[40px] font-black text-white leading-none">US$35</span>
+                            <span className="text-zinc-500 font-medium mb-1">/month</span>
+                        </div>
+                        <Link href="/sign-up" className="w-full py-3.5 bg-white text-black font-semibold text-center rounded-xl hover:bg-zinc-200 transition">Subscribe</Link>
+                        <p className="text-sm text-zinc-500 font-medium mt-6">Includes 20,000 compute units/month</p>
                     </div>
-
-                    <div className="p-8 rounded-[2.5rem] border border-zinc-200 bg-zinc-50 text-left flex flex-col">
-                        <h3 className="text-xl font-bold mb-2 text-black">Max</h3>
-                        <p className="text-4xl font-black mb-8 text-black">$105 <span className="text-lg text-zinc-400 font-medium">/mo</span></p>
-                        <Link href="/sign-up" className="w-full py-3 bg-zinc-200 text-black text-center rounded-xl font-bold hover:bg-zinc-300 transition">Subscribe</Link>
-                        <ul className="mt-8 flex flex-col gap-3 text-sm text-zinc-600 font-medium">
-                            <li>• Maximum Performance</li>
-                            <li>• Dedicated nodes</li>
-                            <li>• Enterprise Support</li>
-                        </ul>
+                    {/* Max */}
+                    <div className="bg-[#111] border border-zinc-800 rounded-3xl p-8 text-left flex flex-col">
+                        <h3 className="text-xl font-bold text-white mb-2">Max</h3>
+                        <div className="flex items-end gap-1 mb-8">
+                            <span className="text-[40px] font-black text-white leading-none">US$105</span>
+                            <span className="text-zinc-500 font-medium mb-1">/month</span>
+                        </div>
+                        <Link href="/sign-up" className="w-full py-3.5 bg-zinc-800 text-white font-semibold text-center rounded-xl hover:bg-zinc-700 transition">Subscribe</Link>
+                        <p className="text-sm text-zinc-500 font-medium mt-6">Includes 60,000 compute units/month</p>
                     </div>
                 </div>
-
             </div>
         </section>
     )
 }
 
-/* ─── FOOTER ─────────────────────────────────────────────────  */
-function Footer() {
-  const cols = [
-    { title: 'NextFlow', links: [{ n: 'Log In', u: '/dashboard' }, { n: 'Pricing', u: '#' }, { n: 'Enterprise', u: '#' }] },
-    { title: 'Products', links: [{ n: 'Motion Transfer', u: '/dashboard/motion' }, { n: '3D Objects', u: '/dashboard/3d' }, { n: 'Video Restyle', u: '/dashboard/video-restyle' }, { n: 'Dashboard', u: '/dashboard' }] },
-    { title: 'Resources', links: [{ n: 'API', u: '#' }, { n: 'Documentation', u: '#' }, { n: 'Careers', u: '#' }] },
-  ];
-
+/* ─── KREA FOOTER EXACT CLONE ──────────────────────────────── */
+function ExactFooter() {
   return (
-    <footer className="bg-black text-white pt-24 pb-12 font-sans border-t border-white/10">
+    <footer className="bg-black text-white pt-20 pb-16 font-sans">
       <div className="max-w-[1400px] mx-auto px-6">
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-12 mb-20">
-          {/* Brand */}
-          <div className="col-span-2">
-            <Link href="/" className="flex items-center gap-2 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center">
-                <Workflow className="w-6 h-6 text-black" />
-              </div>
-              <span className="text-white font-bold text-2xl tracking-tight">NextFlow</span>
-            </Link>
-            <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">X</div>
-                <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">In</div>
-                <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">Ig</div>
-            </div>
-          </div>
-
-          {/* Columns */}
-          {cols.map((col) => (
-            <div key={col.title}>
-              <h4 className="font-semibold text-lg mb-6">{col.title}</h4>
-              <ul className="flex flex-col gap-4">
-                {col.links.map((link) => (
-                  <li key={link.n}>
-                    <Link href={link.u} className="text-zinc-400 hover:text-white transition-colors font-medium">
-                        {link.n}
-                    </Link>
-                  </li>
-                ))}
+        
+        {/* Core Nav */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-20">
+          <div>
+              <h4 className="font-semibold text-lg mb-6">NextFlow</h4>
+              <ul className="flex flex-col gap-4 text-zinc-500 font-medium">
+                  <li><Link href="/dashboard" className="hover:text-white transition">Log In</Link></li>
+                  <li><Link href="#" className="hover:text-white transition">Pricing</Link></li>
+                  <li><Link href="#" className="hover:text-white transition">Enterprise</Link></li>
+                  <li><Link href="#" className="hover:text-white transition">Gallery</Link></li>
               </ul>
-            </div>
-          ))}
+          </div>
+          <div>
+              <h4 className="font-semibold text-lg mb-6">Products</h4>
+              <ul className="flex flex-col gap-4 text-zinc-500 font-medium">
+                  <li><Link href="/dashboard" className="hover:text-white transition">Image Generator</Link></li>
+                  <li><Link href="/dashboard/video-restyle" className="hover:text-white transition">Video Generator</Link></li>
+                  <li><Link href="/dashboard" className="hover:text-white transition">Enhancer</Link></li>
+                  <li><Link href="/dashboard" className="hover:text-white transition">Realtime</Link></li>
+                  <li><Link href="/dashboard/motion" className="hover:text-white transition">Edit</Link></li>
+              </ul>
+          </div>
+          <div>
+              <h4 className="font-semibold text-lg mb-6">Resources</h4>
+              <ul className="flex flex-col gap-4 text-zinc-500 font-medium">
+                  <li><Link href="#" className="hover:text-white transition">Careers</Link></li>
+                  <li><Link href="#" className="hover:text-white transition">Terms of Service</Link></li>
+                  <li><Link href="#" className="hover:text-white transition">Privacy Policy</Link></li>
+                  <li><Link href="#" className="hover:text-white transition">API</Link></li>
+                  <li><Link href="#" className="hover:text-white transition">Documentation</Link></li>
+              </ul>
+          </div>
+          <div>
+              <h4 className="font-semibold text-lg mb-6">About</h4>
+              <ul className="flex flex-col gap-4 text-zinc-500 font-medium">
+                  <li><Link href="#" className="hover:text-white transition">Blog</Link></li>
+                  <li><Link href="#" className="hover:text-white transition">Discord</Link></li>
+              </ul>
+          </div>
         </div>
 
-        <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-zinc-500 font-medium">© 2026 NextFlow. All rights reserved.</p>
-          <div className="flex gap-6">
-              <span className="text-zinc-500 font-medium">Terms of Service</span>
-              <span className="text-zinc-500 font-medium">Privacy Policy</span>
-          </div>
+        {/* Investors & Copyright */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-t border-zinc-900 pt-8 gap-6">
+            <div className="flex items-center gap-6">
+                <span className="text-zinc-600 font-medium text-sm">© 2026 NextFlow</span>
+                <div className="flex items-center gap-4">
+                     <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center hover:bg-zinc-800 cursor-pointer">X</div>
+                     <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center hover:bg-zinc-800 cursor-pointer">In</div>
+                     <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center hover:bg-zinc-800 cursor-pointer">Ig</div>
+                </div>
+            </div>
+
+            <div className="flex items-center flex-wrap gap-4 text-zinc-600">
+                <span className="text-sm font-semibold uppercase tracking-wider">Backed By</span>
+                <span className="font-black">a16z</span>
+                <span className="font-bold border-l border-zinc-800 pl-4">BCV</span>
+                <span className="font-bold border-l border-zinc-800 pl-4">Gradient Ventures</span>
+                <span className="font-bold border-l border-zinc-800 pl-4">Pebblebed</span>
+                <span className="font-bold border-l border-zinc-800 pl-4">HF0</span>
+                <span className="font-bold border-l border-zinc-800 pl-4">Abstract</span>
+            </div>
         </div>
       </div>
     </footer>
   );
 }
 
-/* ─── PAGE ENTRY ─────────────────────────────────────────────  */
-export default function LandingPage() {
+/* ─── MAIN LANDING PAGE ────────────────────────────────────── */
+
+export default function PixelPerfectLandingPage() {
   return (
-    <main className="min-h-screen bg-[#f3f3f5] overflow-x-hidden">
+    <main className="bg-black min-h-screen text-white selection:bg-white selection:text-black">
       <Navbar />
-      <Hero />
-      <Logos />
-      <InteractiveShowcase />
-      <PricingSection />
-      <Footer />
+      <DarkHero />
+      <BentoGrid />
+      <FeatureSwitcher />
+      <ExactPricing />
+      <ExactFooter />
     </main>
   );
 }
