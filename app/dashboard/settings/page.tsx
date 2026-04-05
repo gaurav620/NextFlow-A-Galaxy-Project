@@ -215,11 +215,172 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {!['overview', 'profile', 'appearance', 'api-tokens'].includes(active) && (
-          <div className="max-w-xl">
-            <h2 className="text-[18px] font-semibold mb-4 capitalize">{sections.find(s => s.id === active)?.label}</h2>
-            <div className="bg-[#111] border border-white/[0.06] rounded-xl p-6">
-              <p className="text-[13px] text-zinc-500">This section is coming soon.</p>
+        {active === 'account' && (
+          <div className="max-w-xl space-y-6">
+            <h2 className="text-[18px] font-semibold">Account</h2>
+            <div className="bg-[#111] border border-white/[0.06] rounded-xl p-6 space-y-4">
+              <p className="text-[13px] text-zinc-400">Manage your account security and preferences.</p>
+              
+              <div className="space-y-4 pt-2">
+                <div className="flex items-center justify-between">
+                   <div>
+                      <p className="text-[14px] font-medium text-white">Two-factor Authentication</p>
+                      <p className="text-[12px] text-zinc-500 mt-0.5">Add an extra layer of security to your account.</p>
+                   </div>
+                   <button className="px-4 py-2 bg-[#1a1a1a] border border-white/[0.06] hover:border-white/10 rounded-lg text-[12px] text-zinc-300 transition-colors">
+                     Enable
+                   </button>
+                </div>
+                <div className="h-px bg-white/[0.06] w-full my-4"></div>
+                <div className="flex items-center justify-between">
+                   <div>
+                      <p className="text-[14px] font-medium text-red-500">Delete Account</p>
+                      <p className="text-[12px] text-zinc-500 mt-0.5">Permanently delete your account and all data.</p>
+                   </div>
+                   <button className="px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg text-[12px] font-semibold transition-colors">
+                     Delete
+                   </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {active === 'promo' && (
+          <div className="max-w-xl space-y-6">
+            <h2 className="text-[18px] font-semibold">Promo Codes</h2>
+            <div className="bg-[#111] border border-white/[0.06] rounded-xl p-6 space-y-4">
+              <p className="text-[13px] text-zinc-400">Redeem a promo code for compute packs or subscriptions.</p>
+              <div className="flex gap-3 pt-2">
+                 <input 
+                   placeholder="Enter code" 
+                   className="flex-1 bg-[#0d0d0f] border border-white/[0.06] rounded-lg px-3 py-2 text-[13px] text-white outline-none focus:border-white/10 transition-colors"
+                 />
+                 <button className="px-4 py-2 bg-white text-black rounded-lg text-[12px] font-semibold hover:bg-zinc-100 transition-colors">
+                   Redeem
+                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {active === 'members' && (
+          <div className="max-w-xl space-y-6">
+            <h2 className="text-[18px] font-semibold">Members</h2>
+            <div className="bg-[#111] border border-white/[0.06] rounded-xl p-6 space-y-6">
+              <div className="flex items-center justify-between">
+                 <div>
+                    <p className="text-[14px] font-medium text-white">Default Workspace</p>
+                    <p className="text-[12px] text-zinc-500 mt-0.5">Invite others to collaborate in this workspace.</p>
+                 </div>
+                 <button className="px-4 py-2 bg-white text-black rounded-lg text-[12px] font-semibold hover:bg-zinc-100 transition-colors flex items-center gap-1.5">
+                   <Plus className="w-3.5 h-3.5" />
+                   Invite
+                 </button>
+              </div>
+              
+              <div className="space-y-4">
+                 <div className="text-[11px] text-zinc-500 uppercase tracking-widest font-semibold mb-2">Current Members</div>
+                 <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                       <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-[12px] font-semibold text-zinc-300">
+                         {user?.firstName?.[0]?.toUpperCase() ?? 'U'}
+                       </div>
+                       <div>
+                         <p className="text-[13px] font-medium text-white">{user?.fullName ?? 'User'} (You)</p>
+                         <p className="text-[11px] text-zinc-500">{user?.emailAddresses?.[0]?.emailAddress ?? ''}</p>
+                       </div>
+                    </div>
+                    <span className="text-[11px] text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded-full">Owner</span>
+                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {active === 'workspace-settings' && (
+          <div className="max-w-xl space-y-6">
+            <h2 className="text-[18px] font-semibold">Workspace Settings</h2>
+            <div className="bg-[#111] border border-white/[0.06] rounded-xl p-6 space-y-5">
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[11px] text-zinc-500 uppercase tracking-widest font-semibold block mb-1.5">Workspace Name</label>
+                  <input
+                    defaultValue="Default Workspace"
+                    className="w-full bg-[#0d0d0f] border border-white/[0.06] rounded-lg px-3 py-2 text-[13px] text-white outline-none focus:border-white/10 transition-colors"
+                  />
+                </div>
+              </div>
+              <button className="px-4 py-2 bg-white text-black rounded-lg text-[12px] font-semibold hover:bg-zinc-100 transition-colors">
+                Save
+              </button>
+              
+              <div className="h-px bg-white/[0.06] w-full my-4"></div>
+              
+              <div>
+                <h3 className="text-[14px] font-medium text-white mb-1">Danger Zone</h3>
+                <p className="text-[12px] text-zinc-500 mb-4">Deleting this workspace will remove all assets and workflows permanently.</p>
+                <button className="px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg text-[12px] font-semibold transition-colors">
+                  Delete Workspace
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {active === 'compute-packs' && (
+          <div className="max-w-xl space-y-6">
+            <h2 className="text-[18px] font-semibold">Compute Packs</h2>
+            <div className="bg-[#111] border border-white/[0.06] rounded-xl p-6 space-y-4">
+              <div className="flex items-center gap-3 mb-2">
+                 <Package className="w-6 h-6 text-[#5b61ff]" />
+                 <div>
+                    <h3 className="text-[15px] font-semibold text-white">Need more compute?</h3>
+                    <p className="text-[12px] text-zinc-400">Buy one-time compute packs that never expire.</p>
+                 </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                 <div className="bg-[#0d0d0f] border border-white/[0.06] hover:border-white/10 transition-colors cursor-pointer rounded-xl p-5 flex flex-col items-center justify-center text-center">
+                    <p className="text-[24px] font-bold text-white mb-1">1,000</p>
+                    <p className="text-[11px] text-zinc-500 uppercase tracking-widest font-semibold mb-3">Compute units</p>
+                    <p className="text-[14px] font-medium text-white">$10.00</p>
+                 </div>
+                 <div className="bg-[#0d0d0f] border border-[#5b61ff]/40 hover:border-[#5b61ff]/80 transition-colors cursor-pointer rounded-xl p-5 flex flex-col items-center justify-center text-center relative overflow-hidden shadow-[0_0_20px_rgba(91,97,255,0.15)]">
+                    <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-blue-500 to-purple-500"></div>
+                    <p className="text-[24px] font-bold text-white mb-1">5,000</p>
+                    <p className="text-[11px] text-zinc-500 uppercase tracking-widest font-semibold mb-3">Compute units</p>
+                    <p className="text-[14px] font-medium text-white">$45.00</p>
+                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {active === 'billing' && (
+          <div className="max-w-xl space-y-6">
+            <h2 className="text-[18px] font-semibold">Billing</h2>
+            <div className="bg-[#111] border border-white/[0.06] rounded-xl p-6 space-y-4">
+              <div className="flex items-center justify-between mb-2">
+                 <div>
+                    <h3 className="text-[14px] font-medium text-white">Current Plan</h3>
+                    <p className="text-[12px] text-zinc-400 mt-0.5">You are currently on the Free plan.</p>
+                 </div>
+                 <span className="bg-zinc-800 text-zinc-300 text-[11px] font-medium px-2.5 py-1 rounded-full">Free</span>
+              </div>
+              <button className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg text-[13px] font-semibold transition-all">
+                Upgrade to Pro
+              </button>
+              
+              <div className="h-px bg-white/[0.06] w-full my-4"></div>
+              
+              <div>
+                <h3 className="text-[14px] font-medium text-white mb-1">Payment Methods</h3>
+                <p className="text-[12px] text-zinc-500 mb-4">No payment methods added.</p>
+                <button className="px-4 py-2 bg-[#1a1a1a] border border-white/[0.06] hover:border-white/10 rounded-lg text-[12px] text-zinc-300 transition-colors">
+                  Add Payment Method
+                </button>
+              </div>
             </div>
           </div>
         )}
