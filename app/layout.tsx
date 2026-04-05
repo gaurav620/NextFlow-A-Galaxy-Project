@@ -10,6 +10,11 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: 'NextFlow — AI Workflow Builder',
   description: 'NextFlow is the most powerful creative AI suite. Generate, enhance, and edit images, videos, or 3D meshes for free with AI.',
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  }
 }
 
 export default function RootLayout({
