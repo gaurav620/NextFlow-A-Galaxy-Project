@@ -111,8 +111,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Logo & Toggle */}
         <div className={`px-4 pt-5 pb-3 flex items-center ${isSidebarOpen ? 'justify-between' : 'justify-center'} gap-2.5`}>
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/20">
-              <Workflow className="w-3.5 h-3.5 text-white" />
+            <div className="w-6 h-6 rounded-md bg-white flex items-center justify-center flex-shrink-0 shadow-lg shadow-white/20">
+              <span className="text-black font-extrabold text-sm font-sans tracking-tighter">N</span>
             </div>
             <AnimatePresence>
               {isSidebarOpen && (

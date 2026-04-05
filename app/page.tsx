@@ -93,7 +93,7 @@ function Navbar() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 flex-shrink-0">
           <div className="w-6 h-6 rounded-md bg-white flex items-center justify-center">
-            <Workflow className="w-4 h-4 text-black" />
+            <span className="text-black font-extrabold text-sm font-sans tracking-tighter">N</span>
           </div>
           <span className={`font-semibold text-lg tracking-tight ${scrolled ? 'text-white' : 'text-white'}`}>NextFlow</span>
         </Link>
@@ -181,7 +181,7 @@ function Navbar() {
                         <div className="w-[320px] rounded-2xl overflow-hidden relative group cursor-pointer bg-black flex-shrink-0 shadow-xl">
                             <img src="https://images.unsplash.com/photo-1542596594-649edbc13630?q=80&w=800&auto=format&fit=crop" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80" alt="card" />
                             <div className="absolute top-4 left-4 flex items-center gap-2">
-                                <div className="w-5 h-5 rounded bg-white flex items-center justify-center"><Workflow className="w-3 h-3 text-black"/></div>
+                                <div className="w-5 h-5 rounded bg-white flex items-center justify-center"><span className="text-black font-extrabold text-[11px] font-sans tracking-tighter">N</span></div>
                                 <span className="text-white font-bold text-sm drop-shadow-md">NextFlow 1</span>
                             </div>
                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
