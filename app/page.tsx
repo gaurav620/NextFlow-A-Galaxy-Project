@@ -18,7 +18,8 @@ import {
   Sparkles,
   RefreshCcw,
   Settings2,
-  ChevronRight
+  ChevronRight,
+  ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 
