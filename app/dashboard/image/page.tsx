@@ -173,10 +173,12 @@ export default function ImagePage() {
 
   return (
     <div
-      className="relative flex h-full w-full overflow-hidden text-white bg-black"
+      className="relative flex h-full w-full overflow-hidden text-white bg-[#070707]"
       onClick={closeMenus}
     >
-      <div className="flex-1 px-5 pb-8 pt-4 md:px-8">
+      <div className="pointer-events-none absolute left-1/2 top-[-10%] h-[40%] w-[60%] -translate-x-1/2 rounded-[100%] bg-indigo-500/10 blur-[120px]" />
+      
+      <div className="flex-1 px-5 pb-8 pt-6 md:px-8 relative z-10 w-full">
         <div className="mb-4 flex items-center justify-between">
           <div className="relative" onClick={(e) => e.stopPropagation()}>
             <button
@@ -229,30 +231,40 @@ export default function ImagePage() {
         <div className="relative flex min-h-[62vh] items-center justify-center">
           {resultImages.length === 0 ? (
             <>
-              <div className="pointer-events-none absolute -top-8 text-center">
-                <div className="mb-2 flex items-center justify-center gap-2">
-                  <ImageIcon className="h-9 w-9 text-blue-300" />
-                  <h1 className="text-5xl font-semibold tracking-tight">Image</h1>
+              <div className="pointer-events-none absolute -top-12 text-center">
+                <div className="mb-2 flex items-center justify-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
+                    <ImageIcon className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <h1 className="text-4xl font-bold tracking-tight text-white/90">Image</h1>
                 </div>
               </div>
 
-              <div className="relative mt-8 h-[330px] w-full max-w-4xl">
-                {inspirationCards.map((card, index) => (
+              <div className="relative mt-12 h-[340px] w-full max-w-4xl">
+                {inspirationCards.map((card, index) => {
+                  const rotationMap = ["-rotate-[3deg]", "-rotate-[1deg]", "rotate-[2deg]", "rotate-[4deg]"];
+                  const offsetMap = ["-translate-x-40", "-translate-x-12", "translate-x-12", "translate-x-40"];
+                  const zIndexMap = [10, 20, 20, 10];
+                  
+                  return (
                   <button
                     key={card.title}
                     type="button"
                     onMouseEnter={() => handleCardHover(index)}
                     onFocus={() => handleCardHover(index)}
-                    className={`absolute left-1/2 top-1/2 h-[280px] w-[190px] -translate-y-1/2 rounded-2xl border border-white/10 bg-zinc-900 text-left shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:border-white/25 ${card.rotation} ${card.offset} ${
-                      selectedCard === index ? "ring-1 ring-white/30" : ""
+                    className={`absolute left-1/2 top-1/2 h-[320px] w-[256px] -translate-y-1/2 rounded-[20px] border border-white/[0.08] bg-zinc-900 text-left shadow-2xl transition-all duration-400 ease-out hover:scale-[1.03] hover:-translate-y-[55%] hover:border-white/20 hover:z-50 ${rotationMap[index]} ${offsetMap[index]} ${
+                      selectedCard === index ? "ring-1 ring-white/20" : ""
                     }`}
+                    style={{ zIndex: zIndexMap[index] }}
                   >
-                    <img src={card.image} alt={card.title} className="h-full w-full rounded-2xl object-cover" />
-                    <div className="absolute inset-x-0 bottom-0 rounded-b-2xl bg-gradient-to-t from-black/80 to-transparent p-3">
-                      <p className="truncate text-lg font-medium">{card.title}</p>
+                    <img src={card.image} alt={card.title} className="h-full w-full rounded-[20px] object-cover" />
+                    <div className="absolute inset-0 rounded-[20px] ring-1 ring-inset ring-white/10 pointer-events-none" />
+                    <div className="absolute inset-x-0 bottom-0 h-1/2 rounded-b-[20px] bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
+                    <div className="absolute inset-x-0 bottom-0 p-4">
+                      <p className="text-[15px] font-medium text-white line-clamp-2 leading-snug drop-shadow-md">{card.title}</p>
                     </div>
                   </button>
-                ))}
+                )})}
               </div>
             </>
           ) : (
@@ -275,32 +287,32 @@ export default function ImagePage() {
           )}
         </div>
 
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-full max-w-[760px] px-4 z-40" onClick={() => closeMenus()}>
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-full max-w-[800px] px-4 z-40" onClick={() => closeMenus()}>
           {error && <p className="mb-2 text-sm text-red-400 text-center">{error}</p>}
 
-          <div className="w-full bg-[#1c1c1c] border border-white/10 rounded-3xl overflow-hidden shadow-2xl transition-all hover:border-white/20 p-4" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full bg-[#111214]/80 backdrop-blur-3xl border border-white/[0.08] rounded-[24px] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all p-3 pl-4 hover:border-white/[0.12]" onClick={(e) => e.stopPropagation()}>
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Describe an image and click generate..."
-              className="h-20 w-full resize-none bg-transparent text-base text-zinc-100 placeholder:text-zinc-500 focus:outline-none"
+              className="h-[52px] w-full resize-none bg-transparent text-[15px] text-zinc-100 placeholder:text-zinc-500 focus:outline-none"
             />
 
-            <div className="mt-3 flex flex-wrap items-center gap-2">
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => {
                   setModel(models[0]);
                   setShowModelMenu(true);
                 }}
-                className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-sm text-zinc-200 hover:bg-white/10"
+                className="rounded-full border border-white/[0.06] bg-white/[0.03] px-3.5 py-1.5 text-[13px] font-medium text-zinc-300 hover:bg-white/[0.08] hover:text-white transition-colors"
               >
                 {model.name}
               </button>
 
               <button
                 type="button"
-                className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-300 hover:bg-white/10"
+                className="rounded-full border border-white/[0.06] bg-white/[0.03] px-3.5 py-1.5 text-[13px] font-medium text-zinc-300 hover:bg-white/[0.08] hover:text-white transition-colors"
               >
                 LoRA
               </button>
@@ -309,12 +321,12 @@ export default function ImagePage() {
                 <button
                   type="button"
                   onClick={() => setShowImagePromptMenu((v) => !v)}
-                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-300 hover:bg-white/10"
+                  className="rounded-full border border-white/[0.06] bg-white/[0.03] px-3.5 py-1.5 text-[13px] font-medium text-zinc-300 hover:bg-white/[0.08] hover:text-white transition-colors"
                 >
                   Image prompt
                 </button>
                 {showImagePromptMenu && (
-                  <div className="absolute bottom-full left-0 z-30 mb-2 w-64 rounded-2xl border border-white/10 bg-[#1a1c22] p-3 shadow-2xl">
+                  <div className="absolute bottom-full left-0 z-30 mb-3 w-64 rounded-2xl border border-white/[0.08] bg-[#1a1c22]/95 backdrop-blur-xl p-3 shadow-2xl">
                     <p className="mb-2 text-xs text-zinc-400">Upload/select image for image prompt guidance.</p>
                     <button type="button" className="mb-2 w-full rounded-xl bg-white px-3 py-2 text-sm font-medium text-black">
                       Upload
@@ -328,7 +340,7 @@ export default function ImagePage() {
 
               <button
                 type="button"
-                className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-300 hover:bg-white/10"
+                className="rounded-full border border-white/[0.06] bg-white/[0.03] px-3.5 py-1.5 text-[13px] font-medium text-zinc-300 hover:bg-white/[0.08] hover:text-white transition-colors"
               >
                 Style transfer
               </button>
@@ -337,12 +349,12 @@ export default function ImagePage() {
                 <button
                   type="button"
                   onClick={() => setShowRatioMenu((v) => !v)}
-                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-300 hover:bg-white/10"
+                  className="rounded-full border border-white/[0.06] bg-white/[0.03] px-3.5 py-1.5 text-[13px] font-medium text-zinc-300 hover:bg-white/[0.08] hover:text-white transition-colors"
                 >
                   {ratio}
                 </button>
                 {showRatioMenu && (
-                  <div className="absolute bottom-full left-0 z-30 mb-2 w-44 rounded-2xl border border-white/10 bg-[#1a1c22] p-2 shadow-2xl">
+                  <div className="absolute bottom-full left-0 z-30 mb-3 w-44 rounded-2xl border border-white/[0.08] bg-[#1a1c22]/95 backdrop-blur-xl p-2 shadow-2xl">
                     {ratioOptions.map((item) => (
                       <button
                         key={item}
@@ -367,13 +379,13 @@ export default function ImagePage() {
                 <button
                   type="button"
                   onClick={() => setShowResolutionMenu((v) => !v)}
-                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-300 hover:bg-white/10"
+                  className="rounded-full border border-white/[0.06] bg-white/[0.03] px-3.5 py-1.5 text-[13px] font-medium text-zinc-300 hover:bg-white/[0.08] hover:text-white transition-colors"
                 >
                   <Sparkles className="mr-1 inline h-3.5 w-3.5" />
                   {resolution}
                 </button>
                 {showResolutionMenu && (
-                  <div className="absolute bottom-full right-0 z-30 mb-2 w-32 rounded-2xl border border-white/10 bg-[#1a1c22] p-2 shadow-2xl">
+                  <div className="absolute bottom-full right-0 z-30 mb-3 w-32 rounded-2xl border border-white/[0.08] bg-[#1a1c22]/95 backdrop-blur-xl p-2 shadow-2xl">
                     {resolutionOptions.map((item) => (
                       <button
                         key={item}
@@ -397,9 +409,9 @@ export default function ImagePage() {
                 type="button"
                 onClick={handleGenerate}
                 disabled={!activePrompt || isGenerating}
-                className="ml-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
+                className="ml-auto inline-flex h-9 w-[110px] items-center justify-center gap-1.5 rounded-full bg-white text-black font-semibold text-[14px] transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isGenerating ? <Wand2 className="h-4 w-4 animate-spin" /> : <Plus className="h-5 w-5" />}
+                {isGenerating ? <div className="flex gap-1.5 items-center"><Wand2 className="h-4 w-4 animate-spin" /><span>Gen...</span></div> : <div className="flex gap-1.5 items-center"><Sparkles className="h-4 w-4" strokeWidth={2.5} /><span>Generate</span></div>}
               </button>
             </div>
           </div>
