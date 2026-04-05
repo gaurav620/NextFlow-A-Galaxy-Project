@@ -1,7 +1,7 @@
 'use client';
 
 import { Handle, Position } from '@xyflow/react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Crop } from 'lucide-react';
 import { useState } from 'react';
 
 export default function CropImageNode({ data }: any) {
@@ -23,63 +23,59 @@ export default function CropImageNode({ data }: any) {
 
   return (
     <div
-      className="relative rounded-2xl min-w-[220px] max-w-[260px] transition-all"
+      className="relative rounded-2xl w-[240px] transition-all bg-[#0d0d0d]/90 backdrop-blur-md shadow-2xl"
       style={{
-        background: '#1c1c1c',
-        border: isExecuting ? '1px solid rgba(236,72,153,0.4)' : '1px solid rgba(255,255,255,0.05)',
-        boxShadow: isExecuting ? '0 0 20px rgba(236,72,153,0.2)' : 'none',
+        border: isExecuting ? '1px solid rgba(236,72,153,0.5)' : '1px solid rgba(255,255,255,0.1)',
+        boxShadow: isExecuting ? '0 0 20px rgba(236,72,153,0.15)' : '0 4px 24px rgba(0,0,0,0.4)',
       }}
     >
       {/* Header */}
-      <div
-        className="flex items-center justify-between px-4 py-3 cursor-grab active:cursor-grabbing"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
-      >
+      <div className="flex items-center justify-between px-3 py-2 cursor-grab active:cursor-grabbing border-b border-white/[0.04]">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded" style={{ background: '#ec4899' }} />
-          <span className="text-xs font-medium text-gray-300">Crop Image</span>
+          <div className="w-2 h-2 rounded-full shadow-[0_0_8px_#ec4899]" style={{ background: '#ec4899' }} />
+          <span className="text-[10px] font-semibold text-gray-300 tracking-wider uppercase">Crop Image</span>
         </div>
-        {isExecuting && <Loader2 className="w-3.5 h-3.5 text-gray-500 animate-spin" />}
+        {isExecuting ? (
+          <Loader2 className="w-3 h-3 text-pink-500 animate-spin" />
+        ) : (
+          <Crop className="w-3 h-3 text-gray-500" />
+        )}
       </div>
 
       {/* Body */}
-      <div className="px-4 py-3 space-y-2">
+      <div className="p-2 space-y-2">
         {/* 2x2 Grid */}
         <div className="grid grid-cols-2 gap-1.5">
-          <div>
-            <label className="text-[10px] text-gray-600 block mb-1">X %</label>
+          <div className="flex items-center bg-transparent border border-white/10 rounded-lg overflow-hidden focus-within:border-white/20 transition-colors">
+            <label className="text-[9px] text-gray-500 px-2 font-medium border-r border-white/10 bg-white/[0.02] py-1.5">X</label>
             <input
               type="number" min={0} max={100} value={x}
               onChange={(e) => { setX(Number(e.target.value)); if (data.onChange) data.onChange({ x: Number(e.target.value), y, width, height }); }}
-              className="rounded-lg text-white text-xs px-2 py-1.5 text-center w-full focus:outline-none"
-              style={{ background: '#0f0f0f', border: '1px solid rgba(255,255,255,0.05)' }}
+              className="bg-transparent text-white text-xs px-2 py-1.5 w-full focus:outline-none"
             />
           </div>
-          <div>
-            <label className="text-[10px] text-gray-600 block mb-1">Y %</label>
+          <div className="flex items-center bg-transparent border border-white/10 rounded-lg overflow-hidden focus-within:border-white/20 transition-colors">
+            <label className="text-[9px] text-gray-500 px-2 font-medium border-r border-white/10 bg-white/[0.02] py-1.5">Y</label>
             <input
               type="number" min={0} max={100} value={y}
               onChange={(e) => { setY(Number(e.target.value)); if (data.onChange) data.onChange({ x, y: Number(e.target.value), width, height }); }}
-              className="rounded-lg text-white text-xs px-2 py-1.5 text-center w-full focus:outline-none"
-              style={{ background: '#0f0f0f', border: '1px solid rgba(255,255,255,0.05)' }}
+              className="bg-transparent text-white text-xs px-2 py-1.5 w-full focus:outline-none"
             />
           </div>
-          <div>
-            <label className="text-[10px] text-gray-600 block mb-1">W %</label>
+          <div className="flex items-center bg-transparent border border-white/10 rounded-lg overflow-hidden focus-within:border-white/20 transition-colors">
+            <label className="text-[9px] text-gray-500 px-2 font-medium border-r border-white/10 bg-white/[0.02] py-1.5">W</label>
             <input
               type="number" min={0} max={100} value={width}
               onChange={(e) => { setWidth(Number(e.target.value)); if (data.onChange) data.onChange({ x, y, width: Number(e.target.value), height }); }}
-              className="rounded-lg text-white text-xs px-2 py-1.5 text-center w-full focus:outline-none"
-              style={{ background: '#0f0f0f', border: '1px solid rgba(255,255,255,0.05)' }}
+              className="bg-transparent text-white text-xs px-2 py-1.5 w-full focus:outline-none"
             />
           </div>
-          <div>
-            <label className="text-[10px] text-gray-600 block mb-1">H %</label>
+          <div className="flex items-center bg-transparent border border-white/10 rounded-lg overflow-hidden focus-within:border-white/20 transition-colors">
+            <label className="text-[9px] text-gray-500 px-2 font-medium border-r border-white/10 bg-white/[0.02] py-1.5">H</label>
             <input
               type="number" min={0} max={100} value={height}
               onChange={(e) => { setHeight(Number(e.target.value)); if (data.onChange) data.onChange({ x, y, width, height: Number(e.target.value) }); }}
-              className="rounded-lg text-white text-xs px-2 py-1.5 text-center w-full focus:outline-none"
-              style={{ background: '#0f0f0f', border: '1px solid rgba(255,255,255,0.05)' }}
+              className="bg-transparent text-white text-xs px-2 py-1.5 w-full focus:outline-none"
             />
           </div>
         </div>
@@ -88,24 +84,22 @@ export default function CropImageNode({ data }: any) {
         <button
           onClick={handleRun}
           disabled={isExecuting || !imageConnected}
-          className="text-xs rounded-full py-2 w-full font-medium transition-colors disabled:opacity-50"
+          className="text-xs rounded-lg py-1.5 w-full font-medium transition-colors disabled:opacity-50 border border-transparent hover:border-white/10"
           style={{ background: '#3b82f6', color: '#fff' }}
         >
-          {isExecuting ? 'Cropping...' : 'Crop Image'}
+          {isExecuting ? 'Cropping...' : 'Crop'}
         </button>
       </div>
 
       {/* Input Handles */}
-      <Handle type="target" position={Position.Left} id="image_url" style={{ width: 10, height: 10, borderRadius: '50%', border: '2px solid #0a0a0a', background: '#22c55e', left: -5, top: 60 }} />
-      <span className="absolute text-[10px] text-gray-600 left-3" style={{ top: 54 }}>Image</span>
+      <Handle type="target" position={Position.Left} id="image_url" className="w-2 h-2 !border-2 !border-[#0d0d0d] !bg-[#22c55e] shadow-[0_0_8px_#22c55e]" style={{ left: -4, top: 46 }} />
+      <span className="absolute text-[8px] text-[#22c55e]/70 font-medium tracking-wide right-[102%] pointer-events-none" style={{ top: 42 }}>IMAGE</span>
 
-      <Handle type="target" position={Position.Left} id="x_percent" style={{ width: 10, height: 10, borderRadius: '50%', border: '2px solid #0a0a0a', background: '#6b7280', left: -5, top: 100 }} />
-      <Handle type="target" position={Position.Left} id="y_percent" style={{ width: 10, height: 10, borderRadius: '50%', border: '2px solid #0a0a0a', background: '#6b7280', left: -5, top: 130 }} />
-      <Handle type="target" position={Position.Left} id="width_percent" style={{ width: 10, height: 10, borderRadius: '50%', border: '2px solid #0a0a0a', background: '#6b7280', left: -5, top: 160 }} />
-      <Handle type="target" position={Position.Left} id="height_percent" style={{ width: 10, height: 10, borderRadius: '50%', border: '2px solid #0a0a0a', background: '#6b7280', left: -5, top: 190 }} />
+      <Handle type="target" position={Position.Left} id="x_percent" className="w-2 h-2 !border-2 !border-[#0d0d0d] !bg-[#6b7280]" style={{ left: -4, top: 80 }} />
+      <Handle type="target" position={Position.Left} id="y_percent" className="w-2 h-2 !border-2 !border-[#0d0d0d] !bg-[#6b7280]" style={{ left: -4, top: 96 }} />
 
       {/* Output Handle */}
-      <Handle type="source" position={Position.Right} id="output" style={{ width: 10, height: 10, borderRadius: '50%', border: '2px solid #0a0a0a', background: '#ec4899', right: -5, bottom: 20 }} />
+      <Handle type="source" position={Position.Right} id="output" className="w-2 h-2 !border-2 !border-[#0d0d0d] !bg-[#ec4899] shadow-[0_0_8px_#ec4899]" style={{ right: -4, bottom: 20 }} />
     </div>
   );
 }

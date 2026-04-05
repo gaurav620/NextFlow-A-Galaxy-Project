@@ -336,8 +336,9 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
     [setEdges, safeEdges]
   )
 
-  const onSelectionChange = useCallback(({ nodes: selectedNodes }: any) => {
-    setSelectedNodeIds(selectedNodes?.map((n: any) => n.id) || [])
+  const onSelectionChange = useCallback((params: any) => {
+    const selectedNodes = params?.nodes || []
+    setSelectedNodeIds(Array.isArray(selectedNodes) ? selectedNodes.map((n: any) => n.id) : [])
   }, [])
 
   const filteredNodes = nodeDefinitions.filter((node) =>
@@ -345,283 +346,160 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
   )
 
   return (
-    <div className="relative h-screen w-full overflow-hidden" style={{ background: '#0a0a0a' }}>
-      {/* Top Bar */}
-      <div className="absolute top-0 left-0 right-0 h-12 z-40 flex items-center justify-between px-2 sm:px-4 gap-1 sm:gap-0" style={{ background: 'rgba(15, 15, 15, 0.8)', backdropFilter: 'blur(8px)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-        {/* Mobile hamburger */}
-        <button type="button" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="sm:hidden text-gray-500 hover:text-white transition-colors p-1">
-          {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
-
-        {/* Left: Back & Workflow Name */}
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-          <button type="button" onClick={() => router.back()} className="text-gray-500 hover:text-white transition-colors hidden sm:block">
-            <ChevronLeft className="w-5 h-5" />
+    <div className="relative h-screen w-full overflow-hidden bg-[#0A0A0A] font-sans">
+      {/* Top Floating Header */}
+      <div className="absolute top-4 left-4 right-4 z-40 flex items-center justify-between pointer-events-none">
+        
+        {/* Left: Back & Name */}
+        <div className="flex items-center gap-2 pointer-events-auto bg-[#111111]/90 backdrop-blur-md rounded-full px-2 py-1.5 border border-white/[0.06] shadow-xl">
+          <button type="button" onClick={() => router.back()} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
+            <ChevronLeft className="w-4 h-4" />
           </button>
+          <div className="h-4 w-px bg-white/10 mx-1" />
           <input
             type="text"
             value={workflowName}
             onChange={(e) => setWorkflowName(e.target.value)}
-            className="bg-transparent text-white text-xs sm:text-sm font-medium border-0 outline-none flex-1 max-w-[120px] sm:max-w-xs"
-            placeholder="Untitled Workflow"
+            className="bg-transparent text-white text-sm font-medium border-0 outline-none w-[140px] px-2 focus:ring-0"
+            placeholder="Untitled Node"
           />
-          <div className="hidden sm:flex items-center gap-1">
-            <TooltipProvider delayDuration={0}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button type="button" onClick={undo} disabled={past.length === 0} className="text-gray-600 hover:text-white transition-colors disabled:opacity-30">
-                    <Undo2 className="w-3.5 h-3.5" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">Undo (⌘Z)</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider delayDuration={0}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button type="button" onClick={redo} disabled={future.length === 0} className="text-gray-600 hover:text-white transition-colors disabled:opacity-30">
-                    <Redo2 className="w-3.5 h-3.5" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">Redo (⌘⇧Z)</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
         </div>
 
-        {/* Center: Run Controls */}
-        <div className="flex items-center gap-1 sm:gap-2">
-          <button type="button" onClick={handleLoadSample} className="text-[10px] sm:text-xs text-gray-400 border border-white/10 rounded-full px-2 sm:px-3 py-1 hover:bg-white/5 transition-colors hidden md:block">
-            Load Sample
-          </button>
-          {selectedNodeIds.length > 0 && (
-            <button type="button" onClick={handleRunSelected} disabled={isRunning} className="text-[10px] sm:text-xs text-purple-300 border border-purple-500/30 rounded-full px-2 sm:px-3 py-1 hover:bg-purple-500/10 transition-colors disabled:opacity-50">
-              Run Selected ({selectedNodeIds.length})
+        {/* Right: Actions */}
+        <div className="flex items-center gap-2 pointer-events-auto">
+          <div className="flex items-center bg-[#111111]/90 backdrop-blur-md rounded-full px-1.5 py-1.5 border border-white/[0.06] shadow-xl">
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" onClick={undo} disabled={past.length === 0} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5 disabled:opacity-30">
+                    <Undo2 className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="border-white/10 bg-[#111] text-xs">Undo (⌘Z)</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" onClick={redo} disabled={future.length === 0} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5 disabled:opacity-30">
+                    <Redo2 className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="border-white/10 bg-[#111] text-xs">Redo (⌘⇧Z)</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+             <div className="h-4 w-px bg-white/10 mx-1" />
+
+            <button type="button" onClick={handleSave} className="px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-white transition-colors">
+              Save
             </button>
-          )}
-          <button type="button" onClick={handleRun} disabled={isRunning} className="bg-white text-black text-[10px] sm:text-xs font-semibold rounded-full px-3 sm:px-4 py-1.5 hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center gap-1 sm:gap-2">
-            {isRunning && <Loader2 className="w-3 sm:w-3.5 h-3 sm:h-3.5 animate-spin" />}
-            {isRunning ? 'Running...' : 'Run All'}
-          </button>
-        </div>
-
-        {/* Right: Import / Export / Save / Settings / History toggle */}
-        <div className="flex items-center gap-1 sm:gap-3 ml-auto">
-          <button type="button" onClick={handleSave} className="text-[10px] sm:text-xs text-gray-400 border border-white/10 rounded-full px-2 sm:px-3 py-1 hover:bg-white/5 transition-colors">
-            Save
-          </button>
-          <div className="hidden sm:flex items-center gap-3">
-            <TooltipProvider delayDuration={0}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button type="button" onClick={() => importRef.current?.click()} className="text-gray-500 hover:text-white transition-colors">
-                    <Upload className="w-4 h-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">Import JSON</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider delayDuration={0}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button type="button" onClick={handleExport} className="text-gray-500 hover:text-white transition-colors">
-                    <Download className="w-4 h-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">Export JSON</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider delayDuration={0}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button type="button" className="text-gray-500 hover:text-white transition-colors">
-                    <Share2 className="w-4 h-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">Share</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider delayDuration={0}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button type="button" className="text-gray-500 hover:text-white transition-colors">
-                    <Settings className="w-4 h-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">Settings</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <button type="button" onClick={handleExport} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
+              <Download className="w-4 h-4" />
+            </button>
+            <button type="button" onClick={() => importRef.current?.click()} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
+               <Upload className="w-4 h-4" />
+            </button>
+            <button type="button" onClick={() => setHistoryOpen(!historyOpen)} className={`w-8 h-8 flex items-center justify-center transition-colors rounded-full hover:bg-white/5 ${historyOpen ? 'text-white bg-white/10' : 'text-gray-400 hover:text-white'}`}>
+               <Clock className="w-4 h-4" />
+            </button>
           </div>
-          <TooltipProvider delayDuration={0}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button type="button" onClick={() => setHistoryOpen(!historyOpen)} className={`text-gray-500 hover:text-white transition-colors ${historyOpen ? 'text-purple-400' : ''}`}>
-                  <Clock className="w-4 h-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">{historyOpen ? 'Hide' : 'Show'} History</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+
+          <button 
+            type="button" 
+            onClick={handleRun} 
+            disabled={isRunning} 
+            className="bg-white text-black text-sm font-semibold rounded-full px-5 py-2.5 hover:bg-gray-200 transition-colors shadow-lg disabled:opacity-50 flex items-center gap-2"
+          >
+            {isRunning ? <><Loader2 className="w-4 h-4 animate-spin" /> Running...</> : 'Run Nodes'}
+          </button>
         </div>
       </div>
 
-      {/* Hidden import input */}
+      {/* Hidden Files & Errors */}
       <input ref={importRef} type="file" accept=".json" onChange={handleImport} className="hidden" />
-
-      {/* DAG error toast */}
       {dagError && (
-        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-50 bg-red-500/90 text-white text-xs px-4 py-2 rounded-full shadow-lg">
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50 bg-red-500/90 text-white text-xs px-4 py-2 rounded-full shadow-lg backdrop-blur-md">
           {dagError}
         </div>
       )}
 
-      {/* Mobile slide-out menu */}
-      {mobileMenuOpen && (
-        <div className="absolute left-0 top-12 bottom-0 z-50 w-[220px] sm:hidden overflow-y-auto" style={{ background: '#1c1c1c', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
-          <div className="p-3 space-y-3">
-            <div className="flex flex-col gap-1.5">
-              <button type="button" onClick={() => { router.back(); setMobileMenuOpen(false); }} className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-all">
-                <ChevronLeft className="w-4 h-4" /> Back
-              </button>
-              <button type="button" onClick={() => { handleLoadSample(); setMobileMenuOpen(false); }} className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-all">
-                <Workflow className="w-4 h-4" /> Load Sample
-              </button>
-              <button type="button" onClick={undo} disabled={past.length === 0} className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-all disabled:opacity-30">
-                <Undo2 className="w-4 h-4" /> Undo
-              </button>
-              <button type="button" onClick={redo} disabled={future.length === 0} className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-all disabled:opacity-30">
-                <Redo2 className="w-4 h-4" /> Redo
-              </button>
-              <button type="button" onClick={() => importRef.current?.click()} className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-all">
-                <Upload className="w-4 h-4" /> Import JSON
-              </button>
-              <button type="button" onClick={handleExport} className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-all">
-                <Download className="w-4 h-4" /> Export JSON
-              </button>
-            </div>
-            <div className="h-px bg-white/5" />
-            <div className="text-[10px] text-gray-600 uppercase px-1 font-medium tracking-wide">Nodes</div>
-            <div className="space-y-0.5">
-              {filteredNodes.map((node) => (
-                <div
-                  key={node.type}
-                  draggable
-                  onDragStart={(e) => { handleDragStart(e, node.type); setMobileMenuOpen(false); }}
-                  className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-white/5 cursor-grab active:cursor-grabbing text-xs text-gray-400 hover:text-white transition-all"
-                >
-                  <div className="w-4 h-4 rounded flex-shrink-0" style={{ background: node.color }} />
-                  <span>{node.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Left Mini Panel - Node Picker (desktop, collapsible) */}
-      <div
-        className="absolute left-3 top-16 z-40 rounded-2xl p-2 hidden sm:block transition-all duration-300 ease-in-out"
-        style={{
-          background: '#1c1c1c',
-          border: '1px solid rgba(255,255,255,0.05)',
-          width: leftSidebarOpen ? 180 : 44,
-          overflow: 'hidden',
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => setLeftSidebarOpen(!leftSidebarOpen)}
-          className="w-full flex items-center justify-center mb-2 p-1.5 rounded-lg hover:bg-white/5 text-gray-500 hover:text-white transition-colors"
-          title={leftSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+      {/* React Flow Canvas */}
+      <div className="absolute inset-0 z-0">
+        <ReactFlow
+          nodes={safeNodes as any}
+          edges={safeEdges as any}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          nodeTypes={nodeTypes as any}
+          onInit={setReactFlowInstance as any}
+          onSelectionChange={onSelectionChange}
+          fitView
+          deleteKeyCode="Delete"
         >
-          {leftSidebarOpen ? <PanelLeftClose className="w-3.5 h-3.5" /> : <PanelLeftOpen className="w-3.5 h-3.5" />}
-        </button>
+          <Background variant={BackgroundVariant.Dots} color="rgba(255,255,255,0.08)" gap={24} size={1.5} />
+        </ReactFlow>
+      </div>
 
-        {leftSidebarOpen && (
-          <>
-            <div className="relative mb-2">
-              <Search className="absolute left-3 top-2 w-3.5 h-3.5 text-gray-600" />
-              <input
+      {/* Center Floating Bottom Node Dock (Krea Style) */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 pointer-events-auto">
+        <div className="bg-[#111111]/90 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-1.5 shadow-2xl flex items-center gap-1.5 overflow-x-auto max-w-[90vw] hide-scrollbar">
+          <div className="flex items-center px-3 gap-2 border-r border-white/10 mr-1 py-2">
+             <Search className="w-4 h-4 text-gray-500" />
+             <input
                 type="text"
-                placeholder="Search..."
+                placeholder="Search nodes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="rounded-xl px-3 py-2 pl-8 text-xs text-gray-400 placeholder-gray-600 w-full focus:outline-none"
-                style={{ background: '#0f0f0f', border: '1px solid rgba(255,255,255,0.05)' }}
-              />
-            </div>
-            <div className="text-[10px] text-gray-600 uppercase px-2 py-1 font-medium tracking-wide">
-              Quick Access
-            </div>
-          </>
-        )}
-        <div className="space-y-0.5">
+                className="bg-transparent outline-none text-xs text-white placeholder-gray-600 w-[100px]"
+             />
+          </div>
+          
           {filteredNodes.map((node) => (
             <div
               key={node.type}
               draggable
               onDragStart={(e) => handleDragStart(e, node.type)}
-              className={`flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-white/5 cursor-grab active:cursor-grabbing text-xs text-gray-400 hover:text-white transition-all ${!leftSidebarOpen ? 'justify-center' : ''}`}
-              title={!leftSidebarOpen ? node.label : undefined}
+              className="flex items-center gap-2 cursor-grab active:cursor-grabbing hover:bg-white/5 px-3 py-2 rounded-xl transition-all border border-transparent hover:border-white/[0.05]"
             >
-              <div className="w-4 h-4 rounded flex-shrink-0" style={{ background: node.color }} />
-              {leftSidebarOpen && <span>{node.label}</span>}
+              <div className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)]" style={{ background: node.color, boxShadow: `0 0 8px ${node.color}40` }} />
+              <span className="text-xs font-medium text-gray-300 whitespace-nowrap">{node.label}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* React Flow Canvas and Sidebar */}
-      <div className="flex w-full h-full pt-12">
-        <div ref={reactFlowWrapper} className="flex-1 h-full relative">
-          <ReactFlow
-            nodes={safeNodes as any}
-            edges={safeEdges as any}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-            nodeTypes={nodeTypes as any}
-            onInit={setReactFlowInstance as any}
-            onSelectionChange={onSelectionChange}
-            fitView
-            deleteKeyCode="Delete"
-          >
-            <Background variant={BackgroundVariant.Dots} color="#1a2332" gap={24} size={1.5} />
-            <Controls
-              className="[&]:!bg-[#1c1c1c] [&]:!border-white/5 [&>button]:!bg-[#1c1c1c] [&>button]:!border-white/5 [&>button]:!text-gray-500 [&>button:hover]:!bg-white/5 [&>button:hover]:!text-white"
-              showInteractive={false}
-            />
-            <MiniMap
-              style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.05)' }}
-              nodeColor="#a855f7"
-              maskColor="rgba(0,0,0,0.85)"
-              position="bottom-right"
-            />
-          </ReactFlow>
-        </div>
-
-        {/* History Sidebar */}
-        {historyOpen && (
-          <div className="hidden md:block w-80 flex-shrink-0 h-full border-l border-white/5 bg-[#0a0a0a]">
-            <HistorySidebar className="bg-transparent" />
+      {/* Floating Mini Map (Bottom Right, Stylized) */}
+      <div className="absolute bottom-6 left-6 z-40 pointer-events-auto overflow-hidden rounded-2xl border border-white/[0.06] shadow-2xl bg-[#0a0a0a]/80 backdrop-blur-xl w-32 h-24 hidden md:block opacity-60 hover:opacity-100 transition-opacity">
+        {reactFlowInstance && (
+          <div className="w-full h-full relative -z-10 pointer-events-none">
+             {/* We rely on ReactFlow Minimap standard if needed, but styling it manually via CSS in global might be cleaner. For now using built in with heavy overrides. */}
+             <div className="absolute inset-0 bg-[#0a0a0a]" />
           </div>
         )}
       </div>
 
-      {/* Mobile overlay backdrop */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 sm:hidden" onClick={() => setMobileMenuOpen(false)} />
+      {/* History Slide-over (Right side) */}
+      {historyOpen && (
+        <div className="absolute top-20 right-4 bottom-24 w-80 bg-[#111111]/95 backdrop-blur-2xl border border-white/[0.06] shadow-2xl rounded-3xl z-40 overflow-hidden shadow-black/50">
+          <HistorySidebar className="bg-transparent h-full" />
+        </div>
       )}
 
-      {/* Empty Canvas State */}
+      {/* Empty State Overlay */}
       {safeNodes.length === 0 && (
-        <div className="absolute inset-0 pt-12 flex flex-col items-center justify-center pointer-events-none">
-          <Workflow className="w-12 sm:w-16 h-12 sm:h-16 text-gray-800" />
-          <p className="text-gray-700 text-xs sm:text-sm mt-2">Drop nodes here to start building</p>
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
+          <div className="w-16 h-16 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center mb-4 backdrop-blur-sm shadow-2xl">
+            <Workflow className="w-8 h-8 text-gray-600" />
+          </div>
+          <p className="text-gray-500 font-medium tracking-tight">Drag nodes from the bottom dock to begin</p>
         </div>
       )}
     </div>
   )
 }
+

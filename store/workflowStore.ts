@@ -83,9 +83,9 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
   setCurrentWorkflowId: (currentWorkflowId) => set({ currentWorkflowId }),
   updateNodeData: (nodeId, data) =>
     set((state) => ({
-      nodes: state.nodes.map((node) =>
+      nodes: Array.isArray(state.nodes) ? state.nodes.map((node) =>
         node.id === nodeId ? { ...node, data: { ...node.data, ...data } } : node
-      ),
+      ) : [],
     })),
 
   undo: () => {

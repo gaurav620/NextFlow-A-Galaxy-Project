@@ -1,37 +1,32 @@
 'use client';
 
 import { Handle, Position } from '@xyflow/react';
-import { Upload, Loader2, X } from 'lucide-react';
+import { Upload, Loader2, Image as ImageIcon } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { useWorkflowStore } from '@/store/workflowStore';
 
 async function uploadToTransloadit(file: File): Promise<string> {
-  // 1. Get signed params from server
   const paramsRes = await fetch('/api/upload/params')
   if (!paramsRes.ok) throw new Error('Failed to get upload params')
   const { params, signature } = await paramsRes.json()
 
-  // 2. POST file directly to Transloadit assembly
   const formData = new FormData()
   formData.append('params', params)
   formData.append('signature', signature)
   formData.append('file', file)
 
   const assemblyRes = await fetch('https://api2.transloadit.com/assemblies', {
-    method: 'POST',
-    body: formData,
+    method: 'POST', body: formData,
   })
   if (!assemblyRes.ok) throw new Error('Transloadit upload failed')
   const assemblyData = await assemblyRes.json()
 
-  // 3. Poll until assembly completes
   const pollUrl = assemblyData.assembly_ssl_url || assemblyData.assembly_url
   for (let i = 0; i < 30; i++) {
     await new Promise(r => setTimeout(r, 1000))
     const statusRes = await fetch(pollUrl)
     const status = await statusRes.json()
     if (status.ok === 'ASSEMBLY_COMPLETED') {
-      // No processing steps — original file is in uploads
       const upload = status.uploads?.[0]
       if (upload?.ssl_url) return upload.ssl_url
       if (upload?.url) return upload.url
@@ -56,11 +51,9 @@ export default function ImageUploadNode({ id, data }: any) {
     setFilename(file.name);
     setError(null);
 
-    // Show local preview immediately
     const localUrl = URL.createObjectURL(file);
     setPreview(localUrl);
 
-    // Upload to Transloadit in background
     setUploading(true);
     try {
       const cdnUrl = await uploadToTransloadit(file);
@@ -68,7 +61,6 @@ export default function ImageUploadNode({ id, data }: any) {
       useWorkflowStore.getState().setNodeOutput(id, cdnUrl);
     } catch (err: any) {
       setError(err.message);
-      // Fallback: use local object URL so workflow can still run in dev
       useWorkflowStore.getState().updateNodeData(id, { imageUrl: localUrl, value: localUrl });
       useWorkflowStore.getState().setNodeOutput(id, localUrl);
     } finally {
@@ -77,59 +69,55 @@ export default function ImageUploadNode({ id, data }: any) {
   };
 
   return (
-    <div
-      className="relative rounded-2xl min-w-[220px] max-w-[260px] transition-all"
-      style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.05)' }}
-    >
+    <div className="relative rounded-2xl w-[240px] transition-all bg-[#0d0d0d]/90 backdrop-blur-md border border-white/10 shadow-2xl">
       {/* Header */}
-      <div
-        className="flex items-center justify-between px-4 py-3 cursor-grab active:cursor-grabbing"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
-      >
+      <div className="flex items-center justify-between px-3 py-2 cursor-grab active:cursor-grabbing border-b border-white/[0.04]">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded" style={{ background: '#22c55e' }} />
-          <span className="text-xs font-medium text-gray-300">Upload Image</span>
+          <div className="w-2 h-2 rounded-full shadow-[0_0_8px_#22c55e]" style={{ background: '#22c55e' }} />
+          <span className="text-[10px] font-semibold text-gray-300 tracking-wider uppercase">Image</span>
         </div>
-        {uploading && <Loader2 className="w-3 h-3 text-green-400 animate-spin" />}
+        {uploading ? (
+          <Loader2 className="w-3 h-3 text-green-400 animate-spin" />
+        ) : (
+          <ImageIcon className="w-3 h-3 text-gray-500" />
+        )}
       </div>
 
       {/* Body */}
-      <div className="px-4 py-3">
+      <div className="p-2">
         {!preview ? (
           <div
             onClick={() => fileInputRef.current?.click()}
             onDragOver={e => e.preventDefault()}
             onDrop={e => { e.preventDefault(); e.dataTransfer.files[0] && handleFileChange(e.dataTransfer.files[0]) }}
-            className="rounded-xl p-4 text-center cursor-pointer transition-colors hover:bg-white/5"
-            style={{ background: '#0f0f0f', border: '1px dashed rgba(255,255,255,0.1)' }}
+            className="rounded-xl p-4 text-center cursor-pointer transition-colors bg-white/[0.02] hover:bg-white/[0.04] flex flex-col items-center justify-center border border-white/[0.02]"
           >
-            <Upload className="w-6 h-6 text-gray-600 mx-auto mb-1" />
-            <p className="text-[11px] text-gray-500">Drop image or click</p>
-            <p className="text-[10px] text-gray-600 mt-0.5">JPG PNG WEBP GIF</p>
+            <Upload className="w-5 h-5 text-gray-600 mb-1" />
+            <p className="text-[10px] text-gray-500 font-medium tracking-tight mt-1">Drop image or Browse</p>
           </div>
         ) : (
-          <div>
-            <div className="relative">
-              <img src={preview} alt="Preview" className="rounded-xl max-h-28 w-full object-cover" />
-              {uploading && (
-                <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center">
-                  <div className="flex items-center gap-1.5 text-[10px] text-green-400">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    Uploading...
-                  </div>
+          <div className="group relative rounded-xl overflow-hidden shadow-inner bg-black border border-white/[0.04]">
+            <img src={preview} alt="Preview" className="w-full h-auto max-h-32 object-cover object-center" />
+            {uploading && (
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center z-10 transition-all">
+                <Loader2 className="w-5 h-5 text-green-400 animate-spin drop-shadow-[0_0_8px_#22c55e]" />
+              </div>
+            )}
+            
+            {/* Hover actions */}
+            {!uploading && (
+                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                   <button 
+                     onClick={(e) => { e.stopPropagation(); setPreview(null); setFilename(''); setError(null); }}
+                     className="bg-black/60 hover:bg-red-500/80 text-white p-1 rounded-lg backdrop-blur-md transition-colors"
+                   >
+                     <span className="text-[9px] font-bold px-1">✕</span>
+                   </button>
                 </div>
-              )}
-            </div>
-            <p className="text-[10px] text-gray-600 mt-2 truncate">{filename}</p>
-            {error && <p className="text-[10px] text-orange-400 mt-0.5 truncate" title={error}>⚠ {error}</p>}
-            <button
-              onClick={() => { setPreview(null); setFilename(''); setError(null); }}
-              className="text-[10px] text-gray-500 hover:text-white mt-1"
-            >
-              Clear
-            </button>
+            )}
           </div>
         )}
+        {error && <p className="text-[9px] text-red-400 mt-1.5 truncate px-1" title={error}>{error}</p>}
       </div>
 
       {/* Output Handle */}
@@ -137,10 +125,8 @@ export default function ImageUploadNode({ id, data }: any) {
         type="source"
         position={Position.Right}
         id="image_url"
-        style={{
-          width: 10, height: 10, borderRadius: '50%',
-          border: '2px solid #0a0a0a', background: '#22c55e', right: -5,
-        }}
+        className="w-2 h-2 !border-2 !border-[#0d0d0d] !bg-[#22c55e] shadow-[0_0_8px_#22c55e]"
+        style={{ right: -4 }}
       />
 
       <input

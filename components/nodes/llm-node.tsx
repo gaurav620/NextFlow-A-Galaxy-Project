@@ -1,7 +1,7 @@
 'use client';
 
 import { Handle, Position } from '@xyflow/react';
-import { Copy, Check, Loader2 } from 'lucide-react';
+import { Copy, Check, Loader2, Sparkles } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useWorkflowStore } from '@/store/workflowStore';
 
@@ -77,38 +77,40 @@ export default function LLMNode({ id, data }: any) {
 
   return (
     <div
-      className="relative rounded-2xl min-w-[240px] max-w-[280px] transition-all"
+      className="relative rounded-2xl w-[280px] transition-all bg-[#0d0d0d]/90 backdrop-blur-md shadow-2xl"
       style={{
-        background: '#1c1c1c',
-        border: isExecuting ? '1px solid rgba(168,85,247,0.4)' : '1px solid rgba(255,255,255,0.05)',
-        boxShadow: isExecuting ? '0 0 20px rgba(168,85,247,0.2)' : 'none',
+        border: isExecuting ? '1px solid rgba(168,85,247,0.5)' : '1px solid rgba(255,255,255,0.1)',
+        boxShadow: isExecuting ? '0 0 20px rgba(168,85,247,0.15)' : '0 4px 24px rgba(0,0,0,0.4)',
       }}
     >
       {/* Header */}
-      <div
-        className="flex items-center justify-between px-4 py-3 cursor-grab active:cursor-grabbing"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
-      >
+      <div className="flex items-center justify-between px-3 py-2 cursor-grab active:cursor-grabbing border-b border-white/[0.04]">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded" style={{ background: '#a855f7' }} />
-          <span className="text-xs font-medium text-gray-300">Run LLM</span>
+          <div className="w-2 h-2 rounded-full shadow-[0_0_8px_#a855f7]" style={{ background: '#a855f7' }} />
+          <span className="text-[10px] font-semibold text-gray-300 tracking-wider uppercase">LLM Generation</span>
         </div>
-        {isExecuting && <Loader2 className="w-3.5 h-3.5 text-gray-500 animate-spin" />}
+        {isExecuting ? (
+          <Loader2 className="w-3 h-3 text-[#a855f7] animate-spin" />
+        ) : (
+           <Sparkles className="w-3 h-3 text-gray-500" />
+        )}
       </div>
 
       {/* Body */}
-      <div className="px-4 py-3 space-y-2">
+      <div className="p-2 space-y-2">
         {/* Model selector */}
-        <select
-          value={model}
-          onChange={(e) => { setModel(e.target.value); if (data.onChange) data.onChange({ model: e.target.value }); }}
-          className="rounded-xl text-xs text-white px-3 py-2 w-full focus:outline-none"
-          style={{ background: '#0f0f0f', border: '1px solid rgba(255,255,255,0.05)' }}
-        >
-          <option>gemini-2.0-flash</option>
-          <option>gemini-1.5-flash</option>
-          <option>gemini-1.5-pro</option>
-        </select>
+        <div className="relative group">
+          <select
+            value={model}
+            onChange={(e) => { setModel(e.target.value); if (data.onChange) data.onChange({ model: e.target.value }); }}
+            className="rounded-lg text-xs text-white px-2 py-1.5 w-full focus:outline-none bg-white/[0.02] border border-white/[0.04] appearance-none cursor-pointer pr-6 hover:bg-white/[0.04] transition-colors"
+          >
+            <option className="bg-[#111]">gemini-2.0-flash</option>
+            <option className="bg-[#111]">gemini-1.5-flash</option>
+            <option className="bg-[#111]">gemini-1.5-pro</option>
+          </select>
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500 text-[8px]">▼</div>
+        </div>
 
         {/* System prompt */}
         {!systemConnected && (
@@ -116,13 +118,12 @@ export default function LLMNode({ id, data }: any) {
             value={systemPrompt}
             onChange={(e) => { setSystemPrompt(e.target.value); if (data.onChange) data.onChange({ systemPrompt: e.target.value }); }}
             placeholder="System prompt (optional)..."
-            className="rounded-xl text-white text-xs w-full p-3 resize-none h-12 placeholder-gray-600 focus:outline-none"
-            style={{ background: '#0f0f0f', border: '1px solid rgba(255,255,255,0.05)' }}
+            className="rounded-lg text-gray-200 text-xs w-full p-2 resize-none h-12 placeholder-gray-600 focus:outline-none bg-transparent hover:bg-white/[0.02] transition-colors border border-transparent focus:border-white/10 shadow-inner"
           />
         )}
         {systemConnected && (
-          <div className="rounded-xl px-3 py-2 text-[11px] text-gray-500" style={{ background: '#0f0f0f', border: '1px solid rgba(168,85,247,0.2)' }}>
-            Connected from node
+          <div className="rounded-lg px-2 py-1.5 text-[10px] text-[#a855f7] bg-[#a855f7]/10 flex items-center gap-1.5 border border-[#a855f7]/20">
+            <div className="w-1 h-1 rounded-full bg-[#a855f7] animate-pulse" /> Linked
           </div>
         )}
 
@@ -132,62 +133,48 @@ export default function LLMNode({ id, data }: any) {
             value={userMessage}
             onChange={(e) => { setUserMessage(e.target.value); if (data.onChange) data.onChange({ userMessage: e.target.value }); }}
             placeholder="User message (required)..."
-            className="rounded-xl text-white text-xs w-full p-3 resize-none h-14 placeholder-gray-600 focus:outline-none"
-            style={{ background: '#0f0f0f', border: '1px solid rgba(255,255,255,0.05)' }}
+            className="rounded-lg text-gray-200 text-xs w-full p-2 resize-none h-16 placeholder-gray-600 focus:outline-none bg-transparent hover:bg-white/[0.02] transition-colors border border-transparent focus:border-white/10 shadow-inner"
           />
         )}
         {userConnected && (
-          <div className="rounded-xl px-3 py-2 text-[11px] text-gray-500" style={{ background: '#0f0f0f', border: '1px solid rgba(168,85,247,0.2)' }}>
-            Connected from node
+          <div className="rounded-lg px-2 py-1.5 text-[10px] text-[#a855f7] bg-[#a855f7]/10 flex items-center gap-1.5 border border-[#a855f7]/20 mt-1">
+            <div className="w-1 h-1 rounded-full bg-[#a855f7] animate-pulse" /> Linked
           </div>
         )}
 
-        {/* Run button */}
-        <button
-          onClick={handleRun}
-          disabled={isExecuting}
-          className="text-xs rounded-full py-2 w-full flex items-center justify-center gap-2 font-medium transition-colors disabled:opacity-50"
-          style={{ background: '#3b82f6', color: '#fff' }}
-        >
-          {isExecuting ? <><Loader2 className="w-3 h-3 animate-spin" />Running...</> : 'Run'}
-        </button>
-
         {/* Response area */}
         {result && (
-          <div className="rounded-xl overflow-hidden" style={{ background: '#0f0f0f', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-              <span className="text-[10px] text-gray-600">Response</span>
-              <button onClick={copyResult} className="p-1 hover:bg-white/5 rounded transition-colors">
-                {copied ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3 text-gray-600" />}
+          <div className="rounded-lg overflow-hidden border border-white/[0.04] bg-black/40">
+            <div className="flex items-center justify-between px-2 py-1.5 border-b border-white/[0.02]">
+              <span className="text-[9px] text-[#a855f7] font-medium tracking-widest uppercase">Output</span>
+              <button onClick={copyResult} className="p-1 hover:bg-white/10 rounded transition-colors text-gray-400 hover:text-white">
+                {copied ? <Check className="w-2.5 h-2.5 text-green-400" /> : <Copy className="w-2.5 h-2.5" />}
               </button>
             </div>
             <div
               className="transition-all duration-300 ease-in-out overflow-hidden"
               style={{ maxHeight: isExpanded ? `${resultHeight + 8}px` : '0px', opacity: isExpanded ? 1 : 0 }}
             >
-              <div ref={resultRef} className="px-3 py-2 text-[11px] text-gray-400 leading-relaxed max-h-32 overflow-y-auto">
+              <div ref={resultRef} className="px-2 py-1.5 text-[11px] text-gray-300 leading-relaxed max-h-32 overflow-y-auto hide-scrollbar">
                 {result}
               </div>
-            </div>
-            <div className="px-3 py-1 text-[10px] text-gray-600" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-              ~{estimatedTokens} tokens
             </div>
           </div>
         )}
       </div>
 
       {/* Input Handles - left side */}
-      <Handle type="target" position={Position.Left} id="system_prompt" style={{ width: 10, height: 10, borderRadius: '50%', border: '2px solid #0a0a0a', background: '#6b7280', left: -5, top: 80 }} />
-      <span className="absolute text-[10px] text-gray-600 left-3" style={{ top: 74 }}>System</span>
+      <Handle type="target" position={Position.Left} id="system_prompt" className="w-2 h-2 !border-2 !border-[#0d0d0d] !bg-[#6b7280]" style={{ left: -4, top: 78 }} />
+      <span className="absolute text-[8px] text-gray-500/70 font-medium tracking-wide right-[102%] pointer-events-none" style={{ top: 74 }}>SYS</span>
 
-      <Handle type="target" position={Position.Left} id="user_message" style={{ width: 10, height: 10, borderRadius: '50%', border: '2px solid #0a0a0a', background: '#3b82f6', left: -5, top: 130 }} />
-      <span className="absolute text-[10px] text-gray-600 left-3" style={{ top: 124 }}>Message</span>
+      <Handle type="target" position={Position.Left} id="user_message" className="w-2 h-2 !border-2 !border-[#0d0d0d] !bg-[#3b82f6] shadow-[0_0_8px_#3b82f6]" style={{ left: -4, top: 120 }} />
+      <span className="absolute text-[8px] text-[#3b82f6]/70 font-medium tracking-wide right-[102%] pointer-events-none" style={{ top: 116 }}>PROMPT</span>
 
-      <Handle type="target" position={Position.Left} id="images" style={{ width: 10, height: 10, borderRadius: '50%', border: '2px solid #0a0a0a', background: '#22c55e', left: -5, top: 180 }} />
-      <span className="absolute text-[10px] text-gray-600 left-3" style={{ top: 174 }}>Images</span>
+      <Handle type="target" position={Position.Left} id="images" className="w-2 h-2 !border-2 !border-[#0d0d0d] !bg-[#22c55e] shadow-[0_0_8px_#22c55e]" style={{ left: -4, top: 180 }} />
+      <span className="absolute text-[8px] text-[#22c55e]/70 font-medium tracking-wide right-[102%] pointer-events-none" style={{ top: 176 }}>IMAGE</span>
 
       {/* Output Handle - right side */}
-      <Handle type="source" position={Position.Right} id="output" style={{ width: 10, height: 10, borderRadius: '50%', border: '2px solid #0a0a0a', background: '#a855f7', right: -5, bottom: 20 }} />
+      <Handle type="source" position={Position.Right} id="output" className="w-2 h-2 !border-2 !border-[#0d0d0d] !bg-[#a855f7] shadow-[0_0_8px_#a855f7]" style={{ right: -4, bottom: 20 }} />
     </div>
   );
 }

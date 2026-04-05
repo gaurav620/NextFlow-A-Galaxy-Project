@@ -124,3 +124,54 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* React Flow High Fidelity Overrides for Krea clone */
+.react-flow__background {
+  background-color: #0A0A0A;
+}
+.react-flow__edge-path {
+  stroke-width: 2 !important;
+  stroke: rgba(255, 255, 255, 0.4) !important;
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.3));
+  transition: stroke 0.3s ease;
+}
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke: #a855f7 !important;
+  filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.6));
+}
+
+@keyframes flowDash {
+  to { stroke-dashoffset: -20; }
+}
+
+.react-flow__edge.animated .react-flow__edge-path {
+  stroke-dasharray: 4 !important;
+  animation: flowDash 0.8s linear infinite;
+  stroke: #a855f7 !important;
+  filter: drop-shadow(0 0 4px rgba(168, 85, 247, 0.5));
+}
+
+.react-flow__minimap {
+  background: transparent !important;
+  border-radius: 16px !important;
+  border: none !important;
+  overflow: hidden;
+}
+.react-flow__minimap-mask {
+  fill: rgba(0, 0, 0, 0.85) !important;
+}
+.react-flow__minimap-node {
+  fill: #3b82f6 !important;
+  rx: 4;
+  ry: 4;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;  
+  scrollbar-width: none;  
+}
+
