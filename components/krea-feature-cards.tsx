@@ -34,10 +34,10 @@ export function KreaFeatureCards() {
   ];
 
   return (
-    <section className="bg-white py-24 font-sans px-4 sm:px-6">
-      <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row gap-6 lg:gap-8 justify-center overflow-x-auto pb-8 snap-x no-scrollbar">
+    <section className="bg-white py-16 sm:py-24 font-sans px-4 sm:px-6 overflow-hidden">
+      <div className="max-w-[1400px] mx-auto flex flex-row gap-4 sm:gap-6 lg:gap-8 justify-start md:justify-center overflow-x-auto pb-8 snap-x snap-mandatory no-scrollbar w-full relative left-0 right-0 px-4">
         {cards.map((card, i) => (
-          <div key={i} className="group relative w-full md:w-[320px] lg:w-[340px] h-[520px] rounded-[32px] overflow-hidden shrink-0 snap-center bg-zinc-900 border border-zinc-200 shadow-xl cursor-pointer">
+          <div key={i} className="group relative w-[85vw] sm:w-[320px] lg:w-[340px] h-[480px] sm:h-[520px] rounded-[32px] overflow-hidden shrink-0 snap-center sm:snap-align-none bg-zinc-900 border border-zinc-200 shadow-xl cursor-pointer">
             <Image 
               src={card.image} 
               alt={card.title} 

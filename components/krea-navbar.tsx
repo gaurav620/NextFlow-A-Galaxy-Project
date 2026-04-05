@@ -262,29 +262,31 @@ export function Navbar({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
           <Link href="/dashboard" className={`text-[13px] font-medium transition-colors ${navItemColor}`}>Enterprise</Link>
         </nav>
 
-        {/* CTA Buttons */}
-        <div className="hidden lg:flex items-center gap-4">
-          <Link
-            href="/pricing"
-            className={`px-4 py-2 text-[13px] font-bold rounded-full transition-colors ${isLight ? 'text-black bg-zinc-100 hover:bg-zinc-200' : 'text-black bg-white hover:bg-zinc-200'}`}
-          >
-            Sign up for free
-          </Link>
-          <Link
-            href="/dashboard"
-            className={`px-4 py-2 text-[13px] font-bold rounded-full transition-colors ${isLight ? 'text-white bg-black hover:bg-zinc-800' : 'text-white bg-white/10 hover:bg-white/20'}`}
-          >
-            Log in
-          </Link>
-        </div>
+        {/* CTA Buttons & Hamburger */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Link
+              href="/pricing"
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-[12px] sm:text-[13px] font-bold rounded-full transition-colors whitespace-nowrap ${isLight ? 'text-black bg-zinc-100 hover:bg-zinc-200' : 'text-black bg-white hover:bg-zinc-200'}`}
+            >
+              Sign up for free
+            </Link>
+            <Link
+              href="/dashboard"
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-[12px] sm:text-[13px] font-bold rounded-full transition-colors whitespace-nowrap border ${isLight ? 'text-black border-zinc-200 hover:bg-zinc-50' : 'text-white border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800'}`}
+            >
+              Log in
+            </Link>
+          </div>
 
-        {/* Mobile hamburger */}
-        <button
-          className={`lg:hidden ${textColor}`}
-          onClick={() => setMobileOpen(!mobileOpen)}
-        >
-          {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
+          {/* Mobile hamburger */}
+          <button
+            className={`lg:hidden ${textColor} ml-1`}
+            onClick={() => setMobileOpen(!mobileOpen)}
+          >
+            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
       </div>
     </header>
   );
