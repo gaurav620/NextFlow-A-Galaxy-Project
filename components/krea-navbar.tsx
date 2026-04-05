@@ -265,14 +265,14 @@ export function Navbar({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         {/* CTA Buttons */}
         <div className="hidden lg:flex items-center gap-4">
           <Link
-            href="/sign-up"
-            className={`px-4 py-2 text-[13px] font-bold rounded-full transition-colors ${isLight ? 'text-black bg-zinc-100 hover:bg-zinc-200' : 'text-white bg-white/10 border border-white/10 hover:bg-white/20'}`}
+            href="/pricing"
+            className={`px-4 py-2 text-[13px] font-bold rounded-full transition-colors ${isLight ? 'text-black bg-zinc-100 hover:bg-zinc-200' : 'text-black bg-white hover:bg-zinc-200'}`}
           >
             Sign up for free
           </Link>
           <Link
             href="/dashboard"
-            className={`px-4 py-2 text-[13px] font-bold rounded-full transition-colors ${isLight ? 'text-white bg-black hover:bg-zinc-800' : 'text-black bg-white hover:bg-zinc-200'}`}
+            className={`px-4 py-2 text-[13px] font-bold rounded-full transition-colors ${isLight ? 'text-white bg-black hover:bg-zinc-800' : 'text-white bg-white/10 hover:bg-white/20'}`}
           >
             Log in
           </Link>
