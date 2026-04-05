@@ -4,19 +4,14 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   ChevronDown,
-  Workflow,
   Menu,
   X,
   Image as ImageIcon,
   Video,
   Box,
   MonitorPlay,
-  Zap,
-  Layout,
-  UploadCloud,
   FileBox,
   Sparkles,
-  RefreshCcw,
   Settings2,
   ChevronRight,
   ArrowRight
