@@ -575,15 +575,15 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
       <div className="flex w-full h-full pt-12">
         <div ref={reactFlowWrapper} className="flex-1 h-full relative">
           <ReactFlow
-            nodes={safeNodes}
-            edges={safeEdges}
+            nodes={safeNodes as any}
+            edges={safeEdges as any}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onDrop={onDrop}
             onDragOver={onDragOver}
-            nodeTypes={nodeTypes}
-            onInit={setReactFlowInstance}
+            nodeTypes={nodeTypes as any}
+            onInit={setReactFlowInstance as any}
             onSelectionChange={onSelectionChange}
             fitView
             deleteKeyCode="Delete"

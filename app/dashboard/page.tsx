@@ -311,7 +311,7 @@ export default function DashboardHome() {
   const vidScrollRef  = useRef<HTMLDivElement>(null);
   const nodeScrollRef = useRef<HTMLDivElement>(null);
 
-  const scroll = (ref: React.RefObject<HTMLDivElement>, dir: 'left' | 'right') => {
+  const scroll = (ref: React.RefObject<HTMLDivElement | null>, dir: 'left' | 'right') => {
     ref.current?.scrollBy({ left: dir === 'right' ? 360 : -360, behavior: 'smooth' });
   };
 

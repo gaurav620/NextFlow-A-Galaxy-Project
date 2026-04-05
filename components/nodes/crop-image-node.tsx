@@ -1,10 +1,10 @@
 'use client';
 
-import { Handle, Position, NodeProps } from '@xyflow/react';
+import { Handle, Position } from '@xyflow/react';
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 
-export default function CropImageNode({ data }: NodeProps) {
+export default function CropImageNode({ data }: any) {
   const [x, setX] = useState(data.x || 0);
   const [y, setY] = useState(data.y || 0);
   const [width, setWidth] = useState(data.width || 100);

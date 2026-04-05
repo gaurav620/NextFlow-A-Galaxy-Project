@@ -12,4 +12,5 @@ export default defineConfig({
       factor: 2,
     },
   },
+  maxDuration: 300,
 })

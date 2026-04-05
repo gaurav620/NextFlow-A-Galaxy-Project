@@ -121,7 +121,7 @@ export default function APIPage() {
                             <span className="text-[#79B8FF]">curl</span> -X POST https://api.nextflow.ai/v1/images/generations \{'\n'}
                             {'  '}-H <span className="text-[#9ECBFF]">"Content-Type: application/json"</span> \{'\n'}
                             {'  '}-H <span className="text-[#9ECBFF]">"Authorization: Bearer $NEXTFLOW_KEY"</span> \{'\n'}
-                            {'  '}-d <span className="text-[#9ECBFF]">'{'{'}"prompt": "A cinematic shot of a neon city", "model": "nextflow-v1"'}'</span>{'\n'}
+                            {'  '}-d <span className="text-[#9ECBFF]">{`'{"prompt": "A cinematic shot of a neon city", "model": "nextflow-v1"}'`}</span>{'\n'}
                         </code>
                     </pre>
                 )}

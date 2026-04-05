@@ -1,6 +1,6 @@
 'use client';
 
-import { Handle, Position, NodeProps } from '@xyflow/react';
+import { Handle, Position } from '@xyflow/react';
 import { Upload, Loader2 } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { useWorkflowStore } from '@/store/workflowStore';
@@ -40,7 +40,7 @@ async function uploadToTransloadit(file: File): Promise<string> {
   throw new Error('Transloadit upload timed out')
 }
 
-export default function VideoUploadNode({ id, data }: NodeProps) {
+export default function VideoUploadNode({ id, data }: any) {
   const [preview, setPreview] = useState<string | null>(data.preview || null);
   const [filename, setFilename] = useState(data.filename || '');
   const [uploading, setUploading] = useState(false);

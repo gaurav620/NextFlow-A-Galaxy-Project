@@ -1,10 +1,10 @@
 'use client';
 
-import { Handle, Position, NodeProps } from '@xyflow/react';
+import { Handle, Position } from '@xyflow/react';
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 
-export default function ExtractFrameNode({ data }: NodeProps) {
+export default function ExtractFrameNode({ data }: any) {
   const [timestamp, setTimestamp] = useState(data.timestamp || 0);
   const [isExecuting, setIsExecuting] = useState(false);
 

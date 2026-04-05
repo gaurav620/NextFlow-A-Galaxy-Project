@@ -1,10 +1,10 @@
 'use client';
 
-import { Handle, Position, NodeProps } from '@xyflow/react';
+import { Handle, Position } from '@xyflow/react';
 import { Type } from 'lucide-react';
 import { useState } from 'react';
 
-export default function TextNode({ data }: NodeProps) {
+export default function TextNode({ data }: any) {
   const [content, setContent] = useState(data.content || '');
 
   return (

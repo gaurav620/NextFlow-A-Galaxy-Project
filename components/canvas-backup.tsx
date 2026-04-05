@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState, useCallback, useRef } from 'react'
-import ReactFlow, {
+import {
+  ReactFlow,
   Background,
   BackgroundVariant,
   Controls,
@@ -10,12 +11,11 @@ import ReactFlow, {
   useEdgesState,
   addEdge,
   MarkerType,
-  ReactFlowInstance,
-  Node,
-  Edge,
+  applyNodeChanges,
+  applyEdgeChanges,
   Connection,
-} from 'reactflow'
-import 'reactflow/dist/style.css'
+} from '@xyflow/react'
+import '@xyflow/react/dist/style.css'
 import {
   Play,
   Save,
@@ -43,10 +43,11 @@ const nodeTypes = {
 }
 
 export default function WorkflowCanvas() {
-  const [nodes, setNodes, onNodesChange] = useNodesState([])
-  const [edges, setEdges, onEdgesChange] = useEdgesState([])
-  const [reactFlowInstance, setReactFlowInstance] =
-    useState<ReactFlowInstance | null>(null)
+  const [nodes, setNodes] = useState<any[]>([])
+  const [edges, setEdges] = useState<any[]>([])
+  const onNodesChange = useCallback((changes: any) => setNodes((nds) => applyNodeChanges(changes, nds)), [])
+  const onEdgesChange = useCallback((changes: any) => setEdges((eds) => applyEdgeChanges(changes, eds)), [])
+  const [reactFlowInstance, setReactFlowInstance] = useState<any>(null)
   const [workflowName, setWorkflowName] = useState('Untitled Workflow')
   const [isRunning, setIsRunning] = useState(false)
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
@@ -65,7 +66,7 @@ export default function WorkflowCanvas() {
         y: event.clientY,
       })
 
-      const newNode: Node = {
+      const newNode: any = {
         id: crypto.randomUUID(),
         data: { label: nodeType },
         position,

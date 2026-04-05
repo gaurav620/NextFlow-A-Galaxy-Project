@@ -1,11 +1,11 @@
 'use client';
 
-import { Handle, Position, NodeProps } from '@xyflow/react';
+import { Handle, Position } from '@xyflow/react';
 import { Copy, Check, Loader2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useWorkflowStore } from '@/store/workflowStore';
 
-export default function LLMNode({ id, data }: NodeProps) {
+export default function LLMNode({ id, data }: any) {
   const [model, setModel] = useState(data.model || 'gemini-2.0-flash');
   const [systemPrompt, setSystemPrompt] = useState(data.systemPrompt || '');
   const [userMessage, setUserMessage] = useState(data.userMessage || '');
