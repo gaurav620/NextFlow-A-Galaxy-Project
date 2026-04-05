@@ -27,6 +27,7 @@ import HistorySidebar from '@/components/history-sidebar'
 import { useWorkflowStore } from '@/store/workflowStore'
 import { executeWorkflow } from '@/lib/workflowExecutor'
 import { sampleWorkflow } from '@/data/sampleWorkflow'
+import { useAssetStore } from '@/store/assets'
 
 import {
   ChevronLeft,
@@ -179,6 +180,19 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
         removeExecutingNode(nodeId)
         setNodeOutput(nodeId, output)
         updateNodeData(nodeId, { output: String(output || ''), error: undefined })
+        
+        // Auto-save generated images/videos to Assets Gallery
+        if (output && typeof output === 'string' && output.startsWith('http')) {
+          const node = (safeNodes as any[]).find(n => n.id === nodeId);
+          if (node && ['imageGenNode', 'extractFrameNode', 'cropImageNode'].includes(node.type)) {
+            useAssetStore.getState().addAsset({
+              url: output,
+              prompt: node.data?.prompt || `Generated from ${node.label || node.type}`,
+              tool: 'workflow',
+              ratio: '1:1',
+            });
+          }
+        }
       },
       onNodeError: (nodeId, error) => {
         removeExecutingNode(nodeId)
@@ -223,6 +237,19 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
         removeExecutingNode(nodeId)
         setNodeOutput(nodeId, output)
         updateNodeData(nodeId, { output: String(output || ''), error: undefined })
+
+        // Auto-save generated images/videos to Assets Gallery
+        if (output && typeof output === 'string' && output.startsWith('http')) {
+          const node = (safeNodes as any[]).find(n => n.id === nodeId);
+          if (node && ['imageGenNode', 'extractFrameNode', 'cropImageNode'].includes(node.type)) {
+            useAssetStore.getState().addAsset({
+              url: output,
+              prompt: node.data?.prompt || `Generated from ${node.label || node.type}`,
+              tool: 'workflow',
+              ratio: '1:1',
+            });
+          }
+        }
       },
       onNodeError: (nodeId, error) => {
         removeExecutingNode(nodeId)

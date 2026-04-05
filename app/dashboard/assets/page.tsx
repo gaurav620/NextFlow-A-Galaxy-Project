@@ -153,8 +153,11 @@ export default function AssetsPage() {
                     : "No assets match your current filters."}
                 </p>
                 {assets.length === 0 && (
-                    <button className="bg-white hover:bg-zinc-200 text-black px-6 py-2.5 rounded-xl font-semibold text-[13px] shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-transform hover:-translate-y-0.5">
-                        Start generating
+                    <button 
+                       onClick={() => window.location.href = '/dashboard/image'}
+                       className="bg-white hover:bg-zinc-200 text-black px-6 py-2.5 rounded-full font-bold text-[14px] shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-transform hover:-translate-y-0.5 mt-2"
+                    >
+                        Generate Images
                     </button>
                 )}
                 </motion.div>

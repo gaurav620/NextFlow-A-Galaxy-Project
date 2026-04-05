@@ -156,7 +156,10 @@ export async function executeWorkflow(
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 prompt: promptValue,
-                count: 1
+                count: 1,
+                modelId: "krea1",
+                aspectRatio: "1:1",
+                resolution: "1K"
               }),
             })
             if (!res.ok) throw new Error(`API Error: ${res.statusText}`)
