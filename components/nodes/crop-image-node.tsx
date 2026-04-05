@@ -4,7 +4,7 @@ import { Handle, Position } from '@xyflow/react';
 import { Loader2, Crop } from 'lucide-react';
 import { useState } from 'react';
 
-export default function CropImageNode({ data }: any) {
+export default function CropImageNode({ id, data }: any) {
   const [x, setX] = useState(data.x || 0);
   const [y, setY] = useState(data.y || 0);
   const [width, setWidth] = useState(data.width || 100);
@@ -17,7 +17,9 @@ export default function CropImageNode({ data }: any) {
     setIsExecuting(true);
     setTimeout(() => {
       setIsExecuting(false);
-      if (data.onChange) data.onChange({ x, y, width, height });
+      import('@/store/workflowStore').then(({ useWorkflowStore }) => {
+        useWorkflowStore.getState().updateNodeData(id, { x, y, width, height });
+      });
     }, 1500);
   };
 
@@ -50,7 +52,12 @@ export default function CropImageNode({ data }: any) {
             <label className="text-[9px] text-gray-500 px-2 font-medium border-r border-white/10 bg-white/[0.02] py-1.5">X</label>
             <input
               type="number" min={0} max={100} value={x}
-              onChange={(e) => { setX(Number(e.target.value)); if (data.onChange) data.onChange({ x: Number(e.target.value), y, width, height }); }}
+              onChange={(e) => { 
+                setX(Number(e.target.value)); 
+                import('@/store/workflowStore').then(({ useWorkflowStore }) => {
+                  useWorkflowStore.getState().updateNodeData(id, { x: Number(e.target.value), y, width, height });
+                });
+              }}
               className="bg-transparent text-white text-xs px-2 py-1.5 w-full focus:outline-none"
             />
           </div>
@@ -58,7 +65,12 @@ export default function CropImageNode({ data }: any) {
             <label className="text-[9px] text-gray-500 px-2 font-medium border-r border-white/10 bg-white/[0.02] py-1.5">Y</label>
             <input
               type="number" min={0} max={100} value={y}
-              onChange={(e) => { setY(Number(e.target.value)); if (data.onChange) data.onChange({ x, y: Number(e.target.value), width, height }); }}
+              onChange={(e) => { 
+                setY(Number(e.target.value)); 
+                import('@/store/workflowStore').then(({ useWorkflowStore }) => {
+                  useWorkflowStore.getState().updateNodeData(id, { x, y: Number(e.target.value), width, height });
+                });
+              }}
               className="bg-transparent text-white text-xs px-2 py-1.5 w-full focus:outline-none"
             />
           </div>
@@ -66,7 +78,12 @@ export default function CropImageNode({ data }: any) {
             <label className="text-[9px] text-gray-500 px-2 font-medium border-r border-white/10 bg-white/[0.02] py-1.5">W</label>
             <input
               type="number" min={0} max={100} value={width}
-              onChange={(e) => { setWidth(Number(e.target.value)); if (data.onChange) data.onChange({ x, y, width: Number(e.target.value), height }); }}
+              onChange={(e) => { 
+                setWidth(Number(e.target.value)); 
+                import('@/store/workflowStore').then(({ useWorkflowStore }) => {
+                  useWorkflowStore.getState().updateNodeData(id, { x, y, width: Number(e.target.value), height });
+                });
+              }}
               className="bg-transparent text-white text-xs px-2 py-1.5 w-full focus:outline-none"
             />
           </div>
@@ -74,7 +91,12 @@ export default function CropImageNode({ data }: any) {
             <label className="text-[9px] text-gray-500 px-2 font-medium border-r border-white/10 bg-white/[0.02] py-1.5">H</label>
             <input
               type="number" min={0} max={100} value={height}
-              onChange={(e) => { setHeight(Number(e.target.value)); if (data.onChange) data.onChange({ x, y, width, height: Number(e.target.value) }); }}
+              onChange={(e) => { 
+                setHeight(Number(e.target.value)); 
+                import('@/store/workflowStore').then(({ useWorkflowStore }) => {
+                  useWorkflowStore.getState().updateNodeData(id, { x, y, width, height: Number(e.target.value) });
+                });
+              }}
               className="bg-transparent text-white text-xs px-2 py-1.5 w-full focus:outline-none"
             />
           </div>

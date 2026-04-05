@@ -4,7 +4,7 @@ import { Handle, Position } from '@xyflow/react';
 import { Loader2, Scissors } from 'lucide-react';
 import { useState } from 'react';
 
-export default function ExtractFrameNode({ data }: any) {
+export default function ExtractFrameNode({ id, data }: any) {
   const [timestamp, setTimestamp] = useState(data.timestamp || 0);
   const [isExecuting, setIsExecuting] = useState(false);
 
@@ -14,7 +14,9 @@ export default function ExtractFrameNode({ data }: any) {
     setIsExecuting(true);
     setTimeout(() => {
       setIsExecuting(false);
-      if (data.onChange) data.onChange({ timestamp });
+      import('@/store/workflowStore').then(({ useWorkflowStore }) => {
+        useWorkflowStore.getState().updateNodeData(id, { timestamp });
+      });
     }, 2000);
   };
 
@@ -46,7 +48,12 @@ export default function ExtractFrameNode({ data }: any) {
           <label className="text-[9px] text-gray-500 px-2 font-medium border-r border-white/10 bg-white/[0.02] py-2">TIME (S)</label>
           <input
             type="number" min={0} step={0.1} value={timestamp}
-            onChange={(e) => { setTimestamp(Number(e.target.value)); if (data.onChange) data.onChange({ timestamp: Number(e.target.value) }); }}
+            onChange={(e) => { 
+               setTimestamp(Number(e.target.value)); 
+               import('@/store/workflowStore').then(({ useWorkflowStore }) => {
+                 useWorkflowStore.getState().updateNodeData(id, { timestamp: Number(e.target.value) });
+               });
+            }}
             placeholder="0.0"
             className="bg-transparent text-white text-xs px-2 py-2 w-full focus:outline-none"
           />
