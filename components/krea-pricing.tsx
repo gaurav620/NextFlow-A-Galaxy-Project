@@ -9,67 +9,58 @@ export function Pricing() {
                 </h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    {/* Free */}
+                    {/* Basic Pack */}
                     <div className="bg-[#111] border border-zinc-800 rounded-3xl p-8 text-left flex flex-col hover:border-zinc-700 transition-colors">
-                        <h3 className="text-xl font-bold text-white mb-2">Free</h3>
-                        <div className="flex items-end gap-1 mb-8">
-                            <span className="text-[40px] font-black text-white leading-none">$0</span>
-                            <span className="text-zinc-500 font-medium mb-1">/month</span>
+                        <div className="mb-2">
+                            <span className="inline-block px-3 py-1 bg-white/10 text-white text-xs font-bold rounded hover:bg-white/20 transition-colors">RECHARGE</span>
                         </div>
-                        <Link href="/sign-up" className="w-full py-3.5 bg-white text-black font-semibold text-center rounded-xl hover:bg-zinc-200 transition">Get Started</Link>
-                        <p className="text-sm text-zinc-500 font-medium mt-6">Includes 100 compute units/day</p>
-                        <ul className="mt-8 flex flex-col gap-3 text-sm text-white/70">
-                             <li className="flex items-center gap-3"><div className="w-1.5 h-1.5 rounded-full bg-white/30" />Basic real-time text-to-image</li>
-                             <li className="flex items-center gap-3"><div className="w-1.5 h-1.5 rounded-full bg-white/30" />Basic image enhancements</li>
-                             <li className="flex items-center gap-3"><div className="w-1.5 h-1.5 rounded-full bg-white/30" />Slow generation queue</li>
-                        </ul>
+                        <h3 className="text-xl font-bold text-white mb-2 mt-4">Basic Pack</h3>
+                        <div className="flex items-end gap-1 mb-8">
+                            <span className="text-[40px] font-black text-white leading-none">US$10</span>
+                        </div>
+                        <Link href="/sign-up" className="w-full py-3.5 bg-zinc-800 text-white font-semibold text-center rounded-xl hover:bg-zinc-700 transition">Buy now</Link>
+                        <p className="text-sm text-zinc-300 font-bold mt-6">+ 20,000 compute units</p>
+                        <p className="text-xs text-zinc-500 font-medium mt-1">Never expires</p>
                     </div>
-                    {/* Basic */}
+                    {/* Creator Pack */}
                     <div className="bg-[#111] border border-zinc-800 rounded-3xl p-8 text-left flex flex-col hover:border-zinc-700 transition-colors">
-                        <h3 className="text-xl font-bold text-white mb-2">Basic</h3>
-                        <div className="flex items-end gap-1 mb-8">
-                            <span className="text-[40px] font-black text-white leading-none">US$9</span>
-                            <span className="text-zinc-500 font-medium mb-1">/month</span>
+                        <div className="mb-2">
+                            <span className="inline-block px-3 py-1 bg-white/10 text-white text-xs font-bold rounded hover:bg-white/20 transition-colors">RECHARGE</span>
                         </div>
-                        <Link href="/sign-up" className="w-full py-3.5 bg-zinc-800 text-white font-semibold text-center rounded-xl hover:bg-zinc-700 transition">Subscribe</Link>
-                        <p className="text-sm text-zinc-500 font-medium mt-6">Includes 5,000 compute units/month</p>
-                        <ul className="mt-8 flex flex-col gap-3 text-sm text-white/70">
-                             <li className="flex items-center gap-3"><div className="w-1.5 h-1.5 rounded-full bg-white" />Fast generation queue</li>
-                             <li className="flex items-center gap-3"><div className="w-1.5 h-1.5 rounded-full bg-white" />Commercial use</li>
-                             <li className="flex items-center gap-3"><div className="w-1.5 h-1.5 rounded-full bg-white" />Video generation (standard)</li>
-                        </ul>
+                        <h3 className="text-xl font-bold text-white mb-2 mt-4">Creator Pack</h3>
+                        <div className="flex items-end gap-1 mb-8">
+                            <span className="text-[40px] font-black text-white leading-none">US$25</span>
+                        </div>
+                        <Link href="/sign-up" className="w-full py-3.5 bg-zinc-800 text-white font-semibold text-center rounded-xl hover:bg-zinc-700 transition">Buy now</Link>
+                        <p className="text-sm text-zinc-300 font-bold mt-6">+ 60,000 compute units</p>
+                        <p className="text-xs text-zinc-500 font-medium mt-1">Never expires</p>
                     </div>
-                    {/* Pro */}
+                    {/* Pro Pack */}
                     <div className="bg-[#111] border border-zinc-700 rounded-3xl p-8 text-left flex flex-col relative transform md:-translate-y-4 hover:border-zinc-500 transition-colors shadow-[0_0_40px_rgba(255,255,255,0.05)]">
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white text-black text-[11px] font-bold px-3 py-1 rounded-full tracking-wide">MOST POPULAR</div>
-                        <h3 className="text-xl font-bold text-white mb-2">Pro</h3>
-                        <div className="flex items-end gap-1 mb-8">
-                            <span className="text-[40px] font-black text-white leading-none">US$35</span>
-                            <span className="text-zinc-500 font-medium mb-1">/month</span>
+                        <div className="mb-2">
+                            <span className="inline-block px-3 py-1 bg-white/10 text-white text-xs font-bold rounded hover:bg-white/20 transition-colors">RECHARGE</span>
                         </div>
-                        <Link href="/sign-up" className="w-full py-3.5 bg-white text-black font-semibold text-center rounded-xl hover:bg-zinc-200 transition">Subscribe</Link>
-                        <p className="text-sm text-zinc-500 font-medium mt-6">Includes 20,000 compute units/month</p>
-                        <ul className="mt-8 flex flex-col gap-3 text-sm text-white/70">
-                             <li className="flex items-center gap-3"><div className="w-1.5 h-1.5 rounded-full bg-white" />Premium generation queue</li>
-                             <li className="flex items-center gap-3"><div className="w-1.5 h-1.5 rounded-full bg-white" />Private mode (hidden from gallery)</li>
-                             <li className="flex items-center gap-3"><div className="w-1.5 h-1.5 rounded-full bg-white" />API Access</li>
-                             <li className="flex items-center gap-3"><div className="w-1.5 h-1.5 rounded-full bg-white" />High-res exports</li>
-                        </ul>
+                        <h3 className="text-xl font-bold text-white mb-2 mt-4">Pro Pack</h3>
+                        <div className="flex items-end gap-1 mb-8">
+                            <span className="text-[40px] font-black text-white leading-none">US$70</span>
+                        </div>
+                        <Link href="/sign-up" className="w-full py-3.5 bg-white text-black font-semibold text-center rounded-xl hover:bg-zinc-200 transition">Buy now</Link>
+                        <p className="text-sm text-zinc-300 font-bold mt-6">+ 200,000 compute units</p>
+                        <p className="text-xs text-zinc-500 font-medium mt-1">Never expires</p>
                     </div>
-                    {/* Max */}
+                    {/* Studio Pack */}
                     <div className="bg-[#111] border border-zinc-800 rounded-3xl p-8 text-left flex flex-col hover:border-zinc-700 transition-colors">
-                        <h3 className="text-xl font-bold text-white mb-2">Max</h3>
-                        <div className="flex items-end gap-1 mb-8">
-                            <span className="text-[40px] font-black text-white leading-none">US$105</span>
-                            <span className="text-zinc-500 font-medium mb-1">/month</span>
+                        <div className="mb-2">
+                            <span className="inline-block px-3 py-1 bg-[#FFBD2E]/20 text-[#FFBD2E] text-xs font-bold rounded hover:bg-[#FFBD2E]/30 transition-colors">HIGH VOLUME</span>
                         </div>
-                        <Link href="/sign-up" className="w-full py-3.5 bg-zinc-800 text-white font-semibold text-center rounded-xl hover:bg-zinc-700 transition">Subscribe</Link>
-                        <p className="text-sm text-zinc-500 font-medium mt-6">Includes 60,000 compute units/month</p>
-                        <ul className="mt-8 flex flex-col gap-3 text-sm text-white/70">
-                             <li className="flex items-center gap-3"><div className="w-1.5 h-1.5 rounded-full bg-[#FFBD2E]" />Priority support</li>
-                             <li className="flex items-center gap-3"><div className="w-1.5 h-1.5 rounded-full bg-[#FFBD2E]" />Custom inference servers</li>
-                             <li className="flex items-center gap-3"><div className="w-1.5 h-1.5 rounded-full bg-[#FFBD2E]" />Dedicated account manager</li>
-                        </ul>
+                        <h3 className="text-xl font-bold text-white mb-2 mt-4">Studio Pack</h3>
+                        <div className="flex items-end gap-1 mb-8">
+                            <span className="text-[40px] font-black text-white leading-none">US$180</span>
+                        </div>
+                        <Link href="/sign-up" className="w-full py-3.5 bg-zinc-800 text-white font-semibold text-center rounded-xl hover:bg-zinc-700 transition">Buy now</Link>
+                        <p className="text-sm text-zinc-300 font-bold mt-6">+ 600,000 compute units</p>
+                        <p className="text-xs text-zinc-500 font-medium mt-1">Never expires</p>
                     </div>
                 </div>
             </div>

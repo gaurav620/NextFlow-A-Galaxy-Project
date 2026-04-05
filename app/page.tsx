@@ -2,8 +2,10 @@
 
 import { Navbar } from '@/components/krea-navbar';
 import { Footer } from '@/components/krea-footer';
-import { Pricing } from '@/components/krea-pricing';import { useState, useEffect, useRef } from 'react';
+import { Pricing } from '@/components/krea-pricing';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { BeforeAfterSlider } from '@/components/before-after-slider';
 import {
   ChevronDown,
   Menu,
@@ -143,13 +145,24 @@ function BentoGrid() {
         <section className="bg-[#f3f4f6] pt-16 pb-32 font-sans overflow-hidden">
             <div className="max-w-[1400px] mx-auto px-6">
                 
-                {/* Marquee Logos */}
-                <div className="flex items-center justify-between opacity-50 grayscale mb-16 px-4">
-                    {models.map(m => (
-                        <div key={m.name} className="flex items-center gap-2 text-2xl font-bold text-zinc-900 tracking-tight">
-                            <span>{m.icon}</span> {m.name}
-                        </div>
-                    ))}
+                {/* Animated Marquee Logos */}
+                <div className="relative w-full overflow-hidden mb-16 flex items-center opacity-50 grayscale pb-8 pt-4">
+                    {/* Fade Edges */}
+                    <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#f3f4f6] to-transparent z-10" />
+                    <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#f3f4f6] to-transparent z-10" />
+                    
+                    <motion.div 
+                        initial={{ x: "0%" }}
+                        animate={{ x: "-50%" }}
+                        transition={{ repeat: Infinity, ease: "linear", duration: 25 }}
+                        className="flex items-center gap-16 min-w-max pr-16"
+                    >
+                        {[...models, ...models, ...models].map((m, i) => (
+                            <div key={`${m.name}-${i}`} className="flex items-center gap-3 text-2xl font-bold text-zinc-900 tracking-tight shrink-0">
+                                <span className="text-3xl">{m.icon}</span> {m.name}
+                            </div>
+                        ))}
+                    </motion.div>
                 </div>
 
                 {/* Grid Container */}
@@ -174,13 +187,18 @@ function BentoGrid() {
                         <p className="font-semibold text-zinc-800">Fine-tune models with your own data</p>
                     </div>
 
-                    {/* 4K Native */}
-                    <div className="col-span-12 sm:col-span-6 md:col-span-4 rounded-3xl overflow-hidden relative shadow-sm">
-                        <img src="https://images.unsplash.com/photo-1542596594-649edbc13630?q=80&w=800&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover" alt="4K" />
-                        <div className="absolute inset-0 bg-black/40" />
-                        <div className="absolute bottom-8 left-8">
-                            <p className="text-[64px] font-black text-white leading-none tracking-tighter mb-1">4K</p>
-                            <p className="font-semibold text-white/90 text-lg">Native image generation</p>
+                    {/* 4K Native Interactive Slider Array */}
+                    <div className="col-span-12 sm:col-span-6 md:col-span-4 rounded-3xl overflow-hidden relative shadow-sm group">
+                        <BeforeAfterSlider 
+                            beforeImage="https://images.unsplash.com/photo-1542596594-649edbc13630?q=80&w=800&auto=format&fit=crop"
+                            afterImage="https://images.unsplash.com/photo-1542596594-649edbc13630?q=100&w=2560&auto=format&fit=crop"
+                            beforeLabel="SD"
+                            afterLabel="4K"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+                        <div className="absolute bottom-8 left-8 pointer-events-none z-10">
+                            <p className="text-[64px] font-black text-white leading-none tracking-tighter mb-1 drop-shadow-md">4K</p>
+                            <p className="font-semibold text-white/90 text-lg drop-shadow-md">Native generative upscaling</p>
                         </div>
                     </div>
 
@@ -284,7 +302,8 @@ function FeatureSwitcher() {
 /* ─── PRICING DETAILS ──────────────────────────────────────── */
 
 
-/* ─── KREA FOOTER EXACT CLONE ──────────────────────────────── */
+export default function Home() {
+  return (
     <main className="bg-black min-h-screen text-white selection:bg-white selection:text-black">
       <Navbar />
       <DarkHero />

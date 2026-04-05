@@ -17,7 +17,7 @@ export default function AIImageGeneratorPage() {
             <div className="max-w-[600px]">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-zinc-300 text-sm font-medium mb-8">
                     <ImageIcon className="w-4 h-4 text-white" />
-                    Feature
+                    Text to Image Generator
                 </div>
                 
                 <h1 className="text-[56px] md:text-[76px] leading-[1.05] font-medium tracking-tight mb-8">
@@ -38,35 +38,39 @@ export default function AIImageGeneratorPage() {
                 </div>
             </div>
 
-            {/* Showcase Visual */}
+            {/* Showcase Visual - Interactive Prompt Mimic */}
             <div className="relative">
-                <div className="relative aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border border-white/10 bg-[#111]">
-                    <img 
-                        src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop" 
-                        alt="AI Generation Showcase" 
-                        className="w-full h-full object-cover opacity-80"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden bg-[#111] relative border border-white/10 shadow-2xl">
+                    <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover opacity-90 transition-opacity duration-500" alt="Generated Output" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
                     
-                    <div className="absolute bottom-8 left-8 right-8">
-                        <div className="flex items-center gap-3 bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-4">
-                            <Sparkles className="w-5 h-5 text-zinc-400 shrink-0" />
-                            <p className="text-[15px] text-white font-medium truncate">
-                                A hyper-realistic cinematic portrait of a cybernetic woman with glowing neon accents
-                            </p>
-                            <div className="w-8 h-8 rounded-full bg-white text-black shrink-0 flex items-center justify-center ml-auto">
-                                <span className="font-bold text-xs tracking-tighter">N</span>
+                    {/* Fake Prompt Input */}
+                    <div className="absolute bottom-6 left-6 right-6">
+                        <div className="flex flex-col gap-3 bg-black/60 backdrop-blur-xl border border-white/20 rounded-2xl p-4 shadow-2xl transition-all hover:bg-black/80 cursor-text">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full">
+                                <div className="flex items-center gap-3 flex-1">
+                                    <Sparkles className="w-5 h-5 text-emerald-400 shrink-0" />
+                                    <div className="flex-1 bg-transparent text-white border-none outline-none text-[15px] placeholder:text-zinc-600 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                                        A cinematic portrait of a cybernetic woman with glowing neon accents
+                                    </div>
+                                </div>
+                                <div className="flex gap-2 shrink-0">
+                                    <div className="h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors cursor-pointer border border-white/10">
+                                        <Layers className="w-4 h-4 text-zinc-300" />
+                                    </div>
+                                    <div className="h-8 rounded-lg bg-white text-black px-4 flex items-center justify-center font-bold text-sm tracking-tight cursor-pointer hover:bg-zinc-200 transition-colors">
+                                        Generate
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1 overflow-x-auto pb-1 no-scrollbar">
+                                <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 shrink-0">Styles:</span>
+                                <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/10 text-zinc-300 border border-white/10 shrink-0 hover:bg-white/20 cursor-pointer transition-colors">Cinematic</span>
+                                <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/10 text-zinc-300 border border-white/10 shrink-0 hover:bg-white/20 cursor-pointer transition-colors">8k Resolution</span>
+                                <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/10 text-zinc-300 border border-white/10 shrink-0 hover:bg-white/20 cursor-pointer transition-colors">Neon Core</span>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                {/* Floating Elements */}
-                <div className="absolute -top-6 -right-6 w-32 h-32 rounded-2xl overflow-hidden border border-white/10 shadow-2xl rotate-12">
-                     <img src="https://images.unsplash.com/photo-1542596594-649edbc13630?q=80&w=800&auto=format&fit=crop" className="w-full h-full object-cover" alt="sample" />
-                </div>
-                <div className="absolute top-1/2 -left-12 w-40 h-40 rounded-full overflow-hidden border border-white/10 shadow-2xl -rotate-6">
-                     <img src="https://images.unsplash.com/photo-1707343843437-caacff5cfa74?q=80&w=800&auto=format&fit=crop" className="w-full h-full object-cover grayscale" alt="sample" />
                 </div>
             </div>
         </div>

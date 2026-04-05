@@ -17,7 +17,7 @@ export default function AIVideoGeneratorPage() {
             <div className="max-w-[600px] order-2 lg:order-1">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-zinc-300 text-sm font-medium mb-8">
                     <Video className="w-4 h-4 text-white" />
-                    Feature
+                    Text to Video Generator
                 </div>
                 
                 <h1 className="text-[56px] md:text-[76px] leading-[1.05] font-medium tracking-tight mb-8">
@@ -41,19 +41,16 @@ export default function AIVideoGeneratorPage() {
             {/* Showcase Visual */}
             <div className="relative order-1 lg:order-2">
                 <div className="relative aspect-video rounded-3xl overflow-hidden shadow-2xl border border-white/10 bg-[#111]">
-                    {/* Placeholder for Video Poster */}
-                    <img 
-                        src="https://images.unsplash.com/photo-1535016120720-40c746a6580c?q=80&w=2564&auto=format&fit=crop" 
-                        alt="AI Video Generation Showcase" 
-                        className="w-full h-full object-cover opacity-70"
+                    {/* HTML5 Video Showcase */}
+                    <video 
+                        className="w-full h-full object-cover opacity-90 scale-[1.02] transition-transform duration-1000"
+                        src="https://assets.mixkit.co/videos/preview/mixkit-digital-animation-of-a-cyberpunk-city-32693-large.mp4"
+                        autoPlay 
+                        loop 
+                        muted 
+                        playsInline
+                        poster="https://images.unsplash.com/photo-1535016120720-40c746a6580c?q=80&w=2564&auto=format&fit=crop"
                     />
-                    
-                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                        {/* Play Button Mockup */}
-                        <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 cursor-pointer shadow-lg hover:scale-105 transition-transform">
-                            <div className="w-0 h-0 border-t-8 border-t-transparent border-l-[14px] border-l-white border-b-8 border-b-transparent ml-1" />
-                        </div>
-                    </div>
 
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
                     

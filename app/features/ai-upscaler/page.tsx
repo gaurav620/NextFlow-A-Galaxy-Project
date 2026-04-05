@@ -2,6 +2,7 @@ import { Navbar } from '@/components/krea-navbar';
 import { Footer } from '@/components/krea-footer';
 import Link from 'next/link';
 import { Sparkles, ImageDown, Zap, Search, Layers } from 'lucide-react';
+import { BeforeAfterSlider } from '@/components/before-after-slider';
 
 export default function AIUpscalerPage() {
   return (
@@ -38,34 +39,12 @@ export default function AIUpscalerPage() {
             {/* Showcase Visual */}
             <div className="relative order-1 lg:order-2 flex items-center justify-center">
                 <div className="relative w-full aspect-square md:aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl border border-white/10 bg-[#111]">
-                    
-                    {/* Fake Before/After Slider */}
-                    <div className="absolute inset-0 top-0 left-0 bottom-0 right-1/2 overflow-hidden border-r-2 border-white">
-                        <img 
-                            src="https://images.unsplash.com/photo-1542596594-649edbc13630?q=80&w=800&auto=format&fit=crop" 
-                            alt="Before Upscale" 
-                            className="absolute max-w-none w-[200%] h-full object-cover opacity-50 blur-[2px]"
-                        />
-                        <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1 text-xs font-bold tracking-wider rounded">BEFORE</div>
-                    </div>
-
-                    <div className="absolute inset-0 top-0 left-1/2 bottom-0 right-0 overflow-hidden">
-                        <img 
-                            src="https://images.unsplash.com/photo-1542596594-649edbc13630?q=100&w=2560&auto=format&fit=crop" 
-                            alt="After Upscale" 
-                            className="absolute max-w-none w-[200%] h-full object-cover -translate-x-1/2"
-                        />
-                        <div className="absolute top-4 right-4 bg-white text-black px-3 py-1 text-xs font-bold tracking-wider rounded">AFTER (4K)</div>
-                    </div>
-                    
-                    {/* Slider Handle Mockup */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-zinc-200 cursor-ew-resize">
-                        <div className="flex gap-1">
-                            <div className="w-[1px] h-3 bg-black/40" />
-                            <div className="w-[1px] h-3 bg-black/40" />
-                        </div>
-                    </div>
-
+                    <BeforeAfterSlider 
+                        beforeImage="https://images.unsplash.com/photo-1542596594-649edbc13630?q=80&w=800&auto=format&fit=crop"
+                        afterImage="https://images.unsplash.com/photo-1542596594-649edbc13630?q=100&w=2560&auto=format&fit=crop"
+                        beforeLabel="BEFORE"
+                        afterLabel="AFTER (4K)"
+                    />
                 </div>
             </div>
         </div>

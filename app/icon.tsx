@@ -10,7 +10,6 @@ export const contentType = 'image/png';
 export default function Icon() {
   return new ImageResponse(
     (
-      // ImageResponse JSX element
       <div
         style={{
           width: '100%',
@@ -18,17 +17,18 @@ export default function Icon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'white',
-          borderRadius: '24%', // Slight rounding like a modern squircle
+          background: 'linear-gradient(to bottom right, #111, #000)',
+          border: '1px solid #333',
+          borderRadius: '8px', 
         }}
       >
         <span
           style={{
-            color: 'black',
-            fontSize: '24px',
+            color: 'white',
+            fontSize: '22px',
             fontWeight: 800,
             fontFamily: 'sans-serif',
-            letterSpacing: '-0.05em',
+            letterSpacing: '-1px',
           }}
         >
           N
@@ -36,8 +36,6 @@ export default function Icon() {
       </div>
     ),
     {
-      // For convenience, we can re-use the exported icons size metadata
-      // config to also set the ImageResponse's width and height.
       ...size,
     }
   );

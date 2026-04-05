@@ -1,9 +1,13 @@
+'use client';
+
 import { Navbar } from '@/components/krea-navbar';
 import { Footer } from '@/components/krea-footer';
 import Link from 'next/link';
 import { Terminal, Code, Cpu, Zap, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
 
 export default function APIPage() {
+  const [activeTab, setActiveTab] = useState<'ts' | 'curl'>('ts');
   return (
     <main className="bg-white min-h-screen text-black font-sans selection:bg-black selection:text-white">
       <Navbar theme="light" />
@@ -20,12 +24,12 @@ export default function APIPage() {
           </h1>
           
           <p className="text-[20px] leading-relaxed text-zinc-500 mb-12 max-w-[600px] mx-auto">
-              Integrate our world-class generation and enhancement models directly into your product with a few lines of code.
+              Get your API key and start generating with 40+ AI models in minutes. Same compute units, same account, one API.
           </p>
           
           <div className="flex items-center gap-4">
               <Link href="/dashboard/workflows" className="inline-flex items-center justify-center h-14 px-8 rounded-full bg-black text-white font-semibold text-[15px] hover:bg-zinc-800 transition-colors shadow-xl">
-                  Get API Keys
+                  Get Started
               </Link>
               <Link href="#" className="inline-flex items-center justify-center h-14 px-8 rounded-full bg-transparent text-black border border-black/10 font-semibold text-[15px] hover:bg-zinc-50 transition-colors">
                   Read Docs
@@ -73,24 +77,54 @@ export default function APIPage() {
             </div>
 
             <div className="bg-[#111] rounded-2xl p-6 shadow-2xl border border-black/10 overflow-hidden relative">
-                <div className="flex items-center gap-2 mb-4 border-b border-white/10 pb-4">
-                    <div className="w-3 h-3 rounded-full bg-[#FF5F56]" />
-                    <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
-                    <div className="w-3 h-3 rounded-full bg-[#27C93F]" />
-                    <span className="text-zinc-500 text-xs font-mono ml-4">generate.ts</span>
+                <div className="flex items-center gap-2 mb-4 border-b border-white/10 pb-4 justify-between">
+                    <div className="flex items-center">
+                        <div className="flex gap-2 mr-6">
+                            <div className="w-3 h-3 rounded-full bg-[#FF5F56]" />
+                            <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
+                            <div className="w-3 h-3 rounded-full bg-[#27C93F]" />
+                        </div>
+                        <div className="flex gap-4">
+                            <button 
+                                onClick={() => setActiveTab('ts')}
+                                className={`text-xs font-mono pb-4 -mb-4 transition-colors ${activeTab === 'ts' ? 'text-white border-b-2 border-emerald-400' : 'text-zinc-500 hover:text-zinc-300'}`}
+                            >
+                                TypeScript
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab('curl')}
+                                className={`text-xs font-mono pb-4 -mb-4 transition-colors ${activeTab === 'curl' ? 'text-white border-b-2 border-emerald-400' : 'text-zinc-500 hover:text-zinc-300'}`}
+                            >
+                                cURL
+                            </button>
+                        </div>
+                    </div>
+                    <span className="text-zinc-500 text-xs font-mono">{activeTab === 'ts' ? 'generate.ts' : 'request.sh'}</span>
                 </div>
-                <pre className="text-[13px] font-mono text-zinc-300 leading-relaxed overflow-x-auto">
-                    <code>
-                        <span className="text-[#F97583]">import</span> {'{'} NextFlow {'}'} <span className="text-[#F97583]">from</span> <span className="text-[#9ECBFF]">'nextflow-sdk'</span>;{'\n\n'}
-                        <span className="text-[#F97583]">const</span> nextflow = <span className="text-[#F97583]">new</span> NextFlow({'{'} apiKey: process.env.NEXTFLOW_KEY {'}'});{'\n\n'}
-                        <span className="text-[#F97583]">const</span> image = <span className="text-[#F97583]">await</span> nextflow.images.generate({'{'}{'\n'}
-                        {'  '}prompt: <span className="text-[#9ECBFF]">'A cinematic shot of a neon city, 8k resolution'</span>,{'\n'}
-                        {'  '}model: <span className="text-[#9ECBFF]">'nextflow-v1'</span>,{'\n'}
-                        {'  '}aspect_ratio: <span className="text-[#9ECBFF]">'16:9'</span>{'\n'}
-                        {'}'});{'\n\n'}
-                        console.log(image.url);
-                    </code>
-                </pre>
+                
+                {activeTab === 'ts' ? (
+                    <pre className="text-[13px] font-mono text-zinc-300 leading-relaxed overflow-x-auto min-h-[200px]">
+                        <code>
+                            <span className="text-[#F97583]">import</span> {'{'} NextFlow {'}'} <span className="text-[#F97583]">from</span> <span className="text-[#9ECBFF]">'nextflow-sdk'</span>;{'\n\n'}
+                            <span className="text-[#F97583]">const</span> nextflow = <span className="text-[#F97583]">new</span> NextFlow({'{'} apiKey: process.env.NEXTFLOW_KEY {'}'});{'\n\n'}
+                            <span className="text-[#F97583]">const</span> image = <span className="text-[#F97583]">await</span> nextflow.images.generate({'{'}{'\n'}
+                            {'  '}prompt: <span className="text-[#9ECBFF]">'A cinematic shot of a neon city, 8k resolution'</span>,{'\n'}
+                            {'  '}model: <span className="text-[#9ECBFF]">'nextflow-v1'</span>,{'\n'}
+                            {'  '}aspect_ratio: <span className="text-[#9ECBFF]">'16:9'</span>{'\n'}
+                            {'}'});{'\n\n'}
+                            console.log(image.url);
+                        </code>
+                    </pre>
+                ) : (
+                    <pre className="text-[13px] font-mono text-zinc-300 leading-relaxed overflow-x-auto min-h-[200px]">
+                        <code>
+                            <span className="text-[#79B8FF]">curl</span> -X POST https://api.nextflow.ai/v1/images/generations \{'\n'}
+                            {'  '}-H <span className="text-[#9ECBFF]">"Content-Type: application/json"</span> \{'\n'}
+                            {'  '}-H <span className="text-[#9ECBFF]">"Authorization: Bearer $NEXTFLOW_KEY"</span> \{'\n'}
+                            {'  '}-d <span className="text-[#9ECBFF]">'{'{'}"prompt": "A cinematic shot of a neon city", "model": "nextflow-v1"'}'</span>{'\n'}
+                        </code>
+                    </pre>
+                )}
             </div>
         </div>
       </section>
