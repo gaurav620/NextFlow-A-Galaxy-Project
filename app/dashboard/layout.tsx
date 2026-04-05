@@ -80,17 +80,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className={`h-full flex flex-col pt-3 pb-5 bg-[#0A0A0A] z-[60] transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[64px] items-center px-1' : 'w-[240px] px-3'}`}>
       
       {/* Top Toggle Button */}
-      <div className={`flex items-center mb-5 ${isCollapsed ? 'justify-center w-full' : 'justify-between px-2'}`}>
-        {!isCollapsed && (
-          <div className="w-6 h-6 rounded bg-white flex items-center justify-center shadow-[0_0_10px_rgba(255,255,255,0.2)]">
-            <span className="text-black font-extrabold text-[11px] font-sans tracking-tighter">N</span>
-          </div>
-        )}
+      <div className={`flex items-center mb-6 mt-1 ${isCollapsed ? 'justify-center w-full' : 'px-3'}`}>
         <button 
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="text-zinc-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/5"
+          className={`group flex items-center w-full transition-all duration-200 ${isCollapsed ? 'justify-center' : 'gap-3 hover:bg-white/[0.04] p-1.5 -ml-1.5 rounded-xl'}`}
+          title="Toggle Sidebar"
         >
-          <PanelLeft className="w-5 h-5" />
+          <div className="w-[28px] h-[28px] rounded-[10px] bg-white flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.15)] flex-shrink-0 transition-transform group-hover:scale-[1.05]">
+            <span className="text-black font-black text-[15px] font-sans tracking-tighter">N</span>
+          </div>
+          {!isCollapsed && (
+            <div className="flex items-center justify-between w-full">
+               <span className="text-white font-bold text-[15px] tracking-wide">NextFlow</span>
+               <PanelLeft className="w-4 h-4 text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+          )}
         </button>
       </div>
 
@@ -223,25 +227,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
 
         {/* Profile */}
-        <div className={`mt-2 ${isCollapsed ? 'flex justify-center' : 'px-3'}`}>
+        <div className={`mt-2 mb-2 ${isCollapsed ? 'flex justify-center' : 'px-3'}`}>
           <button 
             onClick={() => setProfileOpen(!profileOpen)}
             className={`flex items-center relative gap-3 rounded-xl hover:bg-white/[0.04] transition-colors ${
-               isCollapsed ? 'w-[38px] h-[38px] justify-center' : 'w-full p-2'
+               isCollapsed ? 'w-[38px] h-[38px] justify-center' : 'w-full p-2 justify-between'
             }`}
           >
-            <div className="w-[30px] h-[30px] flex-shrink-0 rounded-full bg-zinc-800 flex items-center justify-center text-white border border-white/10 shadow-sm">
-              <span className="text-[12px] font-bold">
-                {user?.firstName ? user.firstName[0].toUpperCase() : 'N'}
-              </span>
-            </div>
-            {!isCollapsed && (
-               <div className="flex flex-col items-start overflow-hidden">
-                  <span className="text-[13px] text-zinc-200 font-medium whitespace-nowrap truncate w-full text-left">
-                     {user?.fullName || 'Nextflow User'}
-                  </span>
-                  <span className="text-[11px] text-zinc-500">Free</span>
+            <div className="flex items-center gap-3 overflow-hidden">
+               <div className="w-[30px] h-[30px] flex-shrink-0 rounded-full bg-zinc-800 flex items-center justify-center text-white border border-white/10 shadow-sm">
+                 <span className="text-[12px] font-bold">
+                   {user?.firstName ? user.firstName[0].toUpperCase() : 'N'}
+                 </span>
                </div>
+               {!isCollapsed && (
+                  <div className="flex flex-col items-start overflow-hidden">
+                     <span className="text-[13px] text-zinc-200 font-medium whitespace-nowrap truncate w-full text-left">
+                        {user?.fullName || 'Nextflow User'}
+                     </span>
+                     <span className="text-[11px] text-zinc-500">Free</span>
+                  </div>
+               )}
+            </div>
+            
+            {!isCollapsed && (
+               <MoreHorizontal className="w-4 h-4 text-zinc-500 flex-shrink-0" />
             )}
             
             {/* Tooltip for Profile in collapsed state */}
@@ -259,7 +269,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
                 transition={{ duration: 0.15 }}
-                className={`absolute bottom-14 ${isCollapsed ? 'left-[64px]' : 'left-0'} w-[240px] bg-[#111] border border-white/[0.08] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.5)] overflow-hidden z-[9999]`}
+                className={`absolute bottom-[60px] ${isCollapsed ? 'left-[64px]' : 'left-3'} w-[240px] bg-[#111] border border-white/[0.08] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.5)] overflow-hidden z-[9999]`}
               >
                 <div className="p-4 flex items-center gap-3 border-b border-white/[0.04]">
                    <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-white font-bold text-[14px]">
@@ -272,7 +282,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </div>
                 <div className="p-2 flex flex-col gap-1">
                    <Link href="/dashboard/pricing" onClick={() => setProfileOpen(false)} className="px-3 py-2 text-[13px] text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors">
-                     Upgrade to Pro
+                     Pricing
+                   </Link>
+                   <Link href="/dashboard/settings" onClick={() => setProfileOpen(false)} className="px-3 py-2 text-[13px] text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors">
+                     Settings
                    </Link>
                    <button className="px-3 py-2 text-[13px] text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors text-left">
                      Manage Subscription
