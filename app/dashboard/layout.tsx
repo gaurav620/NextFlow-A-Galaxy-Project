@@ -6,52 +6,77 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Home, Image as ImageIcon, Video, Clapperboard, PenTool, Wand2, Zap, Menu, 
-  Cpu, Network, Library, Folder, Mic, AudioLines, Activity, Box, Film, Palette, MoreHorizontal, PanelLeft
+  Home, Image as ImageIcon, Video, Wand2, Zap, PenTool, AudioLines, Sparkles, Folder, Network, Box, Film, Aperture, Fingerprint, Footprints, MicVocal, Accessibility, Compass, TriangleRight, Menu, PanelLeft, MoreHorizontal
 } from 'lucide-react';
 
+const BananaIcon = (props: any) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={24} height={24} {...props}>
+    <path fill="currentColor" d="M12.215 5.534c.485.485.679 1.157.575 1.831-.083.542-.32 1.059-.75 1.488-.86.86-2.253.86-3.111 0l-3.393-3.393a.964.964 0 0 1 0-1.363l3.393-3.393a2.203 2.203 0 0 1 3.111 0c.348.348.601.815.688 1.341a2.222 2.222 0 0 1-.513 1.489z" opacity="0.3"></path>
+    <path fill="currentColor" d="M19.06 6.353a.964.964 0 0 0-1.363 0l-8.485 8.486c-.86.86-.86 2.253 0 3.111.43.43.946.666 1.488.75.675.105 1.347-.09 1.832-.575a2.222 2.222 0 0 0 .513-1.489c-.087-.525-.34-.992-.688-1.34L19.06 7.716a.964.964 0 0 0 0-1.363z"></path>
+    <path fill="#eab308" d="M6.333 17.666A11.956 11.956 0 0 1 4 12C4 5.373 9.373 0 16 0A12.012 12.012 0 0 1 6.333 17.666z"></path>
+  </svg>
+);
+
+const ColorWheelIcon = (props: any) => (
+  <svg viewBox="0 0 24 24" fill="none" {...props}>
+    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+    <path d="M12 2a10 10 0 0 1 10 10h-10V2z" fill="#f87171" />
+    <path d="M22 12a10 10 0 0 1-10 10v-10h10z" fill="#3b82f6" />
+    <path d="M12 22a10 10 0 0 1-10-10h10v10z" fill="#10b981" />
+    <path d="M2 12A10 10 0 0 1 12 2v10H2z" fill="#facc15" />
+  </svg>
+);
+
+const NodeIcon = (props: any) => (
+  <svg viewBox="0 0 24 24" fill="none" {...props}>
+    <circle cx="6" cy="6" r="3" fill="currentColor" />
+    <circle cx="18" cy="18" r="3" fill="currentColor" />
+    <path d="M7.5 7.5 L16.5 16.5" stroke="currentColor" strokeWidth="2" />
+  </svg>
+);
+
+const MotionIcon = (props: any) => (
+   <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+     <path d="M12 4a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM8.5 24v-8.5L7 17.5l-1.5-1.5L9 12V6h6v6l3.5 4-1.5 1.5-1.5-2V24h-2v-6h-1v6h-2Z"/>
+   </svg>
+);
+
 const mainLinks = [
-  { href: '/dashboard', label: 'Home', icon: Home },
-  { href: '/dashboard/train', label: 'Train Lora', icon: Cpu },
-  { href: '/dashboard/workflows', label: 'Node Editor', icon: Network },
-  { href: '/dashboard/assets', label: 'Assets', icon: Library },
+  { href: '/dashboard', label: 'Home', icon: Home, boxClass: 'bg-white', iconClass: 'text-black fill-current w-[14px] h-[14px]' },
+  { href: '/dashboard/train', label: 'Train Lora', customIcon: ColorWheelIcon, boxClass: 'bg-[#1C1C1C]', iconClass: 'w-[16px] h-[16px] text-white/10' },
+  { href: '/dashboard/workflows', label: 'Node Editor', customIcon: NodeIcon, boxClass: 'bg-[#0076FF]', iconClass: 'text-white w-[14px] h-[14px]' },
+  { href: '/dashboard/assets', label: 'Assets', icon: Folder, boxClass: 'bg-transparent', iconClass: 'text-[#4CB5FF] fill-current w-[20px] h-[20px] -ml-0.5' },
 ];
 
 const defaultTools = [
-  { href: '/dashboard/image', label: 'Image', icon: ImageIcon },
-  { href: '/dashboard/video', label: 'Video', icon: Clapperboard },
-  { href: '/dashboard/enhancer', label: 'Enhancer', icon: Wand2 },
-  { href: '/dashboard/nano', label: 'Nano Banana', icon: SparklesIcon }, // defined inline
-  { href: '/dashboard/realtime', label: 'Realtime', icon: Zap },
-  { href: '/dashboard/edit', label: 'Edit', icon: PenTool },
+  { href: '/dashboard/image', label: 'Image', icon: ImageIcon, boxClass: 'bg-white', iconClass: 'text-[#0076FF] w-[14px] h-[14px]' },
+  { href: '/dashboard/video', label: 'Video', icon: Video, boxClass: 'bg-gradient-to-br from-[#FFC800] to-[#FF8C00]', iconClass: 'text-white fill-current w-[12px] h-[12px]' },
+  { href: '/dashboard/enhancer', label: 'Enhancer', icon: Sparkles, boxClass: 'bg-[#1C1C1C]', iconClass: 'text-white/90 w-[14px] h-[14px]' },
+  { href: '/dashboard/nano', label: 'Nano Banana', customIcon: BananaIcon, boxClass: 'bg-[#FAC213]', iconClass: 'w-[16px] h-[16px]' }, 
+  { href: '/dashboard/realtime', label: 'Realtime', icon: PenTool, boxClass: 'bg-[#00A1FF]', iconClass: 'text-white w-[14px] h-[14px]' },
+  { href: '/dashboard/edit', label: 'Edit', icon: Compass, boxClass: 'bg-[#8E24AA]', iconClass: 'text-white w-[14px] h-[14px]' },
 ];
 
 const moreTools = [
-  { href: '/dashboard/lipsync', label: 'Video Lipsync', icon: AudioLines },
-  { href: '/dashboard/motion', label: 'Motion Transfer', icon: Activity },
-  { href: '/dashboard/3d', label: '3D Objects', icon: Box },
-  { href: '/dashboard/video-restyle', label: 'Video Restyle', icon: Palette },
+  { href: '/dashboard/lipsync', label: 'Video Lipsync', icon: MicVocal, boxClass: 'bg-[#1C1C1C]', iconClass: 'text-white/80 w-[14px] h-[14px]' },
+  { href: '/dashboard/motion', label: 'Motion Transfer', customIcon: MotionIcon, boxClass: 'bg-[#DFFF00]', iconClass: 'text-black w-[14px] h-[14px]' },
+  { href: '/dashboard/3d', label: '3D Objects', icon: Box, boxClass: 'bg-white', iconClass: 'text-[#111] fill-current w-[14px] h-[14px]' },
+  { href: '/dashboard/video-restyle', label: 'Video Restyle', icon: Film, boxClass: 'bg-[#F57C00]', iconClass: 'text-white w-[14px] h-[14px]' },
 ];
 
-// Simple Sparkles Custom Icon
-function SparklesIcon(props: React.SVGProps<SVGSVGElement>) {
+const RenderIcon = ({ item }: { item: any }) => {
+  if (item.label === 'Assets') {
+    const Icon = item.icon;
+    return <Icon className={item.iconClass} strokeWidth={2} />;
+  }
   return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
-    </svg>
+    <div className={`w-[22px] h-[22px] rounded-[6px] flex items-center justify-center flex-shrink-0 shadow-sm border border-white/5 ${item.boxClass}`}>
+      {item.customIcon 
+        ? <item.customIcon className={item.iconClass} /> 
+        : <item.icon className={item.iconClass} strokeWidth={item.label === 'Home' ? 2 : 2.5} />}
+    </div>
   );
-}
+};
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user } = useUser();
@@ -77,7 +102,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const SidebarContent = () => (
-    <div className={`h-full flex flex-col pt-3 pb-5 bg-[#09090B] z-[60] transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[64px] items-center px-1' : 'w-[240px] px-3'}`}>
+    <div className={`h-full flex flex-col pt-3 pb-5 bg-black z-[60] transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[64px] items-center px-1' : 'w-[240px] px-3'}`}>
       
       {/* Top Toggle Button */}
       <div className={`flex items-center mb-6 mt-1 ${isCollapsed ? 'justify-center w-full' : 'px-3'}`}>
@@ -101,7 +126,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Primary Links */}
       <nav className={`flex flex-col gap-0.5 w-full ${isCollapsed ? 'items-center' : ''}`}>
         {mainLinks.map((item) => {
-          const Icon = item.icon;
           const active = isActive(item.href);
           return (
             <div key={item.label} className="relative group w-full">
@@ -110,16 +134,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 className={`flex items-center transition-all duration-200 ${
                   isCollapsed 
                     ? `w-[38px] h-[38px] rounded-xl justify-center ${active ? 'bg-[#1C1C1C] text-white shadow-inner' : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'}`
-                    : `w-full h-10 px-3 rounded-lg gap-3 ${active ? 'bg-[#1C1C1C] text-white shadow-inner' : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'}`
+                    : `w-full h-[38px] px-3 rounded-lg gap-3 ${active ? 'bg-[#1C1C1C] text-white shadow-inner' : 'text-zinc-300 hover:text-white hover:bg-white/[0.04]'}`
                 }`}
               >
-                <Icon className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={active ? 2.5 : 1.75} />
+                <RenderIcon item={item} />
                 {!isCollapsed && <span className="text-[13.5px] font-medium tracking-wide">{item.label}</span>}
               </Link>
               
               {/* Tooltip for collapsed state */}
               {isCollapsed && (
-                <div className="fixed left-[64px] px-3 py-1.5 bg-[#1e1e1e] border border-white/10 text-white text-[12px] font-medium rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-[100] shadow-xl whitespace-nowrap">
+                <div className="fixed left-[64px] px-3 py-1.5 bg-[#1C1C1C] border border-white/10 text-white text-[12px] font-medium opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-[100] shadow-xl whitespace-nowrap">
                   {item.label}
                 </div>
               )}
@@ -129,13 +153,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </nav>
 
       {/* Tools Section */}
-      <div className="mt-6 w-full flex flex-col">
+      <div className="mt-8 w-full flex flex-col">
         {!isCollapsed && (
           <span className="text-[11px] font-semibold text-zinc-600 uppercase tracking-widest px-3 mb-2">Tools</span>
         )}
         <nav className={`flex flex-col gap-0.5 w-full ${isCollapsed ? 'items-center' : ''}`}>
           {defaultTools.map((item) => {
-            const Icon = item.icon;
             const active = isActive(item.href);
             return (
               <div key={item.label} className="relative group w-full">
@@ -144,14 +167,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   className={`flex items-center transition-all duration-200 ${
                     isCollapsed 
                       ? `w-[38px] h-[38px] rounded-xl justify-center ${active ? 'bg-[#1C1C1C] text-white shadow-inner' : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'}`
-                      : `w-full h-10 px-3 rounded-lg gap-3 ${active ? 'bg-[#1C1C1C] text-white shadow-inner' : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'}`
+                      : `w-full h-[38px] px-3 rounded-lg gap-3 ${active ? 'bg-[#1C1C1C] text-white shadow-inner' : 'text-zinc-300 hover:text-white hover:bg-white/[0.04]'}`
                   }`}
                 >
-                  <Icon className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={active ? 2.5 : 1.75} />
+                  <RenderIcon item={item} />
                   {!isCollapsed && <span className="text-[13.5px] font-medium tracking-wide">{item.label}</span>}
                 </Link>
                 {isCollapsed && (
-                  <div className="fixed left-[64px] px-3 py-1.5 bg-[#1e1e1e] border border-white/10 text-white text-[12px] font-medium rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-[100] shadow-xl whitespace-nowrap">
+                  <div className="fixed left-[64px] px-3 py-1.5 bg-[#1C1C1C] border border-white/10 text-white text-[12px] font-medium opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-[100] shadow-xl whitespace-nowrap">
                     {item.label}
                   </div>
                 )}
@@ -168,7 +191,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 className="overflow-hidden flex flex-col gap-0.5"
               >
                 {moreTools.map((item) => {
-                  const Icon = item.icon;
                   const active = isActive(item.href);
                   return (
                     <div key={item.label} className="relative group w-full">
@@ -177,14 +199,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         className={`flex items-center transition-all duration-200 ${
                           isCollapsed 
                             ? `w-[38px] h-[38px] rounded-xl justify-center ${active ? 'bg-[#1C1C1C] text-white shadow-inner' : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'}`
-                            : `w-full h-10 px-3 rounded-lg gap-3 ${active ? 'bg-[#1C1C1C] text-white shadow-inner' : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'}`
+                            : `w-full h-[38px] px-3 rounded-lg gap-3 ${active ? 'bg-[#1C1C1C] text-white shadow-inner' : 'text-zinc-300 hover:text-white hover:bg-white/[0.04]'}`
                         }`}
                       >
-                        <Icon className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={active ? 2.5 : 1.75} />
+                        <RenderIcon item={item} />
                         {!isCollapsed && <span className="text-[13.5px] font-medium tracking-wide">{item.label}</span>}
                       </Link>
                       {isCollapsed && (
-                        <div className="fixed left-[64px] px-3 py-1.5 bg-[#1e1e1e] border border-white/10 text-white text-[12px] font-medium rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-[100] shadow-xl whitespace-nowrap">
+                        <div className="fixed left-[64px] px-3 py-1.5 bg-[#1C1C1C] border border-white/10 text-white text-[12px] font-medium opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-[100] shadow-xl whitespace-nowrap">
                           {item.label}
                         </div>
                       )}
