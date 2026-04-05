@@ -109,7 +109,7 @@ export default function HistorySidebar({ className }: HistorySidebarProps) {
         const response = await fetch(`/api/workflow/${workflowId}/runs`)
         if (response.ok) {
           const data = await response.json()
-          setRuns(data)
+          setRuns(data.runs || [])
         }
       } catch (error) {
         console.error('Failed to fetch workflow runs:', error)
@@ -133,7 +133,7 @@ export default function HistorySidebar({ className }: HistorySidebarProps) {
       const response = await fetch(`/api/workflow/${workflowId}/runs`)
       if (response.ok) {
         const data = await response.json()
-        setRuns(data)
+        setRuns(data.runs || [])
       }
     } catch (error) {
       console.error('Failed to fetch workflow runs:', error)
