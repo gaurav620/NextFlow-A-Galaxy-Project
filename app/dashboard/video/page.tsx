@@ -189,10 +189,11 @@ export default function VideoPage() {
   );
 
   return (
-    <div className="flex w-full h-full text-white bg-[#0f0f0f] relative overflow-hidden font-sans">
+    <div className="flex w-full h-full text-white bg-[#070707] relative overflow-hidden font-sans">
+      <div className="pointer-events-none absolute left-1/2 top-[-10%] h-[40%] w-[60%] -translate-x-1/2 rounded-[100%] bg-indigo-500/10 blur-[120px]" />
       
       {/* TOP LEFT MODEL SWITCHER */}
-      <div className="absolute top-4 left-6 z-50">
+      <div className="absolute top-6 left-6 z-50">
         <Popover open={topModelsOpen} onOpenChange={setTopModelsOpen}>
           <PopoverTrigger asChild>
             <button className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors bg-transparent border-none">
@@ -216,13 +217,15 @@ export default function VideoPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="absolute top-[40%] -translate-y-1/2 flex items-center justify-center pointer-events-none"
+              className="absolute top-[40%] text-center -translate-y-1/2 flex items-center justify-center pointer-events-none"
             >
-              <div className="flex items-center justify-center gap-3 text-white">
-                <div className="bg-yellow-500 rounded-md w-8 h-8 flex items-center justify-center text-black shadow-lg">
-                  <Video size={20} className="fill-black" />
+              <div className="flex items-center justify-center gap-4 text-white drop-shadow-lg">
+                <div className="bg-[#f0a624]/90 rounded-2xl w-14 h-14 flex items-center justify-center text-white border border-white/20 shadow-xl shadow-yellow-500/10 backdrop-blur-sm">
+                  <Video size={30} strokeWidth={2.5} className="fill-white" />
                 </div>
-                <h1 className="text-[32px] font-semibold tracking-tight">{selectedModel.name}</h1>
+                <h1 className="text-[52px] font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-white via-white/90 to-white/60 drop-shadow-md">
+                  {selectedModel.name}
+                </h1>
               </div>
             </motion.div>
           )}
@@ -309,15 +312,19 @@ export default function VideoPage() {
           </div>
         </div>
 
-        {/* FLOATING PROMPT INPUT (BOTTOM CENTER) */}
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-full max-w-[760px] px-4 z-40">
+        {/* FLOATING PROMPT INPUT */}
+        <div 
+          className={`absolute left-1/2 -translate-x-1/2 w-full max-w-[680px] px-4 z-40 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${
+            results.length === 0 && !generating ? 'top-[52%] -translate-y-1/2' : 'bottom-10'
+          }`}
+        >
           <div 
-            className="w-full bg-[#1c1c1c] border border-white/10 rounded-3xl overflow-hidden shadow-2xl transition-all hover:border-white/20 flex flex-col"
+            className="w-full bg-[#111214]/80 backdrop-blur-3xl border border-white/[0.08] rounded-[24px] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all hover:border-white/[0.12] flex flex-col"
             onDragOver={e => e.preventDefault()}
             onDrop={handleImageDrop}
           >
             {/* Top row: Textarea and utility buttons */}
-            <div className="relative flex min-h-[60px]">
+            <div className="relative flex min-h-[64px]">
               <textarea
                  value={prompt}
                  onChange={e => setPrompt(e.target.value)}
@@ -328,9 +335,9 @@ export default function VideoPage() {
                    }
                  }}
                  placeholder="Describe a video and click generate..."
-                 className="flex-1 bg-transparent text-[15px] text-zinc-300 placeholder-zinc-500 resize-none outline-none py-5 px-6 leading-relaxed"
+                 className="flex-1 bg-transparent text-[16px] text-zinc-300 placeholder-zinc-500 resize-none outline-none py-[22px] px-6 leading-relaxed"
                  rows={1}
-                 style={{ minHeight: '60px' }}
+                 style={{ minHeight: '64px' }}
               />
             </div>
 
@@ -350,13 +357,13 @@ export default function VideoPage() {
             )}
 
             {/* Bottom row: Setting Pills and Submit Button */}
-            <div className="px-3 pb-3 pt-1 flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden">
+            <div className="px-4 pb-4 pt-1 flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden">
               
               {/* Selected Model Pill connected to the same model selector */}
               <Popover open={bottomModelsOpen} onOpenChange={setBottomModelsOpen}>
                 <PopoverTrigger asChild>
-                  <button className="flex items-center gap-2 px-3 py-1.5 rounded-3xl bg-[#2a2a2a] hover:bg-[#333] border border-transparent text-[13px] font-medium text-zinc-300 transition-colors">
-                    <span className="text-zinc-400">@</span>
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] text-[13px] font-medium text-zinc-300 transition-colors">
+                    <span className="opacity-50 blur-[0.5px]">@</span>
                     {selectedModel.name}
                   </button>
                 </PopoverTrigger>
@@ -366,7 +373,7 @@ export default function VideoPage() {
               </Popover>
 
               {/* Start Frame Image Upload Pill */}
-              <label className="flex items-center gap-2 px-3 py-1.5 rounded-3xl bg-[#2a2a2a] hover:bg-[#333] border border-transparent text-[13px] font-medium text-zinc-300 transition-colors cursor-pointer">
+              <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] text-[13px] font-medium text-zinc-300 transition-colors cursor-pointer">
                 <ImageIcon className="w-3.5 h-3.5" />
                 <span>Start frame</span>
                 <input type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0]; if(f) loadImageRef(f) }} className="hidden" />
@@ -375,7 +382,7 @@ export default function VideoPage() {
               {/* Aspect Ratio / Quality Popover */}
               <Popover>
                 <PopoverTrigger asChild>
-                  <button className="flex items-center gap-2 px-3 py-1.5 rounded-3xl bg-[#2a2a2a] hover:bg-[#333] border border-transparent text-[13px] font-medium text-zinc-300 transition-colors">
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] text-[13px] font-medium text-zinc-300 transition-colors">
                     {resolution}
                   </button>
                 </PopoverTrigger>
@@ -420,7 +427,7 @@ export default function VideoPage() {
               {/* Duration Popover */}
               <Popover>
                 <PopoverTrigger asChild>
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-3xl bg-[#2a2a2a] hover:bg-[#333] border border-transparent text-[13px] font-medium text-zinc-300 transition-colors">
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] text-[13px] font-medium text-zinc-300 transition-colors">
                     <Clock className="w-3.5 h-3.5" />
                     {duration}
                   </button>
@@ -447,13 +454,13 @@ export default function VideoPage() {
               <button 
                 onClick={handleGenerate}
                 disabled={(!prompt.trim() && !imageRef) || generating}
-                className={`ml-auto w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                className={`ml-auto w-[40px] h-[40px] rounded-full flex items-center justify-center transition-all shadow-md ${
                    (!prompt.trim() && !imageRef) || generating 
-                     ? 'bg-[#333] text-zinc-500 cursor-not-allowed' 
-                     : 'bg-[#444] text-white hover:bg-[#555]'
+                     ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-white/[0.05]' 
+                     : 'bg-white text-black hover:bg-zinc-200'
                 }`}
               >
-                {generating ? <div className="w-4 h-4 border-2 border-zinc-500 border-t-zinc-200 rounded-full animate-spin" /> : <Plus className="w-4 h-4" />}
+                {generating ? <div className="w-4 h-4 border-2 border-zinc-500 border-t-zinc-200 rounded-full animate-spin" /> : <Sparkles className="w-[18px] h-[18px] mr-[1px] mb-[1px]" strokeWidth={2.5} />}
               </button>
 
             </div>
