@@ -5,6 +5,7 @@ import { Footer } from '@/components/krea-footer';
 import { Pricing } from '@/components/krea-pricing';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { BeforeAfterSlider } from '@/components/before-after-slider';
 import {
   ChevronDown,
@@ -170,7 +171,7 @@ function BentoGrid() {
                     
                     {/* Industry Leading Speed */}
                     <div className="col-span-12 md:col-span-5 rounded-3xl overflow-hidden relative shadow-sm group">
-                        <img src="https://images.unsplash.com/photo-1620641788421-7a1c34a26020?q=80&w=800" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt="Speed" />
+                        <Image src="https://images.unsplash.com/photo-1620641788421-7a1c34a26020?q=80&w=800" fill className="object-cover group-hover:scale-105 transition-transform duration-700" alt="Speed" />
                         <div className="absolute inset-0 bg-black/40" />
                         <h3 className="absolute inset-x-8 top-[35%] -translate-y-1/2 text-white font-bold text-4xl leading-tight text-center drop-shadow-md">Industry-leading<br/>inference speed</h3>
                     </div>
@@ -204,7 +205,7 @@ function BentoGrid() {
 
                     {/* NextFlow 1 vertical */}
                     <div className="col-span-12 sm:col-span-6 md:col-span-6 row-span-2 rounded-3xl overflow-hidden relative shadow-sm group">
-                        <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt="NextFlow 1" />
+                        <Image src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800" fill className="object-cover group-hover:scale-105 transition-transform duration-700" alt="NextFlow 1" />
                         <div className="absolute inset-0 bg-black/20" />
                         <div className="absolute bottom-10 left-0 right-0 text-center">
                             <p className="text-[72px] font-black text-white leading-none tracking-tighter drop-shadow-lg mb-2">NextFlow 1</p>
@@ -282,15 +283,21 @@ function FeatureSwitcher() {
 
                     <div className="md:col-span-8 bg-[#111] border border-white/10 rounded-[40px] overflow-hidden relative shadow-2xl min-h-[500px]">
                         <AnimatePresence mode="wait">
-                            <motion.img 
+                            <motion.div 
                                 key={activeId}
-                                src={showcaseFeatures.find(f => f.id === activeId)?.imgUrl}
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: 0.3 }}
-                                className="w-full h-full object-cover absolute inset-0"
-                            />
+                                className="absolute inset-0 w-full h-full"
+                            >
+                                <Image
+                                    src={showcaseFeatures.find(f => f.id === activeId)?.imgUrl || ''}
+                                    fill
+                                    className="object-cover"
+                                    alt="Feature showcase"
+                                />
+                            </motion.div>
                         </AnimatePresence>
                     </div>
                 </div>

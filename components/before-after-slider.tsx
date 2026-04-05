@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 
 interface BeforeAfterSliderProps {
   beforeImage: string;
@@ -73,10 +74,12 @@ export function BeforeAfterSlider({
       }}
     >
       {/* After Image (Background) */}
-      <img 
+      <Image 
         src={afterImage} 
-        alt="After" 
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        alt="After"
+        fill
+        sizes="(max-width: 768px) 100vw, 50vw"
+        className="object-cover pointer-events-none"
       />
       <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 text-white text-xs font-bold tracking-wider rounded z-0">
         {afterLabel}
@@ -87,10 +90,12 @@ export function BeforeAfterSlider({
         className="absolute inset-0 overflow-hidden pointer-events-none"
         style={{ width: `${sliderPosition}%` }}
       >
-        <img 
+        <Image 
           src={beforeImage} 
           alt="Before" 
-          className="absolute inset-0 w-full h-full object-cover max-w-none filter blur-[1px] opacity-80"
+          fill
+          unoptimized={true} // Opt out here because we use custom dynamic width styling
+          className="object-cover max-w-none filter blur-[1px] opacity-80"
           style={{ width: '100vw', maxWidth: containerRef.current ? `${containerRef.current.getBoundingClientRect().width}px` : '1000px' }}
         />
         <div className="absolute top-4 left-4 bg-white/80 text-black backdrop-blur-md px-3 py-1 text-xs font-bold tracking-wider rounded z-0">
