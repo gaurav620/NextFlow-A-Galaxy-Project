@@ -70,7 +70,10 @@ export default function ImageGenNode({ id, data }: any) {
         {!promptConnected && (
           <textarea
             value={prompt}
-            onChange={(e) => { setPrompt(e.target.value); if (data.onChange) data.onChange({ prompt: e.target.value }); }}
+            onChange={(e) => { 
+                setPrompt(e.target.value);
+                useWorkflowStore.getState().updateNodeData(id, { prompt: e.target.value });
+             }}
             placeholder="Image prompt (required)..."
             className="rounded-lg text-gray-200 text-xs w-full p-2 resize-none h-16 placeholder-gray-600 focus:outline-none bg-transparent hover:bg-white/[0.02] transition-colors border border-white/[0.04] focus:border-white/10 shadow-inner"
           />

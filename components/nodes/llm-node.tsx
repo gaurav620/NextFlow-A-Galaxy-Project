@@ -102,7 +102,10 @@ export default function LLMNode({ id, data }: any) {
         <div className="relative group">
           <select
             value={model}
-            onChange={(e) => { setModel(e.target.value); if (data.onChange) data.onChange({ model: e.target.value }); }}
+            onChange={(e) => { 
+               setModel(e.target.value); 
+               useWorkflowStore.getState().updateNodeData(id, { model: e.target.value });
+            }}
             className="rounded-lg text-xs text-white px-2 py-1.5 w-full focus:outline-none bg-white/[0.02] border border-white/[0.04] appearance-none cursor-pointer pr-6 hover:bg-white/[0.04] transition-colors"
           >
             <option className="bg-[#111]">gemini-2.0-flash</option>
@@ -116,7 +119,10 @@ export default function LLMNode({ id, data }: any) {
         {!systemConnected && (
           <textarea
             value={systemPrompt}
-            onChange={(e) => { setSystemPrompt(e.target.value); if (data.onChange) data.onChange({ systemPrompt: e.target.value }); }}
+            onChange={(e) => { 
+                setSystemPrompt(e.target.value); 
+                useWorkflowStore.getState().updateNodeData(id, { systemPrompt: e.target.value });
+            }}
             placeholder="System prompt (optional)..."
             className="rounded-lg text-gray-200 text-xs w-full p-2 resize-none h-12 placeholder-gray-600 focus:outline-none bg-transparent hover:bg-white/[0.02] transition-colors border border-transparent focus:border-white/10 shadow-inner"
           />
@@ -131,7 +137,10 @@ export default function LLMNode({ id, data }: any) {
         {!userConnected && (
           <textarea
             value={userMessage}
-            onChange={(e) => { setUserMessage(e.target.value); if (data.onChange) data.onChange({ userMessage: e.target.value }); }}
+            onChange={(e) => { 
+               setUserMessage(e.target.value); 
+               useWorkflowStore.getState().updateNodeData(id, { userMessage: e.target.value });
+            }}
             placeholder="User message (required)..."
             className="rounded-lg text-gray-200 text-xs w-full p-2 resize-none h-16 placeholder-gray-600 focus:outline-none bg-transparent hover:bg-white/[0.02] transition-colors border border-transparent focus:border-white/10 shadow-inner"
           />

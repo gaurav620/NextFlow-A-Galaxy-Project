@@ -4,7 +4,7 @@ import { Handle, Position } from '@xyflow/react';
 import { Type } from 'lucide-react';
 import { useState } from 'react';
 
-export default function TextNode({ data }: any) {
+export default function TextNode({ id, data }: any) {
   const [content, setContent] = useState(data.content || '');
 
   return (
@@ -24,9 +24,10 @@ export default function TextNode({ data }: any) {
           value={content}
           onChange={(e) => {
             setContent(e.target.value);
-            if (data.onChange) {
-              data.onChange({ content: e.target.value });
-            }
+            // Dynamic import to avoid circular dependency loop if any
+            import('@/store/workflowStore').then(({ useWorkflowStore }) => {
+              useWorkflowStore.getState().updateNodeData(id, { content: e.target.value });
+            });
           }}
           placeholder="Enter text..."
           className="rounded-xl text-gray-200 text-xs w-full p-2.5 resize-none h-20 placeholder-gray-600 focus:outline-none bg-transparent hover:bg-white/[0.02] transition-colors shadow-inner box-border"

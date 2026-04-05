@@ -151,19 +151,19 @@ export async function executeWorkflow(
             
             if (!promptValue) throw new Error('Prompt is required for Image Generation')
 
-            const res = await fetch('/api/generate', {
+            const res = await fetch('/api/generate/image', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 prompt: promptValue,
-                model: 'fal-ai/flux/schnell' // Using the default from your api/generate
+                count: 1
               }),
             })
             if (!res.ok) throw new Error(`API Error: ${res.statusText}`)
             const data = await res.json().catch(() => null)
             if (!data) throw new Error('Invalid JSON response from Generation API')
             if (!data.success) throw new Error(data.error || 'Image generation failed')
-            output = data.imageUrl
+            output = data.images?.[0] || ''
           }
 
           results.set(node.id, output)
