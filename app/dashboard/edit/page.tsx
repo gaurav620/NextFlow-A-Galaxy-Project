@@ -367,8 +367,34 @@ export default function EditPage() {
 
                        {/* FALLBACK FOR OTHERS */}
                        {section.id !== 'adjustments' && section.id !== 'lighting' && (
-                         <div className="px-5 py-4 text-[12px] text-zinc-500 text-center italic bg-[#1a1c23]/50 rounded-xl mx-2 mb-2">
-                           Settings for {section.label}
+                         <div className="px-4 py-4 bg-[#1a1c23]/50 rounded-xl mx-2 mb-2 flex flex-col gap-3">
+                           <div className="text-[12px] text-zinc-400 font-medium mb-1">
+                             {section.label} Options
+                           </div>
+                           {section.id === 'crop-expand' ? (
+                             <div className="grid grid-cols-2 gap-2">
+                               <button className="py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs text-zinc-300">1:1 Square</button>
+                               <button className="py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs text-zinc-300">16:9 Landscape</button>
+                               <button className="py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs text-zinc-300">9:16 Portrait</button>
+                               <button className="py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs text-zinc-300">4:3 Standard</button>
+                             </div>
+                           ) : section.id === 'palette' ? (
+                             <div className="flex gap-2">
+                               {['bg-red-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500'].map(c => (
+                                 <button key={c} className={`w-8 h-8 rounded-full ${c} border border-white/20 hover:scale-110 transition-transform`} />
+                               ))}
+                             </div>
+                           ) : (
+                             <div className="flex flex-col gap-2">
+                               <div className="w-full bg-black/40 border border-white/5 rounded-lg h-8 px-3 flex items-center text-xs text-zinc-500">
+                                 Select area to {section.label.toLowerCase()}...
+                               </div>
+                               <div className="flex gap-2 mt-1">
+                                 <button className="flex-1 py-1.5 bg-white/5 hover:bg-white/10 rounded-md text-xs text-zinc-300 transition-colors">Apply</button>
+                                 <button className="flex-1 py-1.5 bg-white/5 hover:bg-white/10 rounded-md text-xs text-zinc-300 transition-colors">Reset</button>
+                               </div>
+                             </div>
+                           )}
                          </div>
                        )}
                      </motion.div>

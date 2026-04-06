@@ -308,7 +308,7 @@ export default function DashboardHome() {
         <motion.div
            variants={itemVariants}
            whileHover={{ scale: 1.01, transition: { type: 'spring' as const, stiffness: 400, damping: 30 } }}
-          className="rounded-[24px] flex items-center justify-between px-10 py-7 relative overflow-hidden shadow-2xl"
+          className="rounded-[24px] flex flex-col md:flex-row md:items-center justify-between px-6 md:px-10 py-7 relative overflow-hidden shadow-2xl gap-6 md:gap-0"
           style={{ background: 'linear-gradient(135deg, #16161a 0%, #0d0d0f 100%)', border: '1px solid rgba(255,255,255,0.06)' }}
         >
           <div className="space-y-3">
@@ -410,7 +410,7 @@ export default function DashboardHome() {
               View all <ExternalLink className="w-3.5 h-3.5" />
             </button>
           </div>
-          <div className="grid grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {releaseNotes.map((note) => (
               <motion.div
                 whileHover={{ scale: 1.01, y: -2, backgroundColor: 'rgba(255,255,255,0.03)' }}
@@ -435,7 +435,7 @@ export default function DashboardHome() {
         {/* ── INSTANT ACTIONS ─────────────────────────────────── */}
         <motion.section variants={itemVariants} id="instant-actions">
           <SectionHeader title="Instant results with NextFlow actions" />
-          <div className="grid grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {instantActions.map((action) => (
               <motion.div whileHover={hoverSpring} key={action.name}>
                 <Link
@@ -461,7 +461,7 @@ export default function DashboardHome() {
 
         {/* ── FOOTER ───────────────────────────────────────────── */}
         <motion.footer variants={itemVariants} style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }} className="pt-12 pb-10">
-          <div className="grid grid-cols-4 gap-8 mb-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
             <div>
               <p className="text-white text-[11px] font-bold uppercase tracking-widest mb-5 opacity-90">NextFlow</p>
               <ul className="space-y-3.5 flex flex-col">

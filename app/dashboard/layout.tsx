@@ -6,8 +6,9 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Home, Image as ImageIcon, Video, Wand2, Zap, PenTool, AudioLines, Sparkles, Folder, Network, Box, Film, Aperture, Fingerprint, Footprints, MicVocal, Accessibility, Compass, TriangleRight, Menu, PanelLeft, MoreHorizontal
+  Home, Image as ImageIcon, Video, Wand2, Zap, PenTool, AudioLines, Sparkles, Folder, Network, Box, Film, Aperture, Fingerprint, Footprints, MicVocal, Accessibility, Compass, TriangleRight, Menu, PanelLeft, MoreHorizontal, Search, Plus, Settings, LogOut, PieChart
 } from 'lucide-react';
+import { ReferralModal } from '@/components/referral-modal';
 
 const BananaIcon = (props: any) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={24} height={24} {...props}>
@@ -89,6 +90,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Clone specific states
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [showMoreTools, setShowMoreTools] = useState(false);
+  const [referralOpen, setReferralOpen] = useState(false);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -237,14 +239,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {!isCollapsed && (
           <div className="px-5 mb-2 mt-4 flex flex-col">
              <div className="flex flex-col mb-4">
-                <span className="text-[13px] font-semibold text-zinc-600 mb-2 mt-4 tracking-tight">Sessions</span>
+                 <div className="flex items-center justify-between">
+                   <span className="text-[13px] font-semibold text-zinc-600 mb-2 mt-4 tracking-tight">Sessions</span>
+                   <button className="w-6 h-6 mt-2 rounded bg-white/[0.04] hover:bg-white/10 flex items-center justify-center transition-colors">
+                     <Search className="w-3 h-3 text-zinc-400" />
+                   </button>
+                 </div>
+                 <span className="text-[12px] text-zinc-500 mt-1">No recent sessions</span>
              </div>
              
              {/* Bottom Links */}
              <div className="flex flex-col gap-3 mt-4">
-               <Link href="/dashboard/pricing" className="text-[13px] text-white hover:text-zinc-300 font-medium transition-colors w-max tracking-tight">
+               <button onClick={() => setReferralOpen(true)} className="text-[13px] text-left text-white hover:text-zinc-300 font-medium transition-colors w-max tracking-tight">
                   Earn 3,000 Credits
-               </Link>
+               </button>
                <Link href="/dashboard/pricing" className="w-full relative py-[10px] rounded-[10px] overflow-hidden group shadow-[0_4px_16px_rgba(0,85,255,0.2)] block active:scale-[0.98] transition-transform">
                   <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-400 via-blue-600 to-blue-700 opacity-90 group-hover:opacity-100 transition-opacity"></div>
                   <div className="absolute top-0 inset-x-0 h-[1px] bg-white/40"></div>
@@ -306,18 +314,49 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       <span className="text-[12px] text-zinc-500">Free plan</span>
                    </div>
                 </div>
-                <div className="p-2 flex flex-col gap-1">
-                   <Link href="/dashboard/pricing" onClick={() => setProfileOpen(false)} className="px-3 py-2 text-[13px] text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors">
-                     Pricing
+                <div className="p-2 border-b border-white/[0.04]">
+                   <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest px-3 mb-1 block">Workspaces</span>
+                   <button className="w-full flex items-center justify-between px-3 py-2 text-[13px] text-white bg-white/[0.04] rounded-lg transition-colors text-left cursor-default">
+                     <div className="flex items-center gap-2">
+                       <div className="w-5 h-5 rounded bg-zinc-800 flex items-center justify-center text-[10px] text-zinc-400 font-bold">D</div>
+                       <span>Default Workspace</span>
+                     </div>
+                     <span className="text-[10px] text-zinc-500 bg-black px-1.5 py-0.5 rounded">Free</span>
+                   </button>
+                   <button className="w-full mt-1 flex items-center gap-2 px-3 py-2 text-[13px] text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-lg transition-colors text-left">
+                     <Plus className="w-4 h-4" />
+                     <span>Add workspace</span>
+                   </button>
+                </div>
+                <div className="p-2 flex flex-col gap-1 border-b border-white/[0.04]">
+                   <div className="px-3 py-2 flex items-center justify-between">
+                     <div className="flex items-center gap-2 text-[13px] text-zinc-300">
+                       <div className="w-2 h-2 rounded-full border border-blue-500 bg-transparent" />
+                       <span className="text-white">17 Credits remaining</span>
+                     </div>
+                     <span className="text-[10px] text-zinc-500">Daily</span>
+                   </div>
+                   <Link href="/dashboard/pricing" onClick={() => setProfileOpen(false)} className="px-3 py-2 flex items-center gap-2 text-[13px] text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors">
+                     <Settings className="w-4 h-4 text-zinc-500" />
+                     Upgrade plan
                    </Link>
-                   <Link href="/dashboard/settings" onClick={() => setProfileOpen(false)} className="px-3 py-2 text-[13px] text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors">
+                   <Link href="/dashboard/pricing#compute-packs" onClick={() => setProfileOpen(false)} className="px-3 py-2 flex items-center gap-2 text-[13px] text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors">
+                     <Zap className="w-4 h-4 text-zinc-500" />
+                     Buy credits
+                   </Link>
+                </div>
+                <div className="p-2 flex flex-col gap-1">
+                   <Link href="/dashboard/settings" onClick={() => setProfileOpen(false)} className="px-3 py-2 flex items-center gap-2 text-[13px] text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors">
+                     <Settings className="w-4 h-4 text-zinc-500" />
                      Settings
                    </Link>
-                   <button className="px-3 py-2 text-[13px] text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors text-left">
-                     Manage Subscription
-                   </button>
+                   <Link href="/dashboard/usage-statistics" onClick={() => setProfileOpen(false)} className="px-3 py-2 flex items-center gap-2 text-[13px] text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors text-left">
+                     <PieChart className="w-4 h-4 text-zinc-500" />
+                     Usage Statistics
+                   </Link>
                    <div className="h-px bg-white/[0.04] my-1" />
-                   <button onClick={() => { signOut(); setProfileOpen(false); }} className="px-3 py-2 text-[13px] text-red-500 hover:bg-red-500/10 rounded-xl transition-colors text-left font-medium">
+                   <button onClick={() => { signOut(); setProfileOpen(false); }} className="px-3 py-2 flex items-center gap-2 text-[13px] text-red-500 hover:bg-red-500/10 rounded-xl transition-colors text-left font-medium">
+                     <LogOut className="w-4 h-4 opacity-80" />
                      Log out
                    </button>
                 </div>
@@ -388,6 +427,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {children}
       </div>
       
+      <ReferralModal isOpen={referralOpen} onClose={() => setReferralOpen(false)} />
     </div>
   );
 }

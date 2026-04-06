@@ -28,6 +28,7 @@ export default function LipsyncPage() {
   const [tempSpeech, setTempSpeech] = useState('');
 
   const [generating, setGenerating] = useState(false);
+  const [generateStep, setGenerateStep] = useState<string | null>(null);
   const [resultVideo, setResultVideo] = useState<string | null>(null);
 
   const handleFaceUpload = (file: File) => {
@@ -41,24 +42,34 @@ export default function LipsyncPage() {
     if (!faceImage || !speechText.trim()) return;
     setGenerating(true);
     
-    // Simulating generation time
-    await new Promise(r => setTimeout(r, 4000));
+    // Staged progress simulation
+    setGenerateStep("Uploading assets...");
+    await new Promise(r => setTimeout(r, 1000));
+    
+    setGenerateStep("Processing speech...");
+    await new Promise(r => setTimeout(r, 1500));
+    
+    setGenerateStep("Generating lipsync video...");
+    await new Promise(r => setTimeout(r, 2000));
+    
+    setGenerateStep("Finalizing...");
+    await new Promise(r => setTimeout(r, 800));
     
     // Since we can't reliably generate a deepfake video via basic API,
     // we simulate the success by revealing the UI state and a stock loop.
-    // In production this would be the webhook response from the AI Lipsync worker
     const dummyVideo = 'https://cdn.pixabay.com/video/2019/04/18/22822-331201502_tiny.mp4';
     
     setResultVideo(dummyVideo);
     
     addAsset({
-      url: faceImage, // Store face as thumbnail
+      url: faceImage,
       prompt: speechText,
       tool: 'lipsync',
       ratio: '1:1'
     });
     
     setGenerating(false);
+    setGenerateStep(null);
   };
 
   const resetSession = () => {
@@ -209,7 +220,7 @@ export default function LipsyncPage() {
                   } ${generating ? 'opacity-80 cursor-wait' : ''}`}
                 >
                   {generating ? (
-                    <><div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> Generating...</>
+                    <><div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> {generateStep || "Generating..."}</>
                   ) : (
                     <><Sparkles className="w-4 h-4" /> Generate</>
                   )}

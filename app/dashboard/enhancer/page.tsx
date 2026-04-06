@@ -69,9 +69,35 @@ export default function EnhancerPage() {
     setGenerating(true);
     setError(null);
     try {
-      await new Promise(r => setTimeout(r, 2500));
-      // Simulate generation result by using same image
-      setResult(image); 
+      const response = await fetch(image);
+      const blob = await response.blob();
+      
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => {
+          const res = reader.result as string;
+          resolve(res.split(',')[1]);
+        };
+        reader.onerror = reject;
+      });
+      reader.readAsDataURL(blob);
+      const base64 = await base64Promise;
+
+      const apiResponse = await fetch('/api/generate/enhance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageBase64: base64,
+          mimeType: blob.type,
+          scale: parseFloat(factor) || 4,
+          creativity: aiStrength,
+        })
+      });
+      
+      const data = await apiResponse.json();
+      if (!data.success) throw new Error(data.error || 'Enhancement failed');
+      
+      setResult(data.enhanced || image); 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Enhancement failed');
     } finally {

@@ -62,6 +62,46 @@ const computePacks = [
 ];
 
 export default function PricingPage() {
+  const loadRazorpay = async () => {
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handlePayment = async (amount: number, name: string) => {
+    if (isNaN(amount) || amount <= 0) return;
+    const res = await loadRazorpay();
+    if (!res) {
+      alert("Razorpay SDK failed to load. Are you online?");
+      return;
+    }
+
+    const options = {
+      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_SZwdjVacEhnkjd",
+      amount: amount * 100, // in paise
+      currency: "USD",
+      name: "NextFlow AI",
+      description: name,
+      image: "https://v0-next-flow-landing-page.vercel.app/favicon.ico",
+      handler: function (response: any) {
+        alert("Payment Successful! Payment ID: " + response.razorpay_payment_id);
+      },
+      prefill: {
+        name: "NextFlow User",
+      },
+      theme: {
+        color: "#111111",
+      },
+    };
+
+    const paymentObject = new (window as any).Razorpay(options);
+    paymentObject.open();
+  };
+
   return (
     <div className="flex-1 overflow-y-auto bg-[#09090b] [&::-webkit-scrollbar]:hidden">
       <div className="max-w-[900px] mx-auto px-6 py-10 space-y-14">
@@ -71,7 +111,7 @@ export default function PricingPage() {
           <h1 className="text-[24px] font-bold text-white text-center mb-2">Simple, transparent pricing</h1>
           <p className="text-[14px] text-zinc-500 text-center mb-8">Start for free. Upgrade when you need more.</p>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {plans.map((plan) => (
               <div
                 key={plan.name}
@@ -106,6 +146,7 @@ export default function PricingPage() {
 
                 <button
                   disabled={plan.disabled}
+                  onClick={() => handlePayment(parseInt(plan.price.replace('$', '')), `${plan.name} Plan`)}
                   className={`w-full py-2.5 rounded-xl text-[13px] font-semibold transition-colors ${
                     plan.disabled
                       ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
@@ -126,7 +167,7 @@ export default function PricingPage() {
           <h2 className="text-[20px] font-bold text-white mb-2">Compute Packs</h2>
           <p className="text-[13px] text-zinc-500 mb-6">Buy one-time credits that never expire. Use them anytime.</p>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {computePacks.map((pack) => (
               <div
                 key={pack.credits}
@@ -148,7 +189,10 @@ export default function PricingPage() {
                   <p className="text-[28px] font-black text-white leading-none">{pack.price}</p>
                   <p className="text-[11px] text-zinc-500 mt-1">{pack.per}</p>
                 </div>
-                <button className="w-full py-2 rounded-xl bg-white text-black text-[12px] font-semibold hover:bg-zinc-100 transition-colors flex items-center justify-center gap-1.5">
+                <button 
+                   onClick={() => handlePayment(parseInt(pack.price.replace('$', '')), `${pack.credits} Credits Pack`)}
+                   className="w-full py-2 rounded-xl bg-white text-black text-[12px] font-semibold hover:bg-zinc-100 transition-colors flex items-center justify-center gap-1.5"
+                >
                   <Plus className="w-3.5 h-3.5" />
                   Buy Pack
                 </button>

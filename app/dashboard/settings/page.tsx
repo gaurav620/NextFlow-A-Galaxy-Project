@@ -109,10 +109,10 @@ export default function SettingsPage() {
                 <button className="px-4 py-2 bg-[#1a1a1a] border border-white/[0.06] hover:border-white/10 rounded-lg text-[12px] text-zinc-300 transition-colors">
                   Manage Workspace
                 </button>
-                <button className="px-4 py-2 bg-white text-black rounded-lg text-[12px] font-semibold hover:bg-zinc-100 transition-colors flex items-center gap-1.5">
+                <Link href="/dashboard/pricing" className="px-4 py-2 bg-white text-black rounded-lg text-[12px] font-semibold hover:bg-zinc-100 transition-colors flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" />
                   Upgrade
-                </button>
+                </Link>
               </div>
             </div>
 
@@ -133,9 +133,9 @@ export default function SettingsPage() {
                 <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold mb-3">ONE-TIME COMPUTE</p>
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-[40px] font-black leading-none text-white">0</p>
-                  <button className="flex items-center gap-1 text-[12px] text-zinc-400 hover:text-white transition-colors">
+                  <Link href="/dashboard/pricing#compute-packs" className="flex items-center gap-1 text-[12px] text-zinc-400 hover:text-white transition-colors">
                     <Plus className="w-3.5 h-3.5" /> Buy
-                  </button>
+                  </Link>
                 </div>
                 <p className="text-[11px] text-zinc-600">No compute packs purchased</p>
               </div>
