@@ -110,7 +110,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const SidebarContent = () => (
-    <div className={`h-full flex flex-col pt-3 pb-5 bg-black z-[60] transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[64px] items-center px-1' : 'w-[240px] px-3'}`}>
+    <div className={`h-full flex flex-col pt-3 pb-5 bg-background z-[60] transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[64px] items-center px-1' : 'w-[240px] px-3'}`}>
       
       {/* Top Toggle Button */}
       <div className={`flex items-center mb-6 mt-1 ${isCollapsed ? 'justify-center w-full' : 'px-3'}`}>
@@ -400,7 +400,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   );
 
   return (
-    <div className="flex w-screen h-screen bg-[#000000] overflow-hidden font-sans">
+    <div className="flex w-screen h-screen bg-background overflow-hidden font-sans">
       
       {/* ── DESKTOP SIDEBAR ── */}
       <div className="hidden md:flex h-full border-r border-white/[0.03] shadow-2xl z-[60]">
@@ -432,7 +432,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </AnimatePresence>
 
       {/* ── MOBILE NAVBAR TOP ── */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[#0c0c0c]/90 backdrop-blur border-b border-white/[0.04] z-[40] flex items-center justify-between px-4">
+      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-background/90 backdrop-blur border-b border-border z-[40] flex items-center justify-between px-4">
          <div className="flex items-center gap-3">
              <div className="w-7 h-7 rounded bg-white flex items-center justify-center">
                  <span className="text-black font-bold text-xs tracking-tighter">N</span>
@@ -445,7 +445,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       {/* ── MAIN CONTENT ── */}
-      <div className="flex-1 w-full h-full relative overflow-y-auto bg-[#000000] md:pt-0 pt-14 flex flex-col">
+      <div className="flex-1 w-full h-full relative overflow-y-auto bg-background md:pt-0 pt-14 flex flex-col">
         <motion.div
           key={pathname}
           initial={{ opacity: 0, y: 6 }}

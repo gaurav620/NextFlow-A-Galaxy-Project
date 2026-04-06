@@ -163,7 +163,7 @@ export default function SettingsPage() {
   return (
     <>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" />
-      <div className="flex w-full h-full bg-[#09090b] text-white overflow-hidden relative">
+      <div className="flex w-full h-full bg-background text-foreground overflow-hidden relative">
       {/* Desktop Sidebar */}
       <div className="hidden md:flex w-[220px] border-r border-white/[0.06] flex-col flex-shrink-0 overflow-y-auto [&::-webkit-scrollbar]:hidden">
         <div className="p-4 flex items-center justify-between border-b border-white/[0.05]">
