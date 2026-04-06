@@ -18,6 +18,8 @@ import {
   Diamond,
   Heart,
   ArrowUpRight,
+  Image as ImageIcon,
+  PenTool,
 } from 'lucide-react';
 
 /* ─── TYPES ─────────────────────────────────────────────────── */
