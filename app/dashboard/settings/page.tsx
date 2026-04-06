@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTheme } from 'next-themes';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -50,7 +51,7 @@ export default function SettingsPage() {
   const [displayName, setDisplayName] = useState('');
   const [workspaceName, setWorkspaceName] = useState('Default Workspace');
   const [promoCode, setPromoCode] = useState('');
-  const [themePreference, setThemePreference] = useState('Dark');
+  const { theme, setTheme } = useTheme();
   const [tokens, setTokens] = useState<any[]>([]);
 
   // Loading states
@@ -330,18 +331,21 @@ export default function SettingsPage() {
             <div className="bg-[#111] border border-white/[0.06] rounded-xl p-6 space-y-4">
               <p className="text-[13px] text-zinc-400">Choose your preferred theme.</p>
               <div className="grid grid-cols-2 gap-3">
-                {['Dark', 'Light'].map((theme) => (
+                {(['dark', 'light'] as const).map((t) => (
                   <button
-                    key={theme}
+                    key={t}
                     onClick={() => {
-                      setThemePreference(theme);
-                      toast.success(`Theme updated to ${theme}`);
+                      setTheme(t);
+                      toast.success(`Theme updated to ${t === 'dark' ? 'Dark' : 'Light'}`);
                     }}
-                    className={`p-4 rounded-xl border text-[13px] font-medium transition-all ${
-                      themePreference === theme ? 'border-white/20 bg-zinc-900 text-white' : 'border-white/[0.06] bg-[#0d0d0f] text-zinc-400 hover:text-white'
+                    className={`p-4 rounded-xl border text-[13px] font-medium transition-all capitalize ${
+                      theme === t
+                        ? 'border-blue-500/60 bg-blue-500/10 text-white'
+                        : 'border-white/[0.06] bg-[#0d0d0f] text-zinc-400 hover:text-white hover:border-white/10'
                     }`}
                   >
-                    {theme}
+                    <span className="text-xl mr-2">{t === 'dark' ? '🌙' : '☀️'}</span>
+                    {t === 'dark' ? 'Dark' : 'Light'}
                   </button>
                 ))}
               </div>

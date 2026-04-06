@@ -4,6 +4,7 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { dark } from '@clerk/themes'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
+import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
 
 const inter = Inter({ subsets: ["latin"] });
@@ -43,17 +44,24 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} font-sans antialiased`}>
-        <ClerkProvider
-          appearance={{ baseTheme: dark }}
-          signInUrl="/sign-in"
-          signUpUrl="/sign-up"
-          signInFallbackRedirectUrl="/dashboard"
-          signUpFallbackRedirectUrl="/dashboard"
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}
+          themes={['dark', 'light']}
         >
-          {children}
-          <Toaster theme="dark" position="bottom-right" richColors closeButton />
-          <Analytics />
-        </ClerkProvider>
+          <ClerkProvider
+            appearance={{ baseTheme: dark }}
+            signInUrl="/sign-in"
+            signUpUrl="/sign-up"
+            signInFallbackRedirectUrl="/dashboard"
+            signUpFallbackRedirectUrl="/dashboard"
+          >
+            {children}
+            <Toaster theme="dark" position="bottom-right" richColors closeButton />
+            <Analytics />
+          </ClerkProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
