@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-@custom-variant dark (&:is(html.dark *), html.dark &);
+@custom-variant dark (&:is(.dark *));
 
 /* ── Shared base (radius only, no color) ───────────────────── */
 :root {

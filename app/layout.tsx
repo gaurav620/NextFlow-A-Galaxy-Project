@@ -5,6 +5,7 @@ import { dark } from '@clerk/themes'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import { ThemeProvider } from '@/components/theme-provider'
+import { ThemeApplier } from '@/components/theme-applier'
 import './globals.css'
 
 const inter = Inter({ subsets: ["latin"] });
@@ -57,6 +58,7 @@ export default function RootLayout({
             signInFallbackRedirectUrl="/dashboard"
             signUpFallbackRedirectUrl="/dashboard"
           >
+            <ThemeApplier />
             {children}
             <Toaster theme="dark" position="bottom-right" richColors closeButton />
             <Analytics />
