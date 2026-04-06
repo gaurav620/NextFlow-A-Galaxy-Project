@@ -219,9 +219,9 @@ export default function WorkflowsPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f0f] via-transparent to-transparent z-10" />
 
         {/* Hero Content */}
-        <div className="relative z-20 flex flex-col justify-center h-full px-8 md:px-16 pt-16">
+        <div className="relative z-20 flex flex-col justify-center h-full px-5 md:px-16 pt-16">
           <div className="flex items-center gap-4 mb-5">
-            <div className="w-11 h-11 rounded-[10px] bg-blue-500 text-white flex items-center justify-center">
+            <div className="w-11 h-11 rounded-[10px] bg-blue-500 text-white flex items-center justify-center shrink-0">
               <NodeIcon />
             </div>
             <h1 className="text-[28px] font-semibold text-white tracking-tight">Node Editor</h1>
@@ -244,7 +244,7 @@ export default function WorkflowsPage() {
       </div>
 
       {/* TABS */}
-      <div className="px-8 md:px-16 py-4 flex gap-2">
+      <div className="px-5 md:px-16 py-4 flex gap-2 overflow-x-auto hide-scrollbar">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -294,7 +294,7 @@ export default function WorkflowsPage() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 p-8 md:px-16 py-12">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 p-5 sm:p-8 md:px-16 py-8 sm:py-12">
                 {workflows.map((workflow) => (
                   <Link key={workflow.id} href={`/dashboard/workflows/${workflow.id}`}>
                     <div className="flex flex-col gap-3 group cursor-pointer">
@@ -323,7 +323,7 @@ export default function WorkflowsPage() {
 
         {/* APPS TAB */}
         {activeTab === 'apps' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 p-8 md:px-16 py-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 p-5 sm:p-8 md:px-16 py-8 sm:py-12">
             {MOCK_APPS.map((app) => (
               <div 
                 key={app.id} 
@@ -352,7 +352,7 @@ export default function WorkflowsPage() {
 
         {/* EXAMPLES TAB */}
         {activeTab === 'examples' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-8 md:px-16 py-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 p-5 sm:p-8 md:px-16 py-8 sm:py-12">
             {MOCK_EXAMPLES.map((ex) => (
               <div 
                 key={ex.id} 
@@ -382,7 +382,7 @@ export default function WorkflowsPage() {
 
         {/* TEMPLATES TAB */}
         {activeTab === 'templates' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 p-8 md:px-16 py-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 p-5 sm:p-8 md:px-16 py-8 sm:py-12">
             {MOCK_TEMPLATES.map((tmpl) => (
               <div 
                 key={tmpl.id} 

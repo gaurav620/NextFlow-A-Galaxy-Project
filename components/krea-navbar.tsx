@@ -50,7 +50,8 @@ export function Navbar({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   const navItemColor = isLight ? 'text-zinc-600 hover:text-black' : 'text-zinc-300 hover:text-white';
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 font-sans border-b ${headerBgClass}`}>
+    <>
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 font-sans border-b ${headerBgClass}`}>
       <div className="max-w-[1400px] mx-auto px-6 h-[72px] flex items-center justify-between">
         
         {/* Logo */}
@@ -368,5 +369,6 @@ export function Navbar({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         </motion.div>
       )}
     </AnimatePresence>
+    </>
   );
 }

@@ -348,6 +348,30 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
     event.dataTransfer.dropEffect = 'move'
   }, [])
 
+  const handleAddNodeClick = useCallback(
+    (nodeType: string) => {
+      if (!reactFlowInstance) return
+      // Use center of screen or defaults if not available
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: centerX,
+        y: centerY,
+      })
+      
+      const newNode: any = {
+        id: crypto.randomUUID(),
+        data: { label: nodeType },
+        // Offset slightly randomly so multiple taps don't perfectly overlap
+        position: { x: position.x + (Math.random() - 0.5) * 50, y: position.y + (Math.random() - 0.5) * 50 },
+        type: nodeType,
+      }
+      setNodes((nds: any) => [...nds, newNode])
+    },
+    [reactFlowInstance, setNodes]
+  )
+
   const onConnect = useCallback(
     (connection: Connection) => {
       if (connection.source && connection.target && hasCycle(connection.source, connection.target, safeEdges as any[])) {
@@ -378,30 +402,30 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
   return (
     <div className="relative h-screen w-full overflow-hidden bg-[#0A0A0A] font-sans">
       {/* Top Floating Header */}
-      <div className="absolute top-4 left-4 right-4 z-40 flex items-center justify-between pointer-events-none">
+      <div className="absolute top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-40 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0 pointer-events-none">
         
         {/* Left: Back & Name */}
-        <div className="flex items-center gap-2 pointer-events-auto bg-[#111111]/90 backdrop-blur-md rounded-full px-2 py-1.5 border border-white/[0.06] shadow-xl">
-          <button type="button" onClick={() => router.back()} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
+        <div className="flex items-center gap-2 pointer-events-auto bg-[#111111]/90 backdrop-blur-md rounded-full px-2 py-1.5 border border-white/[0.06] shadow-xl max-w-full">
+          <button type="button" onClick={() => router.back()} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5 shrink-0">
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <div className="h-4 w-px bg-white/10 mx-1" />
+          <div className="h-4 w-px bg-white/10 mx-0.5 sm:mx-1 shrink-0" />
           <input
             type="text"
             value={workflowName}
             onChange={(e) => setWorkflowName(e.target.value)}
-            className="bg-transparent text-white text-sm font-medium border-0 outline-none w-[140px] px-2 focus:ring-0"
+            className="bg-transparent text-white text-sm font-medium border-0 outline-none w-[100px] sm:w-[140px] px-2 focus:ring-0"
             placeholder="Untitled Node"
           />
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-2 pointer-events-auto">
-          <div className="flex items-center bg-[#111111]/90 backdrop-blur-md rounded-full px-1.5 py-1.5 border border-white/[0.06] shadow-xl">
+        <div className="flex items-center gap-2 pointer-events-auto max-w-full overflow-x-auto hide-scrollbar pb-1 sm:pb-0">
+          <div className="flex items-center bg-[#111111]/90 backdrop-blur-md rounded-full px-1.5 py-1.5 border border-white/[0.06] shadow-xl shrink-0">
             <TooltipProvider delayDuration={0}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button type="button" onClick={undo} disabled={past.length === 0} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5 disabled:opacity-30">
+                  <button type="button" onClick={undo} disabled={past.length === 0} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5 disabled:opacity-30 shrink-0">
                     <Undo2 className="w-4 h-4" />
                   </button>
                 </TooltipTrigger>
@@ -412,7 +436,7 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
             <TooltipProvider delayDuration={0}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button type="button" onClick={redo} disabled={future.length === 0} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5 disabled:opacity-30">
+                  <button type="button" onClick={redo} disabled={future.length === 0} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5 disabled:opacity-30 shrink-0">
                     <Redo2 className="w-4 h-4" />
                   </button>
                 </TooltipTrigger>
@@ -420,18 +444,18 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
               </Tooltip>
             </TooltipProvider>
 
-             <div className="h-4 w-px bg-white/10 mx-1" />
+             <div className="h-4 w-px bg-white/10 mx-1 shrink-0" />
 
-            <button type="button" onClick={handleSave} className="px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-white transition-colors">
+            <button type="button" onClick={handleSave} className="px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-white transition-colors shrink-0">
               Save
             </button>
-            <button type="button" onClick={handleExport} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
+            <button type="button" onClick={handleExport} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5 shrink-0 hidden sm:flex">
               <Download className="w-4 h-4" />
             </button>
-            <button type="button" onClick={() => importRef.current?.click()} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
+            <button type="button" onClick={() => importRef.current?.click()} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5 shrink-0 hidden sm:flex">
                <Upload className="w-4 h-4" />
             </button>
-            <button type="button" onClick={() => setHistoryOpen(!historyOpen)} className={`w-8 h-8 flex items-center justify-center transition-colors rounded-full hover:bg-white/5 ${historyOpen ? 'text-white bg-white/10' : 'text-gray-400 hover:text-white'}`}>
+            <button type="button" onClick={() => setHistoryOpen(!historyOpen)} className={`w-8 h-8 flex items-center justify-center transition-colors rounded-full hover:bg-white/5 shrink-0 ${historyOpen ? 'text-white bg-white/10' : 'text-gray-400 hover:text-white'}`}>
                <Clock className="w-4 h-4" />
             </button>
           </div>
@@ -440,7 +464,7 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
             type="button" 
             onClick={handleRun} 
             disabled={isRunning} 
-            className="bg-white text-black text-sm font-semibold rounded-full px-5 py-2.5 hover:bg-gray-200 transition-colors shadow-lg disabled:opacity-50 flex items-center gap-2"
+            className="bg-white text-black text-sm font-semibold rounded-full px-4 sm:px-5 py-2 sm:py-2.5 hover:bg-gray-200 transition-colors shadow-lg disabled:opacity-50 flex items-center gap-2 shrink-0 whitespace-nowrap"
           >
             {isRunning ? <><Loader2 className="w-4 h-4 animate-spin" /> Running...</> : 'Run Nodes'}
           </button>
@@ -476,16 +500,16 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
       </div>
 
       {/* Center Floating Bottom Node Dock (Krea Style) */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 pointer-events-auto">
-        <div className="bg-[#111111]/90 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-1.5 shadow-2xl flex items-center gap-1.5 overflow-x-auto max-w-[90vw] hide-scrollbar">
-          <div className="flex items-center px-3 gap-2 border-r border-white/10 mr-1 py-2">
+      <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 pointer-events-auto w-[95vw] sm:w-auto">
+        <div className="bg-[#111111]/90 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-1.5 shadow-2xl flex items-center gap-1.5 overflow-x-auto hide-scrollbar">
+          <div className="flex items-center px-3 gap-2 border-r border-white/10 mr-1 py-2 shrink-0">
              <Search className="w-4 h-4 text-gray-500" />
              <input
                 type="text"
                 placeholder="Search nodes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent outline-none text-xs text-white placeholder-gray-600 w-[100px]"
+                className="bg-transparent outline-none text-xs text-white placeholder-gray-600 w-[80px] sm:w-[100px]"
              />
           </div>
           
@@ -494,10 +518,11 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
               key={node.type}
               draggable
               onDragStart={(e) => handleDragStart(e, node.type)}
-              className="flex items-center gap-2 cursor-grab active:cursor-grabbing hover:bg-white/5 px-3 py-2 rounded-xl transition-all border border-transparent hover:border-white/[0.05]"
+              onClick={() => handleAddNodeClick(node.type)}
+              className="flex items-center gap-2 cursor-grab active:cursor-grabbing hover:bg-white/5 px-2.5 sm:px-3 py-2 rounded-xl transition-all border border-transparent hover:border-white/[0.05] shrink-0"
             >
               <div className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)]" style={{ background: node.color, boxShadow: `0 0 8px ${node.color}40` }} />
-              <span className="text-xs font-medium text-gray-300 whitespace-nowrap">{node.label}</span>
+              <span className="text-[11px] sm:text-xs font-medium text-gray-300 whitespace-nowrap">{node.label}</span>
             </div>
           ))}
         </div>
@@ -507,7 +532,6 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
       <div className="absolute bottom-6 left-6 z-40 pointer-events-auto overflow-hidden rounded-2xl border border-white/[0.06] shadow-2xl bg-[#0a0a0a]/80 backdrop-blur-xl w-32 h-24 hidden md:block opacity-60 hover:opacity-100 transition-opacity">
         {reactFlowInstance && (
           <div className="w-full h-full relative -z-10 pointer-events-none">
-             {/* We rely on ReactFlow Minimap standard if needed, but styling it manually via CSS in global might be cleaner. For now using built in with heavy overrides. */}
              <div className="absolute inset-0 bg-[#0a0a0a]" />
           </div>
         )}
@@ -515,9 +539,18 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
 
       {/* History Slide-over (Right side) */}
       {historyOpen && (
-        <div className="absolute top-20 right-4 bottom-24 w-80 bg-[#111111]/95 backdrop-blur-2xl border border-white/[0.06] shadow-2xl rounded-3xl z-40 overflow-hidden shadow-black/50">
-          <HistorySidebar className="bg-transparent h-full" />
-        </div>
+        <>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-30 sm:hidden" onClick={() => setHistoryOpen(false)} />
+          <div className="absolute top-0 right-0 bottom-0 sm:top-20 sm:right-4 sm:bottom-24 w-[85vw] sm:w-80 bg-[#111111]/95 backdrop-blur-2xl border-l sm:border border-white/[0.06] shadow-2xl sm:rounded-3xl z-40 overflow-hidden flex flex-col">
+            <div className="flex sm:hidden items-center justify-between p-4 border-b border-white/5">
+              <h3 className="text-white text-sm font-medium">History</h3>
+              <button type="button" onClick={() => setHistoryOpen(false)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white rounded-full bg-white/5">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <HistorySidebar className="bg-transparent flex-1 overflow-y-auto" />
+          </div>
+        </>
       )}
 
       {/* Empty State Overlay */}
