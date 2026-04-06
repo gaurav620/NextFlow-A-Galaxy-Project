@@ -273,21 +273,100 @@ export function Navbar({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
             </Link>
             <Link
               href="/dashboard"
-              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-[12px] sm:text-[13px] font-bold rounded-full transition-colors whitespace-nowrap border ${isLight ? 'text-black border-zinc-200 hover:bg-zinc-50' : 'text-white border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800'}`}
+              className={`hidden sm:block px-3 py-1.5 sm:px-4 sm:py-2 text-[12px] sm:text-[13px] font-bold rounded-full transition-colors whitespace-nowrap border ${isLight ? 'text-black border-zinc-200 hover:bg-zinc-50' : 'text-white border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800'}`}
             >
               Log in
             </Link>
           </div>
 
-          {/* Mobile hamburger */}
+          {/* Mobile hamburger — always shows, toggles overlay */}
           <button
-            className={`lg:hidden ${textColor} ml-1`}
-            onClick={() => setMobileOpen(!mobileOpen)}
+            className={`lg:hidden ${textColor} ml-1 p-1`}
+            onClick={() => setMobileOpen(true)}
+            aria-label="Open menu"
           >
-            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            <Menu className="w-6 h-6" />
           </button>
         </div>
       </div>
     </header>
+
+    {/* ── MOBILE FULL-SCREEN OVERLAY (Krea.ai style) ─────────────── */}
+    <AnimatePresence>
+      {mobileOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          className="fixed inset-0 z-[200] bg-black flex flex-col lg:hidden"
+          style={{ fontFamily: 'inherit' }}
+        >
+          {/* Top bar */}
+          <div className="flex items-center justify-between px-4 sm:px-6 h-[68px] flex-shrink-0">
+            <Link href="/" onClick={() => setMobileOpen(false)}>
+              <div className="w-7 h-7 rounded-[7px] bg-white flex items-center justify-center">
+                <span className="font-extrabold text-[13px] text-black tracking-tighter">N</span>
+              </div>
+            </Link>
+
+            <div className="flex items-center gap-2">
+              <Link
+                href="/pricing"
+                onClick={() => setMobileOpen(false)}
+                className="px-3.5 py-2 bg-white text-black text-[13px] font-bold rounded-full leading-none"
+              >
+                Sign up for free
+              </Link>
+              <Link
+                href="/dashboard"
+                onClick={() => setMobileOpen(false)}
+                className="px-3.5 py-2 bg-zinc-900 border border-zinc-700 text-white text-[13px] font-bold rounded-full leading-none"
+              >
+                Log in
+              </Link>
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="ml-1 text-white p-1"
+                aria-label="Close menu"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+
+          {/* Nav links — large Krea-style */}
+          <nav className="flex flex-col px-5 sm:px-8 flex-1 overflow-y-auto">
+            {[
+              { label: 'App', href: '/dashboard' },
+              { label: 'Image Generation', href: '/features/ai-image-generator' },
+              { label: 'Video Generation', href: '/features/ai-video-generator' },
+              { label: 'Upscale & Enhance', href: '/features/ai-upscaler' },
+              { label: 'Mini Apps', href: '/dashboard' },
+              { label: 'Pricing', href: '/pricing' },
+              { label: 'Enterprise', href: '#' },
+            ].map((item, i) => (
+              <motion.div
+                key={item.label}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04, duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <Link
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center py-5 text-white font-semibold text-[22px] sm:text-[26px] tracking-tight border-b border-white/[0.07] active:opacity-60 transition-opacity"
+                >
+                  {item.label}
+                </Link>
+              </motion.div>
+            ))}
+          </nav>
+
+          {/* Bottom blur — matches Krea screenshot */}
+          <div className="h-28 bg-gradient-to-t from-black to-transparent flex-shrink-0 pointer-events-none" />
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
