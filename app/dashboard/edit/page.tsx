@@ -7,6 +7,7 @@ import {
   Crop, Sliders, Sun, Brush, Box, Palette, ChevronRight, ChevronDown, Check, MousePointer2
 } from 'lucide-react';
 import { useAssetStore } from '@/store/assets';
+import { toast } from 'sonner';
 
 const MODELS = [
   { id: 'flux2', name: 'NextFlow 2 Klein', desc: 'Fast, high quality' },
@@ -109,6 +110,7 @@ export default function EditPage() {
           link.download = `nextflow-edit-${Date.now()}.jpg`;
           link.href = canvas.toDataURL('image/jpeg', 0.95);
           link.click();
+          toast.success('Image downloaded successfully');
         }
       };
       img.src = image;
@@ -118,6 +120,7 @@ export default function EditPage() {
       a.href = image;
       a.download = `nextflow-edit-${Date.now()}.jpg`;
       a.click();
+      toast.success('Image downloaded successfully');
     }
   };
 
@@ -136,7 +139,7 @@ export default function EditPage() {
           <div className="absolute top-6 left-6 right-6 flex justify-between z-40 items-start pointer-events-none">
             <div className="flex items-center gap-2 pointer-events-auto">
               <button 
-                onClick={() => setFilters({ brightness: 100, contrast: 100, saturation: 100, blur: 0, hue: 0 })}
+                onClick={() => { setFilters({ brightness: 100, contrast: 100, saturation: 100, blur: 0, hue: 0 }); toast.success('Filters reset'); }}
                 className="p-2 bg-[#1a1c23] hover:bg-[#2a2c35] transition-colors rounded-xl border border-white/5" 
                 title="Reset Filters"
               >

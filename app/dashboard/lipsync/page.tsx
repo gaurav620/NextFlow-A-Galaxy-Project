@@ -7,6 +7,7 @@ import {
   Smile, AlignLeft, Disc, Check, ArrowLeft
 } from 'lucide-react';
 import { useAssetStore } from '@/store/assets';
+import { toast } from 'sonner';
 
 const MODELS = [
   { id: 'nextflow-sync', name: 'NextFlow Sync', desc: 'Omnimodal lipsync model' },
@@ -70,6 +71,7 @@ export default function LipsyncPage() {
     
     setGenerating(false);
     setGenerateStep(null);
+    toast.success('Lipsync video generated');
   };
 
   const resetSession = () => {

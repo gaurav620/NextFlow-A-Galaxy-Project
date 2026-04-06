@@ -13,6 +13,7 @@ import {
   Wand2,
 } from "lucide-react";
 import { useAssetStore } from "@/store/assets";
+import { toast } from "sonner";
 
 type ModelOption = {
   id: string;
@@ -97,6 +98,7 @@ export default function ImagePage() {
   const [showResolutionMenu, setShowResolutionMenu] = useState(false);
   const [showImagePromptMenu, setShowImagePromptMenu] = useState(false);
   const [showRightPanel, setShowRightPanel] = useState(true);
+  const [rightTab, setRightTab] = useState<'settings' | 'history'>('settings');
 
   const [selectedCard, setSelectedCard] = useState(0);
 
@@ -142,6 +144,7 @@ export default function ImagePage() {
       }
 
       setResultImages((prev) => [...images, ...prev]);
+      toast.success(`Generated ${images.length} image${images.length > 1 ? 's' : ''} successfully`);
 
       for (const imageUrl of images) {
         addAsset({
@@ -154,6 +157,7 @@ export default function ImagePage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Image generation failed";
       setError(message);
+      toast.error(message);
     } finally {
       setIsGenerating(false);
     }
@@ -419,38 +423,80 @@ export default function ImagePage() {
       </div>
 
       {showRightPanel && (
-        <aside className="w-[280px] border-l border-white/[0.04] bg-[#09090b] p-4 flex-shrink-0 z-10 transition-all">
-          <div className="mb-4 flex items-center gap-2">
-            <Layers className="h-4 w-4 text-zinc-400" />
-            <h3 className="text-sm font-semibold text-zinc-200">Image settings</h3>
+        <aside className="hidden md:flex w-[280px] border-l border-white/[0.04] bg-[#09090b] flex-col flex-shrink-0 z-10 transition-all">
+          {/* Tab Switcher */}
+          <div className="flex border-b border-white/[0.04]">
+            <button
+              onClick={() => setRightTab('settings')}
+              className={`flex-1 py-3 text-[12px] font-semibold text-center transition-colors ${
+                rightTab === 'settings' ? 'text-white border-b-2 border-white' : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              Settings
+            </button>
+            <button
+              onClick={() => setRightTab('history')}
+              className={`flex-1 py-3 text-[12px] font-semibold text-center transition-colors ${
+                rightTab === 'history' ? 'text-white border-b-2 border-white' : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              History
+            </button>
           </div>
 
-          <div className="space-y-4 text-sm">
-            <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-              <p className="mb-1 text-xs text-zinc-500">Model</p>
-              <p className="font-medium text-zinc-100">{model.name}</p>
-              <p className="text-xs text-zinc-500">{model.subtitle}</p>
-            </div>
+          <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden p-4">
+            {rightTab === 'settings' && (
+              <div className="space-y-4 text-sm">
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                  <p className="mb-1 text-xs text-zinc-500">Model</p>
+                  <p className="font-medium text-zinc-100">{model.name}</p>
+                  <p className="text-xs text-zinc-500">{model.subtitle}</p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                  <p className="mb-1 text-xs text-zinc-500">Aspect ratio</p>
+                  <p className="font-medium text-zinc-100">{ratio}</p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                  <p className="mb-1 text-xs text-zinc-500">Resolution</p>
+                  <p className="font-medium text-zinc-100">{resolution}</p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                  <p className="mb-1 text-xs text-zinc-500">Negative prompt</p>
+                  <textarea
+                    value={negativePrompt}
+                    onChange={(e) => setNegativePrompt(e.target.value)}
+                    placeholder="Avoid objects, style or artifacts..."
+                    className="h-20 w-full resize-none rounded-lg border border-white/10 bg-black/30 p-2 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+            )}
 
-            <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-              <p className="mb-1 text-xs text-zinc-500">Aspect ratio</p>
-              <p className="font-medium text-zinc-100">{ratio}</p>
-            </div>
-
-            <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-              <p className="mb-1 text-xs text-zinc-500">Resolution</p>
-              <p className="font-medium text-zinc-100">{resolution}</p>
-            </div>
-
-            <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-              <p className="mb-1 text-xs text-zinc-500">Negative prompt</p>
-              <textarea
-                value={negativePrompt}
-                onChange={(e) => setNegativePrompt(e.target.value)}
-                placeholder="Avoid objects, style or artifacts..."
-                className="h-20 w-full resize-none rounded-lg border border-white/10 bg-black/30 p-2 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none"
-              />
-            </div>
+            {rightTab === 'history' && (
+              <div className="space-y-2">
+                {resultImages.length === 0 ? (
+                  <div className="text-center py-12">
+                    <ImageIcon className="w-8 h-8 text-zinc-700 mx-auto mb-3" />
+                    <p className="text-[13px] text-zinc-500">No generations yet</p>
+                    <p className="text-[11px] text-zinc-600 mt-1">Generate images to see them here</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    {resultImages.map((img, i) => (
+                      <div key={i} className="rounded-xl overflow-hidden border border-white/[0.06] group relative cursor-pointer">
+                        <img src={img} alt={`Gen ${i+1}`} className="w-full aspect-square object-cover" referrerPolicy="no-referrer" />
+                        <button
+                          onClick={() => handleDownload(img, i)}
+                          className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                        >
+                          <Download className="w-4 h-4 text-white" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </aside>
       )}

@@ -6,9 +6,11 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Home, Image as ImageIcon, Video, Wand2, Zap, PenTool, AudioLines, Sparkles, Folder, Network, Box, Film, Aperture, Fingerprint, Footprints, MicVocal, Accessibility, Compass, TriangleRight, Menu, PanelLeft, MoreHorizontal, Search, Plus, Settings, LogOut, PieChart
+  Home, Image as ImageIcon, Video, Wand2, Zap, PenTool, AudioLines, Sparkles, Folder, Network, Box, Film, Aperture, Fingerprint, Footprints, MicVocal, Accessibility, Compass, TriangleRight, Menu, PanelLeft, MoreHorizontal, Search, Plus, Settings, LogOut, PieChart, Clock
 } from 'lucide-react';
 import { ReferralModal } from '@/components/referral-modal';
+import { KeyboardShortcutsModal } from '@/components/keyboard-shortcuts-modal';
+import { useAssetStore } from '@/store/assets';
 
 const BananaIcon = (props: any) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={24} height={24} {...props}>
@@ -91,6 +93,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [showMoreTools, setShowMoreTools] = useState(false);
   const [referralOpen, setReferralOpen] = useState(false);
+
+  // Pull recent assets as sessions
+  const { assets } = useAssetStore();
+  const recentSessions = assets.slice(-5).reverse();
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -245,7 +251,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                      <Search className="w-3 h-3 text-zinc-400" />
                    </button>
                  </div>
-                 <span className="text-[12px] text-zinc-500 mt-1">No recent sessions</span>
+                 {recentSessions.length === 0 ? (
+                   <span className="text-[12px] text-zinc-500 mt-1">No recent sessions</span>
+                 ) : (
+                   <div className="flex flex-col gap-1 mt-1 max-h-[120px] overflow-y-auto [&::-webkit-scrollbar]:hidden">
+                     {recentSessions.map((asset) => (
+                       <div key={asset.id} className="flex items-center gap-2 px-1 py-1.5 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer group">
+                         <div className="w-7 h-7 rounded-md overflow-hidden flex-shrink-0 bg-zinc-800">
+                           <img src={asset.url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                         </div>
+                         <div className="flex-1 min-w-0">
+                           <p className="text-[11px] text-zinc-300 truncate">{asset.prompt.slice(0, 30) || asset.tool}</p>
+                           <p className="text-[10px] text-zinc-600 flex items-center gap-1"><Clock className="w-2.5 h-2.5" />{new Date(asset.timestamp).toLocaleDateString()}</p>
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                 )}
              </div>
              
              {/* Bottom Links */}
@@ -424,10 +446,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* ── MAIN CONTENT ── */}
       <div className="flex-1 w-full h-full relative overflow-y-auto bg-[#000000] md:pt-0 pt-14 flex flex-col">
-        {children}
+        <motion.div
+          key={pathname}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+          className="flex-1 flex flex-col"
+        >
+          {children}
+        </motion.div>
       </div>
       
       <ReferralModal isOpen={referralOpen} onClose={() => setReferralOpen(false)} />
+      <KeyboardShortcutsModal />
     </div>
   );
 }

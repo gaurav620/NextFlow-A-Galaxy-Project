@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { Upload, Sparkles, X, Clapperboard, MonitorPlay, Film, ArrowRight, UserRound, ArrowDownToLine, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { toast } from 'sonner';
 
 export default function MotionTransferPage() {
   const [sourceFile, setSourceFile] = useState<string | null>(null);
@@ -59,12 +60,13 @@ export default function MotionTransferPage() {
       const data = await response.json();
       if (data.success) {
         setResultVideo(data.videoUrl);
+        toast.success('Motion transfer complete');
       } else {
-        alert("Generation failed");
+        toast.error('Generation failed');
       }
     } catch(err) {
       console.error(err);
-      alert("Error occurred during generation");
+      toast.error('Error occurred during generation');
     } finally {
       setGenerating(false);
     }

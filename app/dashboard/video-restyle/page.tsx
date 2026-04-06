@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { Upload, Wand2, Sparkles, ArrowRight, Video, X, Link, Check, RotateCcw, Download, Search, Film, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 const PREDEFINED_STYLES = [
   { id: 'anime', name: 'Anime Aesthetic' },
@@ -65,12 +66,13 @@ export default function VideoRestylePage() {
       const data = await response.json();
       if (data.success) {
         setResult({ url: data.resultUrl, meta: data.meta });
+        toast.success("Video restyled successfully");
       } else {
-        alert("Generation failed: " + data.error);
+        toast.error("Generation failed: " + data.error);
       }
     } catch(err) {
       console.error(err);
-      alert("Error occurred during generation");
+      toast.error("Error occurred during generation");
     } finally {
       setGenerating(false);
     }

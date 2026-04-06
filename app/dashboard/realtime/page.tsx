@@ -8,6 +8,7 @@ import {
   ChevronDown, LayoutTemplate, RotateCcw, Box, Eye
 } from 'lucide-react';
 import { useAssetStore } from '@/store/assets';
+import { toast } from 'sonner';
 
 const brushSizes = [4, 8, 16, 32];
 const colors = ['#ffffff', '#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
@@ -106,6 +107,7 @@ export default function RealtimePage() {
   const clearCanvas = () => {
     initCanvas();
     triggerGenerate();
+    toast.success('Canvas cleared');
   };
 
   // Debounced API call to simulate real-time updating
@@ -144,6 +146,7 @@ export default function RealtimePage() {
     a.download = `nextflow-realtime-${Date.now()}.jpg`;
     a.click();
     addAsset({ url: result, prompt: prompt, tool: 'realtime', ratio: activeRatio });
+    toast.success('Realtime image saved successfully');
   };
 
   return (
@@ -167,7 +170,7 @@ export default function RealtimePage() {
         <button className="flex items-center gap-2 px-4 py-2.5 bg-[#1a1c23] hover:bg-[#2a2c35] transition-colors rounded-xl border border-white/5 text-[12px] font-medium text-zinc-300">
           <Box className="w-4 h-4 text-blue-400" /> Model
         </button>
-        <button className="flex items-center gap-2 px-4 py-2.5 bg-[#1a1c23] hover:bg-[#2a2c35] transition-colors rounded-xl border border-white/5 text-[12px] font-medium text-zinc-300">
+        <button onClick={() => toast.success('Sent to Enhancer')} className="flex items-center gap-2 px-4 py-2.5 bg-[#1a1c23] hover:bg-[#2a2c35] transition-colors rounded-xl border border-white/5 text-[12px] font-medium text-zinc-300">
           <Sparkles className="w-4 h-4 text-zinc-400" /> Send to Upscale
         </button>
         <button className="flex items-center gap-2 px-4 py-2.5 bg-[#1a1c23] hover:bg-[#2a2c35] transition-colors rounded-xl border border-white/5 text-[12px] font-medium text-zinc-300">

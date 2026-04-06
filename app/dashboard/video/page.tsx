@@ -5,6 +5,7 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Image as ImageIcon, Play, Download, X, AlertCircle, Pause, Settings2, Plus, Zap, Clock, ChevronDown, Check, Wand2, Video } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { toast } from 'sonner';
 
 const models = [
   { id: 'seedance2', name: 'Seedance 2.0', icon: '📊', desc: 'Flagship video model with native audio, references, and frame animation.', features: ['Start', 'End', 'References'], speed: 4, quality: 5, credits: 300 },
@@ -53,6 +54,8 @@ export default function VideoPage() {
   const [topModelsOpen, setTopModelsOpen] = useState(false);
   const [bottomModelsOpen, setBottomModelsOpen] = useState(false);
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+  const [endFrameRef, setEndFrameRef] = useState<string | null>(null);
+  const [endFrameBase64, setEndFrameBase64] = useState<string | null>(null);
 
   const handleImageDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -105,8 +108,11 @@ export default function VideoPage() {
         aspectRatio: aspect,
       }, ...prev]);
       setPrompt('');
+      toast.success('Video generated successfully');
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg);
+      toast.error(msg);
     } finally {
       setGenerating(false);
       setStep('');
@@ -355,6 +361,20 @@ export default function VideoPage() {
                 </div>
               </div>
             )}
+            {endFrameRef && (
+              <div className="px-6 pb-2">
+                <div className="relative inline-block border border-white/10 rounded-xl overflow-hidden group">
+                  <div className="absolute -top-0.5 left-1 text-[8px] font-bold text-zinc-400 bg-black/70 px-1 rounded-b z-10">END</div>
+                  <img src={endFrameRef} alt="End frame" className="h-16 w-16 object-cover" />
+                  <button 
+                    onClick={() => { setEndFrameRef(null); setEndFrameBase64(null); }}
+                    className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-4 h-4 text-white" />
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Bottom row: Setting Pills and Submit Button */}
             <div className="px-4 pb-4 pt-1 flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden">
@@ -377,6 +397,21 @@ export default function VideoPage() {
                 <ImageIcon className="w-3.5 h-3.5" />
                 <span>Start frame</span>
                 <input type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0]; if(f) loadImageRef(f) }} className="hidden" />
+              </label>
+
+              {/* End Frame Upload Pill */}
+              <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] text-[13px] font-medium text-zinc-300 transition-colors cursor-pointer">
+                <ImageIcon className="w-3.5 h-3.5 opacity-60" />
+                <span>End frame</span>
+                <input type="file" accept="image/*" onChange={e => {
+                  const f = e.target.files?.[0];
+                  if (f) {
+                    setEndFrameRef(URL.createObjectURL(f));
+                    const reader = new FileReader();
+                    reader.onload = () => setEndFrameBase64((reader.result as string).split(',')[1]);
+                    reader.readAsDataURL(f);
+                  }
+                }} className="hidden" />
               </label>
 
               {/* Aspect Ratio / Quality Popover */}

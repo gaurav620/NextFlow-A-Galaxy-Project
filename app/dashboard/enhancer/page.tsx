@@ -19,6 +19,7 @@ import {
   Eye,
   MenuSquare
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const models = [
   { id: 'krea-enhance', name: 'Krea Enhance', icon: '✨', desc: 'Excellent AI enhancement, great overall details.', credits: 10 },
@@ -97,9 +98,12 @@ export default function EnhancerPage() {
       const data = await apiResponse.json();
       if (!data.success) throw new Error(data.error || 'Enhancement failed');
       
-      setResult(data.enhanced || image); 
+      setResult(data.enhanced || image);
+      toast.success('Image enhanced successfully');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Enhancement failed');
+      const msg = err instanceof Error ? err.message : 'Enhancement failed';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setGenerating(false);
     }

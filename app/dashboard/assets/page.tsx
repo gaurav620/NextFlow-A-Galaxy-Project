@@ -21,6 +21,7 @@ import {
   Maximize2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 type FilterCategory = 'All' | 'Favorites';
 type ToolFilter = string;
@@ -223,7 +224,7 @@ export default function AssetsPage() {
                             <Download className="w-4 h-4" />
                         </button>
                         <button 
-                            onClick={() => removeAsset(asset.id)}
+                            onClick={() => { removeAsset(asset.id); toast.success('Asset deleted'); }}
                             className="w-10 h-10 flex items-center justify-center bg-black/50 hover:bg-red-500/80 backdrop-blur-md rounded-xl transition-all border border-white/10 text-white"
                         >
                             <Trash2 className="w-4 h-4" />

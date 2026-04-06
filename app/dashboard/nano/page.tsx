@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, Download, Image as ImageIcon, ChevronDown, Check, Expand, Plus, Search, CircleDashed } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAssetStore } from '@/store/assets';
+import { toast } from 'sonner';
 
 const models = [
   { id: 'nano-pro', name: 'NextFlow Nano Pro', sub: 'Highest quality, ~10s' },
@@ -76,8 +77,10 @@ export default function NanoPage() {
         tool: 'nano',
         ratio: selectedRatio.id
       });
+      toast.success('Generated successfully');
     } catch (err) {
       setError("Failed to generate image. Please try again.");
+      toast.error('Failed to generate image');
     } finally {
       setGenerating(false);
     }
@@ -89,6 +92,7 @@ export default function NanoPage() {
     a.href = result;
     a.download = `nextflow-nano-${Date.now()}.jpg`;
     a.click();
+    toast.success('Image downloaded successfully');
   };
 
   return (

@@ -402,6 +402,47 @@ export default function DashboardHome() {
           </div>
         </motion.section>
 
+        {/* ── FROM THE COMMUNITY ────────────────────────────────── */}
+        <motion.section variants={itemVariants} id="community-gallery">
+          <SectionHeader title="From the community" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {[
+              { title: 'Cyberpunk City', image: '/bento-eye.png', author: 'studiox', likes: '2.4k' },
+              { title: 'Fantasy Portrait', image: '/card-portrait.png', author: 'artflow', likes: '1.8k' },
+              { title: 'Neon Warrior', image: '/bento-warrior.png', author: 'neoart', likes: '3.1k' },
+              { title: 'Speed Racer', image: '/bento-speed.png', author: 'pixelguru', likes: '890' },
+              { title: 'Desert Truck', image: '/card-truck.png', author: 'trucknft', likes: '1.2k' },
+              { title: 'Capybara Dreams', image: '/card-capybara.png', author: 'dreamcore', likes: '4.5k' },
+            ].map((item) => (
+              <motion.div whileHover={hoverSpring} key={item.title}>
+                <div className="group rounded-[16px] overflow-hidden border border-white/[0.04] hover:border-white/[0.12] transition-all cursor-pointer bg-[#111] shadow-lg">
+                  <div className="relative aspect-square overflow-hidden bg-zinc-900">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-zinc-800 to-zinc-900 animate-pulse" />
+                    <img
+                      src={item.image}
+                      alt={item.title}
+                      className="relative w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                      onLoad={(e) => {
+                        const target = e.currentTarget;
+                        if (target.previousElementSibling) (target.previousElementSibling as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                  <div className="p-2.5">
+                    <p className="text-[11px] font-semibold text-zinc-200 truncate">{item.title}</p>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-[10px] text-zinc-500">@{item.author}</span>
+                      <span className="text-[10px] text-zinc-500 flex items-center gap-0.5"><Heart className="w-2.5 h-2.5" />{item.likes}</span>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.section>
+
         {/* ── RELEASE NOTES ────────────────────────────────────── */}
         <motion.section variants={itemVariants} id="release-notes">
           <div className="flex items-center justify-between mb-6">

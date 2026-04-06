@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { Upload, Box, Image as ImageIcon, Sparkles, ArrowRight, X, Type, FileImage, Download, RotateCcw, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 export default function ThreeDPage() {
   const [mode, setMode] = useState<'image' | 'text'>('image');
@@ -49,12 +50,13 @@ export default function ThreeDPage() {
       const data = await response.json();
       if (data.success) {
         setResult({ url: data.modelUrl, format: data.format, style: data.meshStyle });
+        toast.success('3D object generated');
       } else {
-        alert("Generation failed: " + data.error);
+        toast.error("Generation failed: " + data.error);
       }
     } catch(err) {
       console.error(err);
-      alert("Error occurred during generation");
+      toast.error("Error occurred during generation");
     } finally {
       setGenerating(false);
     }
