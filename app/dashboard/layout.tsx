@@ -87,7 +87,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   // Clone specific states
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [showMoreTools, setShowMoreTools] = useState(false);
 
   // Close mobile menu on route change
@@ -257,7 +257,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
 
         {/* Profile */}
-        <div className={`mt-2 mb-3 ${isCollapsed ? 'flex justify-center' : 'px-4'}`}>
+        <div className={`mt-2 mb-3 ${isCollapsed ? 'flex flex-col items-center gap-3' : 'px-4'}`}>
           <button 
             onClick={() => setProfileOpen(!profileOpen)}
             className={`flex items-center relative gap-3 rounded-[12px] hover:bg-white/[0.04] transition-colors ${
@@ -279,10 +279,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </div>
                )}
             </div>
-            
-            {!isCollapsed && (
-               <div className="hidden" /> // No more-horizontal icon in krea's screenshot for profile
-            )}
             
             {/* Tooltip for Profile in collapsed state */}
             {isCollapsed && (
@@ -328,6 +324,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Bottom Sidebar Collapse Toggle */}
+          <button
+             onClick={() => setIsCollapsed(!isCollapsed)}
+             className={`hidden md:flex items-center justify-center text-zinc-500 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/[0.04] ${isCollapsed ? 'mt-2 mb-2' : 'absolute bottom-3 right-4'}`}
+             title="Toggle Sidebar"
+          >
+             {isCollapsed ? <TriangleRight className="w-4 h-4 fill-current rotate-0" /> : <TriangleRight className="w-4 h-4 fill-current rotate-180" />}
+          </button>
         </div>
       </div>
     </div>

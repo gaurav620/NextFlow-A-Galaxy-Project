@@ -55,10 +55,10 @@ export function Navbar({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-          <div className={`w-6 h-6 rounded-md flex items-center justify-center ${isLight ? 'bg-black text-white' : 'bg-white text-black'}`}>
+          <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${isLight ? 'bg-black text-white' : 'bg-white text-black'}`}>
             <span className="font-extrabold text-sm font-sans tracking-tighter">N</span>
           </div>
-          <span className={`font-semibold text-lg tracking-tight ${textColor}`}>NextFlow</span>
+          <span className={`font-semibold text-lg tracking-tight hidden sm:block ${textColor}`}>NextFlow</span>
         </Link>
 
         {/* Desktop Nav */}
@@ -263,13 +263,13 @@ export function Navbar({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         </nav>
 
         {/* CTA Buttons & Hamburger */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <Link
               href="/pricing"
               className={`px-3 py-1.5 sm:px-4 sm:py-2 text-[12px] sm:text-[13px] font-bold rounded-full transition-colors whitespace-nowrap ${isLight ? 'text-black bg-zinc-100 hover:bg-zinc-200' : 'text-black bg-white hover:bg-zinc-200'}`}
             >
-              Sign up for free
+              Sign up <span className="hidden min-[380px]:inline">for free</span>
             </Link>
             <Link
               href="/dashboard"

@@ -219,50 +219,61 @@ function SectionHeader({ title, hasSearch, onScrollLeft, onScrollRight }: {
 }
 
 /* ─── HERO BANNER ─────────────────────────────────────────── */
-function BentoGridHero() {
+function DashboardHero() {
   return (
-    <motion.section variants={itemVariants} className="grid grid-cols-1 md:grid-cols-12 gap-4">
-      {/* Large Featured Card (Video) */}
-      <Link href="/dashboard/video" className="md:col-span-8 group relative rounded-[16px] overflow-hidden border border-white/[0.05] shadow-xl block cursor-pointer transition-all hover:border-white/[0.15]" style={{ minHeight: '400px' }}>
-        <img src="/v-kling.png" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-        <div className="absolute bottom-6 left-6 flex flex-col gap-2 z-10">
-          <div className="flex items-center gap-2 mb-1">
-             <div className="bg-white/10 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/10 flex flex-center">
-                <span className="text-white text-[10px] font-bold tracking-widest uppercase">Video</span>
-             </div>
-             <span className="bg-orange-500/20 text-orange-300 border border-orange-500/30 px-2.5 py-1 rounded-md text-[10px] font-bold tracking-widest uppercase flex items-center gap-1.5"><Sparkles className="w-3 h-3"/> New</span>
-          </div>
-          <h2 className="text-white text-[32px] md:text-[40px] font-black tracking-tight leading-tight">NextFlow Video is here</h2>
-          <p className="text-zinc-300 text-[14px] font-medium max-w-md mt-1">The most advanced frontier model with native audio. Try the world-class video generation now.</p>
-        </div>
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-      </Link>
+    <div className="flex flex-col gap-10">
+       {/* Big Blue Banner */}
+       <motion.div variants={itemVariants} className="w-full bg-[#8fbce1] rounded-[20px] h-[360px] flex flex-col items-center justify-center p-8 text-center relative overflow-hidden shadow-sm">
+           <div className="absolute inset-0 bg-gradient-to-b from-[#9ac7e8] to-[#8fbce1] pointer-events-none" />
+           <h1 className="text-white text-[clamp(44px,5vw,54px)] tracking-tight mb-8 relative z-10 drop-shadow-sm font-sans" style={{ fontWeight: 500 }}>
+             Start by generating a free image
+           </h1>
+           <div className="flex items-center gap-4 relative z-10">
+              <Link href="/dashboard/image" className="bg-white text-zinc-900 font-bold text-[14px] px-6 py-3 rounded-full hover:bg-zinc-50 transition-colors shadow-sm flex items-center gap-2 tracking-wide">
+                 Generate Image <ArrowRight className="w-4 h-4 opacity-70" />
+              </Link>
+              <Link href="/dashboard/video" className="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-bold text-[14px] px-6 py-3 rounded-full transition-colors flex items-center gap-2 tracking-wide">
+                 Generate Video <ArrowRight className="w-4 h-4 opacity-70" />
+              </Link>
+           </div>
+       </motion.div>
 
-      {/* Right Column Stack */}
-      <div className="md:col-span-4 flex flex-col gap-4">
-        {/* Upscale Card */}
-        <Link href="/dashboard/enhancer" className="flex-1 group relative rounded-[16px] overflow-hidden border border-white/[0.05] shadow-xl block cursor-pointer transition-all hover:border-white/[0.15]">
-          <img src="/m-flux2.png" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
-          <div className="absolute bottom-5 left-5 z-10">
-            <h3 className="text-white text-[18px] font-bold tracking-tight mb-1">Enhance & Upscale</h3>
-            <p className="text-zinc-400 text-[13px] font-medium">Crystal clear clarity in seconds</p>
-          </div>
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-        </Link>
-        {/* Realtime Card */}
-        <Link href="/dashboard/realtime" className="flex-1 group relative rounded-[16px] overflow-hidden border border-white/[0.05] shadow-xl block cursor-pointer transition-all hover:border-white/[0.15]">
-          <img src="/bento-eye.png" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 grayscale opacity-80" />
-           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-          <div className="absolute bottom-5 left-5 z-10">
-            <h3 className="text-white text-[18px] font-bold tracking-tight mb-1 flex gap-2 items-center"><Zap className="w-4 h-4 fill-yellow-400 text-yellow-400"/> Realtime</h3>
-            <p className="text-zinc-400 text-[13px] font-medium">Draw and generate live</p>
-          </div>
-           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-        </Link>
-      </div>
-    </motion.section>
+       {/* Quick Actions 4-Card Nav */}
+       <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 gap-5">
+           {quickActions.map((action, i) => (
+              <Link key={action.label} href={action.href} className="group relative outline-none flex flex-col">
+                 <div className="w-full rounded-[16px] overflow-hidden bg-[#111] relative shadow-lg" style={{ aspectRatio: '16/9' }}>
+                    <img src={action.image} className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 ${i === 2 ? 'grayscale' : ''}`} alt={action.label} />
+                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors duration-500" />
+                    {/* Centered Icon Box */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                       {i === 0 && (
+                          <div className="w-[42px] h-[42px] bg-white rounded-xl flex items-center justify-center shadow-[0_4px_16px_rgba(0,161,255,0.4)] group-hover:scale-110 transition-transform duration-300">
+                             <ImageIcon className="w-5 h-5 text-[#4B9FFF] fill-blue-50" />
+                          </div>
+                       )}
+                       {i === 1 && (
+                          <div className="w-[42px] h-[42px] bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center shadow-[0_4px_16px_rgba(255,140,0,0.4)] group-hover:scale-110 transition-transform duration-300">
+                             <Video className="w-5 h-5 text-white fill-current" />
+                          </div>
+                       )}
+                       {i === 2 && (
+                          <div className="w-[42px] h-[42px] bg-black/90 rounded-xl border border-white/10 flex items-center justify-center backdrop-blur-md shadow-[0_4px_16px_rgba(0,0,0,0.6)] group-hover:scale-110 transition-transform duration-300">
+                             <Sparkles className="w-5 h-5 text-white/90" />
+                          </div>
+                       )}
+                       {i === 3 && (
+                          <div className="w-[42px] h-[42px] bg-[#00A1FF] rounded-xl flex items-center justify-center shadow-[0_4px_16px_rgba(0,161,255,0.4)] group-hover:scale-110 transition-transform duration-300">
+                             <PenTool className="w-5 h-5 text-white" />
+                          </div>
+                       )}
+                    </div>
+                 </div>
+                 <p className="text-zinc-100 font-medium text-[14.5px] tracking-tight mt-3 group-hover:text-white transition-colors">{action.label}</p>
+              </Link>
+           ))}
+       </motion.div>
+    </div>
   );
 }
 
@@ -289,7 +300,7 @@ export default function DashboardHome() {
       >
 
         {/* ── HERO BANNER ──────────────────────────────────────── */}
-        <BentoGridHero />
+        <DashboardHero />
 
         {/* ── UPGRADE BANNER ──────────────────────────────────── */}
         <motion.div
