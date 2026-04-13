@@ -5,7 +5,6 @@ import {
   ReactFlow,
   Background,
   BackgroundVariant,
-  Controls,
   MiniMap,
   applyNodeChanges,
   applyEdgeChanges,
@@ -31,8 +30,6 @@ import { useAssetStore } from '@/store/assets'
 
 import {
   ChevronLeft,
-  Share2,
-  Settings,
   Search,
   Workflow,
   Loader2,
@@ -40,18 +37,20 @@ import {
   Upload,
   Undo2,
   Redo2,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Menu,
   X,
   Clock,
+  Play,
+  Type,
+  ImageIcon,
+  Video,
+  Sparkles,
+  Scissors,
+  Film,
+  Plus,
+  MousePointer2,
+  ChevronDown,
+  Zap,
 } from 'lucide-react'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
 
 const nodeTypes = {
   textNode: TextNode,
@@ -63,22 +62,38 @@ const nodeTypes = {
   imageGenNode: ImageGenNode,
 }
 
-const nodeDefinitions = [
-  { type: 'textNode', label: 'Text', color: '#3b82f6' },
-  { type: 'imageUploadNode', label: 'Upload Image', color: '#22c55e' },
-  { type: 'videoUploadNode', label: 'Upload Video', color: '#f97316' },
-  { type: 'llmNode', label: 'Run LLM', color: '#a855f7' },
-  { type: 'imageGenNode', label: 'Image Gen', color: '#0ea5e9' },
-  { type: 'cropImageNode', label: 'Crop Image', color: '#ec4899' },
-  { type: 'extractFrameNode', label: 'Extract Frame', color: '#eab308' },
+const nodeCategories = [
+  {
+    label: 'Media',
+    icon: <ImageIcon className="w-3 h-3" />,
+    nodes: [
+      { type: 'imageUploadNode', label: 'Upload Image', color: '#22c55e', icon: <ImageIcon className="w-3.5 h-3.5" /> },
+      { type: 'videoUploadNode', label: 'Upload Video', color: '#f97316', icon: <Video className="w-3.5 h-3.5" /> },
+    ],
+  },
+  {
+    label: 'AI',
+    icon: <Sparkles className="w-3 h-3" />,
+    nodes: [
+      { type: 'imageGenNode', label: 'Generate Image', color: '#0ea5e9', icon: <Zap className="w-3.5 h-3.5" /> },
+      { type: 'llmNode', label: 'Run LLM', color: '#a855f7', icon: <Sparkles className="w-3.5 h-3.5" /> },
+    ],
+  },
+  {
+    label: 'Utility',
+    icon: <Scissors className="w-3 h-3" />,
+    nodes: [
+      { type: 'textNode', label: 'Text', color: '#3b82f6', icon: <Type className="w-3.5 h-3.5" /> },
+      { type: 'cropImageNode', label: 'Crop Image', color: '#ec4899', icon: <Scissors className="w-3.5 h-3.5" /> },
+      { type: 'extractFrameNode', label: 'Extract Frame', color: '#eab308', icon: <Film className="w-3.5 h-3.5" /> },
+    ],
+  },
 ]
 
-/** DFS cycle check: can we reach `target` starting from `source` in the current graph? */
-function hasCycle(
-  source: string,
-  target: string,
-  edges: { source: string; target: string }[]
-): boolean {
+const allNodes = nodeCategories.flatMap(c => c.nodes)
+
+/** DFS cycle check */
+function hasCycle(source: string, target: string, edges: { source: string; target: string }[]): boolean {
   const visited = new Set<string>()
   const stack = [target]
   while (stack.length) {
@@ -111,17 +126,16 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [dagError, setDagError] = useState<string | null>(null)
-  const [leftSidebarOpen, setLeftSidebarOpen] = useState(true)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [historyOpen, setHistoryOpen] = useState(true)
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [nodePanelOpen, setNodePanelOpen] = useState(true)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
   const importRef = useRef<HTMLInputElement>(null)
 
-  // Ensure nodes/edges are always arrays
   const safeNodes = useMemo(() => Array.isArray(nodes) ? nodes : [], [nodes])
   const safeEdges = useMemo(() => Array.isArray(edges) ? edges : [], [edges])
 
-  // Load workflow from DB when opening an existing workflow (id !== 'new')
+  // Load workflow from DB
   useEffect(() => {
     if (!id || id === 'new') return
     fetch(`/api/workflow/${id}`)
@@ -138,7 +152,7 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
       .catch(err => console.error('Failed to load workflow:', err))
   }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Keyboard shortcuts: Cmd+Z / Cmd+Shift+Z
+  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey)) return
@@ -159,7 +173,7 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
   )
 
   async function handleRun() {
-    if (!safeNodes.length) { alert('Add some nodes first!'); return }
+    if (!safeNodes.length) { setDagError('Add some nodes first!'); setTimeout(() => setDagError(null), 3000); return }
     setIsRunning(true)
     resetOutputs()
     let workflowRunId = 'local-' + Date.now()
@@ -180,17 +194,15 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
         removeExecutingNode(nodeId)
         setNodeOutput(nodeId, output)
         updateNodeData(nodeId, { output: String(output || ''), error: undefined })
-        
-        // Auto-save generated images/videos to Assets Gallery
         if (output && typeof output === 'string' && output.startsWith('http')) {
-          const node = (safeNodes as any[]).find(n => n.id === nodeId);
+          const node = (safeNodes as any[]).find(n => n.id === nodeId)
           if (node && ['imageGenNode', 'extractFrameNode', 'cropImageNode'].includes(node.type)) {
             useAssetStore.getState().addAsset({
               url: output,
               prompt: node.data?.prompt || `Generated from ${node.label || node.type}`,
               tool: 'workflow',
               ratio: '1:1',
-            });
+            })
           }
         }
       },
@@ -200,87 +212,32 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
       }
     })
     setIsRunning(false)
-  }
-
-  async function handleRunSelected() {
-    if (!selectedNodeIds.length) return
-    setIsRunning(true)
-    resetOutputs()
-    let workflowRunId = 'local-' + Date.now()
-    if (currentWorkflowId) {
-      try {
-        const res = await fetch(`/api/workflow/${currentWorkflowId}/runs`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ scope: 'partial', nodeIds: selectedNodeIds })
-        })
-        const data = await res.json()
-        if (data.success) workflowRunId = data.run.id
-      } catch {}
-    }
-    const upstreamIds = new Set<string>(selectedNodeIds)
-    let changed = true
-    while (changed) {
-      changed = false
-      for (const edge of safeEdges as any[]) {
-        if (upstreamIds.has(edge.target) && !upstreamIds.has(edge.source)) {
-          upstreamIds.add(edge.source)
-          changed = true
-        }
-      }
-    }
-    const subNodes = (safeNodes as any[]).filter(n => upstreamIds.has(n.id))
-    const subEdges = (safeEdges as any[]).filter(e => upstreamIds.has(e.source) && upstreamIds.has(e.target))
-    await executeWorkflow(subNodes, subEdges, workflowRunId, {
-      onNodeStart: (nodeId) => addExecutingNode(nodeId),
-      onNodeComplete: (nodeId, output) => {
-        removeExecutingNode(nodeId)
-        setNodeOutput(nodeId, output)
-        updateNodeData(nodeId, { output: String(output || ''), error: undefined })
-
-        // Auto-save generated images/videos to Assets Gallery
-        if (output && typeof output === 'string' && output.startsWith('http')) {
-          const node = (safeNodes as any[]).find(n => n.id === nodeId);
-          if (node && ['imageGenNode', 'extractFrameNode', 'cropImageNode'].includes(node.type)) {
-            useAssetStore.getState().addAsset({
-              url: output,
-              prompt: node.data?.prompt || `Generated from ${node.label || node.type}`,
-              tool: 'workflow',
-              ratio: '1:1',
-            });
-          }
-        }
-      },
-      onNodeError: (nodeId, error) => {
-        removeExecutingNode(nodeId)
-        updateNodeData(nodeId, { error })
-      }
-    })
-    setIsRunning(false)
+    // After run, refresh history
+    setHistoryOpen(true)
   }
 
   async function handleSave() {
-    if (!safeNodes.length) { alert('Nothing to save!'); return }
-    const res = await fetch('/api/workflow', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: workflowName || 'Untitled Workflow',
-        data: { nodes: safeNodes, edges: safeEdges },
-        workflowId: currentWorkflowId
+    if (!safeNodes.length) { setDagError('Nothing to save!'); setTimeout(() => setDagError(null), 3000); return }
+    setSaveStatus('saving')
+    try {
+      const res = await fetch('/api/workflow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: workflowName || 'Untitled Workflow',
+          data: { nodes: safeNodes, edges: safeEdges },
+          workflowId: currentWorkflowId
+        })
       })
-    })
-    const data = await res.json()
-    if (data.success) {
-      setCurrentWorkflowId(data.workflow.id)
-      alert('Workflow saved successfully!')
+      const data = await res.json()
+      if (data.success) {
+        setCurrentWorkflowId(data.workflow.id)
+        setSaveStatus('saved')
+        setTimeout(() => setSaveStatus('idle'), 2000)
+      }
+    } catch {
+      setSaveStatus('idle')
     }
-  }
-
-  function handleLoadSample() {
-    setNodes(sampleWorkflow.nodes as any)
-    setEdges(sampleWorkflow.edges as any)
-    setWorkflowName('Product Marketing Kit Generator')
   }
 
   function handleExport() {
@@ -310,7 +267,8 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
         if (json.data?.edges) setEdges(json.data.edges)
         if (json.name) setWorkflowName(json.name)
       } catch {
-        alert('Invalid workflow JSON file')
+        setDagError('Invalid workflow JSON file')
+        setTimeout(() => setDagError(null), 3000)
       }
     }
     reader.readAsText(file)
@@ -351,20 +309,13 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
   const handleAddNodeClick = useCallback(
     (nodeType: string) => {
       if (!reactFlowInstance) return
-      // Use center of screen or defaults if not available
-      const centerX = window.innerWidth / 2;
-      const centerY = window.innerHeight / 2;
-      
-      const position = reactFlowInstance.screenToFlowPosition({
-        x: centerX,
-        y: centerY,
-      })
-      
+      const centerX = window.innerWidth / 2
+      const centerY = window.innerHeight / 2
+      const position = reactFlowInstance.screenToFlowPosition({ x: centerX, y: centerY })
       const newNode: any = {
         id: crypto.randomUUID(),
         data: { label: nodeType },
-        // Offset slightly randomly so multiple taps don't perfectly overlap
-        position: { x: position.x + (Math.random() - 0.5) * 50, y: position.y + (Math.random() - 0.5) * 50 },
+        position: { x: position.x + (Math.random() - 0.5) * 80, y: position.y + (Math.random() - 0.5) * 80 },
         type: nodeType,
       }
       setNodes((nds: any) => [...nds, newNode])
@@ -395,92 +346,19 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
     setSelectedNodeIds(Array.isArray(selectedNodes) ? selectedNodes.map((n: any) => n.id) : [])
   }, [])
 
-  const filteredNodes = nodeDefinitions.filter((node) =>
+  const filteredNodes = allNodes.filter((node) =>
     node.label.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  const filteredCategories = searchQuery
+    ? [{ label: 'Results', icon: <Search className="w-3 h-3" />, nodes: filteredNodes }]
+    : nodeCategories
+
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-[#0A0A0A] font-sans">
-      {/* Top Floating Header */}
-      <div className="absolute top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-40 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0 pointer-events-none">
-        
-        {/* Left: Back & Name */}
-        <div className="flex items-center gap-2 pointer-events-auto bg-[#111111]/90 backdrop-blur-md rounded-full px-2 py-1.5 border border-white/[0.06] shadow-xl max-w-full">
-          <button type="button" onClick={() => router.back()} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5 shrink-0">
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <div className="h-4 w-px bg-white/10 mx-0.5 sm:mx-1 shrink-0" />
-          <input
-            type="text"
-            value={workflowName}
-            onChange={(e) => setWorkflowName(e.target.value)}
-            className="bg-transparent text-white text-sm font-medium border-0 outline-none w-[100px] sm:w-[140px] px-2 focus:ring-0"
-            placeholder="Untitled Node"
-          />
-        </div>
-
-        {/* Right: Actions */}
-        <div className="flex items-center gap-2 pointer-events-auto max-w-full overflow-x-auto hide-scrollbar pb-1 sm:pb-0">
-          <div className="flex items-center bg-[#111111]/90 backdrop-blur-md rounded-full px-1.5 py-1.5 border border-white/[0.06] shadow-xl shrink-0">
-            <TooltipProvider delayDuration={0}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button type="button" onClick={undo} disabled={past.length === 0} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5 disabled:opacity-30 shrink-0">
-                    <Undo2 className="w-4 h-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="border-white/10 bg-[#111] text-xs">Undo (⌘Z)</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <TooltipProvider delayDuration={0}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button type="button" onClick={redo} disabled={future.length === 0} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5 disabled:opacity-30 shrink-0">
-                    <Redo2 className="w-4 h-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="border-white/10 bg-[#111] text-xs">Redo (⌘⇧Z)</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-             <div className="h-4 w-px bg-white/10 mx-1 shrink-0" />
-
-            <button type="button" onClick={handleSave} className="px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-white transition-colors shrink-0">
-              Save
-            </button>
-            <button type="button" onClick={handleExport} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5 shrink-0 hidden sm:flex">
-              <Download className="w-4 h-4" />
-            </button>
-            <button type="button" onClick={() => importRef.current?.click()} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5 shrink-0 hidden sm:flex">
-               <Upload className="w-4 h-4" />
-            </button>
-            <button type="button" onClick={() => setHistoryOpen(!historyOpen)} className={`w-8 h-8 flex items-center justify-center transition-colors rounded-full hover:bg-white/5 shrink-0 ${historyOpen ? 'text-white bg-white/10' : 'text-gray-400 hover:text-white'}`}>
-               <Clock className="w-4 h-4" />
-            </button>
-          </div>
-
-          <button 
-            type="button" 
-            onClick={handleRun} 
-            disabled={isRunning} 
-            className="bg-white text-black text-sm font-semibold rounded-full px-4 sm:px-5 py-2 sm:py-2.5 hover:bg-gray-200 transition-colors shadow-lg disabled:opacity-50 flex items-center gap-2 shrink-0 whitespace-nowrap"
-          >
-            {isRunning ? <><Loader2 className="w-4 h-4 animate-spin" /> Running...</> : 'Run Nodes'}
-          </button>
-        </div>
-      </div>
-
-      {/* Hidden Files & Errors */}
-      <input ref={importRef} type="file" accept=".json" onChange={handleImport} className="hidden" />
-      {dagError && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50 bg-red-500/90 text-white text-xs px-4 py-2 rounded-full shadow-lg backdrop-blur-md">
-          {dagError}
-        </div>
-      )}
-
-      {/* React Flow Canvas */}
-      <div className="absolute inset-0 z-0">
+    <div className="relative h-screen w-full overflow-hidden" style={{ background: '#050505' }}>
+      
+      {/* ── ReactFlow Canvas ── */}
+      <div ref={reactFlowWrapper} className="absolute inset-0 z-0">
         <ReactFlow
           nodes={safeNodes as any}
           edges={safeEdges as any}
@@ -494,75 +372,340 @@ export default function WorkflowCanvas({ id, router }: WorkflowCanvasProps) {
           onSelectionChange={onSelectionChange}
           fitView
           deleteKeyCode="Delete"
+          proOptions={{ hideAttribution: true }}
+          style={{ background: 'transparent' }}
         >
-          <Background variant={BackgroundVariant.Dots} color="rgba(255,255,255,0.08)" gap={24} size={1.5} />
+          <Background
+            variant={BackgroundVariant.Dots}
+            color="rgba(255,255,255,0.06)"
+            gap={28}
+            size={1.2}
+          />
+          {/* Bottom-right MiniMap */}
+          <MiniMap
+            style={{
+              background: '#0a0a0a',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: '12px',
+            }}
+            maskColor="rgba(0,0,0,0.6)"
+            nodeColor={() => 'rgba(255,255,255,0.15)'}
+            className="!bottom-[80px] !right-4"
+          />
         </ReactFlow>
       </div>
 
-      {/* Center Floating Bottom Node Dock (Krea Style) */}
-      <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 pointer-events-auto w-[95vw] sm:w-auto">
-        <div className="bg-[#111111]/90 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-1.5 shadow-2xl flex items-center gap-1.5 overflow-x-auto hide-scrollbar">
-          <div className="flex items-center px-3 gap-2 border-r border-white/10 mr-1 py-2 shrink-0">
-             <Search className="w-4 h-4 text-gray-500" />
-             <input
+      {/* ── Floating Error Toast ── */}
+      {dagError && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 bg-[#1a0a0a] border border-red-500/30 text-red-400 text-xs px-4 py-2 rounded-xl shadow-2xl backdrop-blur-xl flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+          {dagError}
+        </div>
+      )}
+
+      {/* ── TOP BAR ── */}
+      <div className="absolute top-3 left-3 right-3 z-40 flex items-center justify-between pointer-events-none">
+        
+        {/* Left: Back + Name */}
+        <div className="flex items-center gap-2 pointer-events-auto">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#111]/80 backdrop-blur-xl border border-white/[0.07] rounded-xl text-gray-400 hover:text-white transition-all text-xs shadow-xl hover:bg-white/[0.06]"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Workflow name pill */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111]/80 backdrop-blur-xl border border-white/[0.07] rounded-xl shadow-xl">
+            <div className="w-5 h-5 rounded-md bg-[#1a1a2e] border border-white/10 flex items-center justify-center flex-shrink-0">
+              <Workflow className="w-3 h-3 text-purple-400" />
+            </div>
+            <input
+              type="text"
+              value={workflowName}
+              onChange={(e) => setWorkflowName(e.target.value)}
+              className="bg-transparent text-white text-[13px] font-medium border-0 outline-none w-[130px] placeholder-gray-600"
+              placeholder="Untitled Workflow"
+            />
+            <ChevronDown className="w-3 h-3 text-gray-600" />
+          </div>
+        </div>
+
+        {/* Right: Actions */}
+        <div className="flex items-center gap-2 pointer-events-auto">
+          {/* Undo / Redo */}
+          <div className="flex items-center bg-[#111]/80 backdrop-blur-xl border border-white/[0.07] rounded-xl shadow-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={undo}
+              disabled={past.length === 0}
+              title="Undo (⌘Z)"
+              className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-white transition-colors disabled:opacity-25 hover:bg-white/[0.05]"
+            >
+              <Undo2 className="w-3.5 h-3.5" />
+            </button>
+            <div className="w-px h-4 bg-white/[0.07]" />
+            <button
+              type="button"
+              onClick={redo}
+              disabled={future.length === 0}
+              title="Redo (⌘⇧Z)"
+              className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-white transition-colors disabled:opacity-25 hover:bg-white/[0.05]"
+            >
+              <Redo2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Import/Export */}
+          <div className="flex items-center bg-[#111]/80 backdrop-blur-xl border border-white/[0.07] rounded-xl shadow-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={handleExport}
+              title="Export"
+              className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-white transition-colors hover:bg-white/[0.05]"
+            >
+              <Download className="w-3.5 h-3.5" />
+            </button>
+            <div className="w-px h-4 bg-white/[0.07]" />
+            <button
+              type="button"
+              onClick={() => importRef.current?.click()}
+              title="Import"
+              className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-white transition-colors hover:bg-white/[0.05]"
+            >
+              <Upload className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* History */}
+          <button
+            type="button"
+            onClick={() => setHistoryOpen(!historyOpen)}
+            title="Workflow History"
+            className={`w-8 h-8 flex items-center justify-center rounded-xl border shadow-xl transition-all ${
+              historyOpen
+                ? 'bg-purple-500/20 border-purple-500/30 text-purple-400'
+                : 'bg-[#111]/80 backdrop-blur-xl border-white/[0.07] text-gray-500 hover:text-white hover:bg-white/[0.05]'
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Save */}
+          <button
+            type="button"
+            onClick={handleSave}
+            className="h-8 px-3.5 flex items-center gap-1.5 text-xs font-medium bg-[#111]/80 backdrop-blur-xl border border-white/[0.07] rounded-xl text-gray-300 hover:text-white transition-all shadow-xl hover:bg-white/[0.05]"
+          >
+            {saveStatus === 'saving' ? (
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving...</>
+            ) : saveStatus === 'saved' ? (
+              <><div className="w-1.5 h-1.5 rounded-full bg-green-400" /> Saved</>
+            ) : (
+              'Save'
+            )}
+          </button>
+
+          {/* Run */}
+          <button
+            type="button"
+            onClick={handleRun}
+            disabled={isRunning}
+            className="h-8 px-4 flex items-center gap-2 text-[13px] font-semibold bg-white text-black rounded-xl hover:bg-gray-100 transition-all shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isRunning ? (
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Running</>
+            ) : (
+              <><Play className="w-3.5 h-3.5 fill-current" /> Run</>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* ── LEFT NODE PANEL (krea.ai style) ── */}
+      {nodePanelOpen && (
+        <div className="absolute top-14 left-3 z-40 w-[220px] bg-[#0e0e0e]/95 backdrop-blur-2xl border border-white/[0.07] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[calc(100vh-100px)]">
+          {/* Search */}
+          <div className="p-2 border-b border-white/[0.05]">
+            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.06] transition-colors border border-white/[0.04]">
+              <Search className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" />
+              <input
                 type="text"
                 placeholder="Search nodes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent outline-none text-xs text-white placeholder-gray-600 w-[80px] sm:w-[100px]"
-             />
-          </div>
-          
-          {filteredNodes.map((node) => (
-            <div
-              key={node.type}
-              draggable
-              onDragStart={(e) => handleDragStart(e, node.type)}
-              onClick={() => handleAddNodeClick(node.type)}
-              className="flex items-center gap-2 cursor-grab active:cursor-grabbing hover:bg-white/5 px-2.5 sm:px-3 py-2 rounded-xl transition-all border border-transparent hover:border-white/[0.05] shrink-0"
-            >
-              <div className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)]" style={{ background: node.color, boxShadow: `0 0 8px ${node.color}40` }} />
-              <span className="text-[11px] sm:text-xs font-medium text-gray-300 whitespace-nowrap">{node.label}</span>
+                className="bg-transparent outline-none text-xs text-white placeholder-gray-600 w-full"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="text-gray-600 hover:text-gray-400">
+                  <X className="w-3 h-3" />
+                </button>
+              )}
             </div>
-          ))}
+          </div>
+
+          {/* Node Categories */}
+          <div className="flex-1 overflow-y-auto py-1 scrollbar-none" style={{ scrollbarWidth: 'none' }}>
+            {filteredCategories.map((category) => (
+              <div key={category.label} className="mb-1">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-semibold text-gray-600 uppercase tracking-wider">
+                  {category.icon}
+                  {category.label}
+                </div>
+                {category.nodes.map((node) => (
+                  <div
+                    key={node.type}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, node.type)}
+                    onClick={() => handleAddNodeClick(node.type)}
+                    className="flex items-center gap-2.5 px-3 py-2 mx-1 rounded-xl cursor-grab active:cursor-grabbing hover:bg-white/[0.06] transition-all group border border-transparent hover:border-white/[0.05]"
+                  >
+                    <div
+                      className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105"
+                      style={{
+                        background: `${node.color}18`,
+                        border: `1px solid ${node.color}30`,
+                        color: node.color,
+                      }}
+                    >
+                      {node.icon}
+                    </div>
+                    <span className="text-[12px] font-medium text-gray-300 group-hover:text-white transition-colors">{node.label}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── TOGGLE NODE PANEL BUTTON ── */}
+      <button
+        type="button"
+        onClick={() => setNodePanelOpen(!nodePanelOpen)}
+        title={nodePanelOpen ? 'Close node panel' : 'Open node panel'}
+        className={`absolute top-14 z-40 w-7 h-7 flex items-center justify-center rounded-xl border shadow-xl transition-all ${
+          nodePanelOpen
+            ? 'left-[235px] bg-[#0e0e0e]/95 backdrop-blur-2xl border-white/[0.07] text-gray-400 hover:text-white'
+            : 'left-3 bg-[#111]/80 backdrop-blur-xl border-white/[0.07] text-gray-500 hover:text-white hover:bg-white/[0.05]'
+        }`}
+      >
+        <Plus className="w-3.5 h-3.5" />
+      </button>
+
+      {/* ── BOTTOM CENTER TOOLBAR (krea.ai style) ── */}
+      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-40 pointer-events-auto">
+        <div className="flex items-center gap-1 bg-[#0e0e0e]/95 backdrop-blur-2xl border border-white/[0.07] rounded-2xl px-2 py-2 shadow-2xl">
+          {/* Undo / Redo mini */}
+          <button
+            type="button"
+            onClick={undo}
+            disabled={past.length === 0}
+            title="Undo"
+            className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-500 hover:text-white hover:bg-white/[0.06] transition-all disabled:opacity-25"
+          >
+            <Undo2 className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={redo}
+            disabled={future.length === 0}
+            title="Redo"
+            className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-500 hover:text-white hover:bg-white/[0.06] transition-all disabled:opacity-25"
+          >
+            <Redo2 className="w-3.5 h-3.5" />
+          </button>
+
+          <div className="w-px h-5 bg-white/[0.07] mx-1" />
+
+          {/* Fit view */}
+          <button
+            type="button"
+            onClick={() => reactFlowInstance?.fitView({ padding: 0.2, duration: 400 })}
+            title="Fit view"
+            className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-500 hover:text-white hover:bg-white/[0.06] transition-all"
+          >
+            <MousePointer2 className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Load sample */}
+          <button
+            type="button"
+            onClick={() => {
+              setNodes(sampleWorkflow.nodes as any)
+              setEdges(sampleWorkflow.edges as any)
+              setWorkflowName('Product Marketing Kit Generator')
+            }}
+            title="Load sample workflow"
+            className="flex items-center gap-1.5 px-2.5 h-8 rounded-xl text-[11px] font-medium text-gray-500 hover:text-white hover:bg-white/[0.06] transition-all"
+          >
+            <Zap className="w-3.5 h-3.5" />
+            <span className="hidden sm:block">Sample</span>
+          </button>
+
+          <div className="w-px h-5 bg-white/[0.07] mx-1" />
+
+          {/* Run button in toolbar */}
+          <button
+            type="button"
+            onClick={handleRun}
+            disabled={isRunning}
+            className="flex items-center gap-1.5 px-3 h-8 rounded-xl text-[12px] font-semibold bg-white text-black hover:bg-gray-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+          >
+            {isRunning ? (
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Running</>
+            ) : (
+              <><Play className="w-3.5 h-3.5 fill-current" /> Run</>
+            )}
+          </button>
         </div>
       </div>
 
-      {/* Floating Mini Map (Bottom Right, Stylized) */}
-      <div className="absolute bottom-6 left-6 z-40 pointer-events-auto overflow-hidden rounded-2xl border border-white/[0.06] shadow-2xl bg-[#0a0a0a]/80 backdrop-blur-xl w-32 h-24 hidden md:block opacity-60 hover:opacity-100 transition-opacity">
-        {reactFlowInstance && (
-          <div className="w-full h-full relative -z-10 pointer-events-none">
-             <div className="absolute inset-0 bg-[#0a0a0a]" />
-          </div>
-        )}
-      </div>
-
-      {/* History Slide-over (Right side) */}
+      {/* ── HISTORY PANEL (Right slide-over) ── */}
       {historyOpen && (
         <>
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-30 sm:hidden" onClick={() => setHistoryOpen(false)} />
-          <div className="absolute top-0 right-0 bottom-0 sm:top-20 sm:right-4 sm:bottom-24 w-[85vw] sm:w-80 bg-[#111111]/95 backdrop-blur-2xl border-l sm:border border-white/[0.06] shadow-2xl sm:rounded-3xl z-40 overflow-hidden flex flex-col">
-            <div className="flex sm:hidden items-center justify-between p-4 border-b border-white/5">
-              <h3 className="text-white text-sm font-medium">History</h3>
-              <button type="button" onClick={() => setHistoryOpen(false)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white rounded-full bg-white/5">
-                <X className="w-4 h-4" />
+          {/* Backdrop on mobile */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm z-30 sm:hidden"
+            onClick={() => setHistoryOpen(false)}
+          />
+          <div className="absolute top-14 right-3 bottom-[70px] w-[280px] bg-[#0e0e0e]/95 backdrop-blur-2xl border border-white/[0.07] rounded-2xl z-40 overflow-hidden flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.05]">
+              <div className="flex items-center gap-2">
+                <Clock className="w-3.5 h-3.5 text-gray-500" />
+                <span className="text-[13px] font-semibold text-white">Run History</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setHistoryOpen(false)}
+                className="w-6 h-6 flex items-center justify-center rounded-lg text-gray-600 hover:text-white hover:bg-white/[0.06] transition-all"
+              >
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
-            <HistorySidebar className="bg-transparent flex-1 overflow-y-auto" />
+            <HistorySidebar className="flex-1 overflow-y-auto bg-transparent" />
           </div>
         </>
       )}
 
-      {/* Empty State Overlay */}
+      {/* ── EMPTY STATE ── */}
       {safeNodes.length === 0 && (
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
-          <div className="w-16 h-16 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center mb-4 backdrop-blur-sm shadow-2xl">
-            <Workflow className="w-8 h-8 text-gray-600" />
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="w-16 h-16 rounded-3xl bg-white/[0.03] border border-white/[0.07] flex items-center justify-center shadow-2xl">
+              <Workflow className="w-7 h-7 text-gray-700" />
+            </div>
+            <div>
+              <p className="text-[14px] font-medium text-gray-500">Drag nodes from the panel</p>
+              <p className="text-[12px] text-gray-700 mt-1">or click a node to add it to center</p>
+            </div>
           </div>
-          <p className="text-gray-500 font-medium tracking-tight">Drag nodes from the bottom dock to begin</p>
         </div>
       )}
+
+      {/* Hidden import input */}
+      <input ref={importRef} type="file" accept=".json" onChange={handleImport} className="hidden" />
     </div>
   )
 }
-
