@@ -25,18 +25,22 @@ export async function POST(req: NextRequest) {
       output = videoUrl
     }
 
-    if (workflowRunId && nodeId) {
-      await prisma.nodeRun.create({
-        data: {
-          workflowRunId,
-          nodeId,
-          nodeType: 'extractFrameNode',
-          status: 'success',
-          inputs: { videoUrl, timestamp },
-          outputs: { imageUrl: output },
-          endedAt: new Date(),
-        },
-      })
+    if (workflowRunId && nodeId && !workflowRunId.startsWith('local-')) {
+      try {
+        await prisma.nodeRun.create({
+          data: {
+            workflowRunId,
+            nodeId,
+            nodeType: 'extractFrameNode',
+            status: 'success',
+            inputs: { videoUrl, timestamp },
+            outputs: { imageUrl: output },
+            endedAt: new Date(),
+          },
+        })
+      } catch (dbErr) {
+        console.warn('Could not save nodeRun:', dbErr)
+      }
     }
 
     return NextResponse.json({ success: true, output })

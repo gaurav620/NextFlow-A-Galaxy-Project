@@ -35,7 +35,6 @@ import {
   Undo2, Redo2, Search, Plus, MousePointer2, Hand, Scissors, Link2,
   Wand2, Share, Moon, Sun, ChevronDown, X, Keyboard, Play, BoxSelect,
   Image as ImageIcon, Video, Sparkles, Type, Film, Crop, Bot, Maximize,
-  ChevronRight,
 } from 'lucide-react'
 
 // ── NODE TYPES ──
@@ -55,48 +54,29 @@ const nodeMenuCategories = [
     label: 'Image',
     icon: <ImageIcon className="w-3.5 h-3.5" />,
     items: [
-      {
-        label: 'Generate Image',
-        type: 'imageGenNode',
-        hasSubmenu: true,
-        submenu: [
-          { label: 'NextFlow 1', type: 'imageGenNode' },
-          { label: 'Flux 2 Klein', type: 'imageGenNode' },
-          { label: 'Nano Banana', type: 'imageGenNode' },
-          { label: 'Nano Banana 2', type: 'imageGenNode', pro: true },
-          { label: 'Flux', type: 'imageGenNode' },
-        ]
-      },
-      {
-        label: 'Enhance Image',
-        type: 'cropImageNode',
-        hasSubmenu: true,
-        submenu: [
-          { label: 'Upscale 2x', type: 'cropImageNode' },
-          { label: 'Upscale 4x', type: 'cropImageNode' },
-        ]
-      },
-      { label: 'Edit Image', type: 'cropImageNode' },
-      { label: 'Image Utility', type: 'imageUploadNode' },
+      { label: 'Generate Image', type: 'imageGenNode', desc: 'Text to Image' },
+      { label: 'Enhance Image', type: 'cropImageNode', desc: 'Upscale & enhance' },
+      { label: 'Edit Image', type: 'cropImageNode', desc: 'Crop & transform' },
+      { label: 'Image Utility', type: 'imageUploadNode', desc: 'Upload an image' },
     ]
   },
   {
     label: 'Video',
     icon: <Video className="w-3.5 h-3.5" />,
     items: [
-      { label: 'Generate Video', type: 'videoUploadNode' },
-      { label: 'Enhance Video', type: 'extractFrameNode' },
-      { label: 'Motion Transfer', type: 'extractFrameNode' },
-      { label: 'Lipsync', type: 'videoUploadNode' },
-      { label: 'Video Utility', type: 'videoUploadNode' },
+      { label: 'Generate Video', type: 'videoUploadNode', desc: 'Text to Video' },
+      { label: 'Enhance Video', type: 'extractFrameNode', desc: 'Upscale video' },
+      { label: 'Motion Transfer', type: 'extractFrameNode', desc: 'Transfer motion' },
+      { label: 'Lipsync', type: 'videoUploadNode', desc: 'Sync audio to video' },
+      { label: 'Video Utility', type: 'videoUploadNode', desc: 'Upload a video' },
     ]
   },
   {
     label: 'LLM',
     icon: <Sparkles className="w-3.5 h-3.5" />,
     items: [
-      { label: 'LLM Node', type: 'llmNode' },
-      { label: 'Text / Prompt', type: 'textNode' },
+      { label: 'LLM Node', type: 'llmNode', desc: 'Run Gemini / GPT' },
+      { label: 'Text / Prompt', type: 'textNode', desc: 'Enter text' },
     ]
   },
 ]
@@ -275,7 +255,6 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [selectedTool, setSelectedTool] = useState<'select' | 'pan' | 'cut' | 'group'>('select')
   const [showPresets, setShowPresets] = useState(true)
-  const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null)
 
   const safeNodes = useMemo(() => Array.isArray(nodes) ? nodes : [], [nodes]) as Node[]
   const safeEdges = useMemo(() => Array.isArray(edges) ? edges : [], [edges]) as Edge[]
@@ -324,7 +303,6 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
     setNodeMenuPos({ x: (rect?.width || window.innerWidth) / 2, y: (rect?.height || window.innerHeight) / 2 })
     setShowNodeMenu(true)
     setNodeSearch('')
-    setActiveSubmenu(null)
   }
 
   function addNodeAtCenter(type: string) {
@@ -352,10 +330,19 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
     setEdges(addEdge({ ...connection, animated: true, style: { stroke: '#a855f7', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' } }, safeEdges))
   }, [setEdges, safeEdges, updateNodeData])
 
-  const addNode = (type: string) => {
+  const addNode = (type: string, extraData?: Record<string, any>) => {
     if (!reactFlowInstance) return
-    const position = reactFlowInstance.screenToFlowPosition({ x: nodeMenuPos.x, y: nodeMenuPos.y })
-    setNodes([...safeNodes, { id: crypto.randomUUID(), type, position, data: { label: type } } as Node])
+    // Use menu position or fallback to center of screen
+    const screenX = nodeMenuPos.x || window.innerWidth / 2
+    const screenY = nodeMenuPos.y || window.innerHeight / 2
+    const position = reactFlowInstance.screenToFlowPosition({ x: screenX, y: screenY })
+    const newNode: Node = {
+      id: crypto.randomUUID(),
+      type,
+      position: { x: position.x + (Math.random() - 0.5) * 40, y: position.y + (Math.random() - 0.5) * 40 },
+      data: { label: type, ...extraData }
+    }
+    setNodes([...safeNodes, newNode])
     setShowNodeMenu(false)
     setShowPresets(false)
   }
@@ -503,24 +490,24 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
           </button>
         </div>
 
-        {/* ── NODE MENU (Krea-exact floating with sub-menus) ── */}
+        {/* ── NODE MENU (Floating searchable) ── */}
         {showNodeMenu && (
           <>
-            <div className="absolute inset-0 z-40" onClick={() => { setShowNodeMenu(false); setActiveSubmenu(null) }} />
-            <div className={`absolute z-50 w-[260px] border rounded-xl shadow-2xl overflow-hidden flex flex-col ${dark ? 'bg-[#161616] border-white/[0.08]' : 'bg-white border-black/[0.08]'}`}
-              style={{ left: Math.min(Math.max(nodeMenuPos.x - 130, 50), window.innerWidth - 300), top: Math.min(Math.max(nodeMenuPos.y - 200, 60), window.innerHeight - 400) }}
+            <div className="absolute inset-0 z-40" onClick={() => setShowNodeMenu(false)} />
+            <div className={`absolute z-50 w-[280px] border rounded-xl shadow-2xl overflow-hidden flex flex-col ${dark ? 'bg-[#161616] border-white/[0.08]' : 'bg-white border-black/[0.08]'}`}
+              style={{ left: Math.min(Math.max(nodeMenuPos.x - 140, 50), window.innerWidth - 320), top: Math.min(Math.max(nodeMenuPos.y - 200, 60), window.innerHeight - 400) }}
             >
               <div className={`p-3 border-b ${dark ? 'border-white/[0.06]' : 'border-black/[0.06]'}`}>
                 <div className="flex items-center gap-2">
                   <Search className={`w-4 h-4 ml-1 ${dark ? 'text-[#666]' : 'text-gray-400'}`} />
-                  <input autoFocus type="text" value={nodeSearch} onChange={(e) => setNodeSearch(e.target.value)} placeholder="Search nodes or models..."
+                  <input autoFocus type="text" value={nodeSearch} onChange={(e) => setNodeSearch(e.target.value)} placeholder="Search nodes..."
                     className={`bg-transparent text-[13px] outline-none w-full ${dark ? 'text-white placeholder:text-[#555]' : 'text-black placeholder:text-gray-400'}`}
                   />
                 </div>
               </div>
-              <div className="p-1.5 max-h-[350px] overflow-y-auto scrollbar-none">
+              <div className="p-1.5 max-h-[380px] overflow-y-auto scrollbar-none">
                 {nodeMenuCategories.map(cat => {
-                  const items = cat.items.filter(i => i.label.toLowerCase().includes(nodeSearch.toLowerCase()))
+                  const items = cat.items.filter(i => i.label.toLowerCase().includes(nodeSearch.toLowerCase()) || (i.desc && i.desc.toLowerCase().includes(nodeSearch.toLowerCase())))
                   if (!items.length) return null
                   return (
                     <div key={cat.label} className="mb-1">
@@ -528,34 +515,16 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
                         {cat.icon} {cat.label}
                       </div>
                       {items.map(item => (
-                        <div key={item.label} className="relative"
-                          onMouseEnter={() => item.hasSubmenu && setActiveSubmenu(item.label)}
-                          onMouseLeave={() => item.hasSubmenu && setActiveSubmenu(null)}
+                        <button key={item.label}
+                          onClick={() => addNode(item.type)}
+                          className={`w-full text-left flex items-center justify-between px-3 py-2.5 text-[13px] rounded-lg transition-colors ${dark ? 'text-[#e0e0e0] hover:bg-[#2A2A2A] hover:text-white' : 'text-gray-700 hover:bg-gray-100 hover:text-black'}`}
                         >
-                          <button onClick={() => !item.hasSubmenu && addNode(item.type)}
-                            className={`w-full text-left flex justify-between items-center px-3 py-2 text-[13px] rounded-lg transition-colors ${dark ? 'text-[#e0e0e0] hover:bg-[#2A2A2A] hover:text-white' : 'text-gray-700 hover:bg-gray-100 hover:text-black'}`}
-                          >
-                            {item.label}
-                            {item.hasSubmenu && <ChevronRight className={`w-3.5 h-3.5 ${dark ? 'text-[#555]' : 'text-gray-400'}`} />}
-                          </button>
-                          {/* Sub-menu */}
-                          {item.hasSubmenu && activeSubmenu === item.label && item.submenu && (
-                            <div className={`absolute left-full top-0 ml-1 w-[200px] border rounded-xl shadow-2xl p-1.5 z-[60] ${dark ? 'bg-[#161616] border-white/[0.08]' : 'bg-white border-black/[0.08]'}`}>
-                              <div className={`text-[10px] font-semibold uppercase px-2.5 py-1.5 ${dark ? 'text-[#555]' : 'text-gray-400'}`}>{item.label}</div>
-                              {item.submenu.map(sub => (
-                                <button key={sub.label} onClick={() => { addNode(sub.type); setActiveSubmenu(null) }}
-                                  className={`w-full text-left flex items-center justify-between px-3 py-2 text-[13px] rounded-lg transition-colors ${dark ? 'text-[#e0e0e0] hover:bg-[#2A2A2A] hover:text-white' : 'text-gray-700 hover:bg-gray-100 hover:text-black'}`}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <div className={`w-1.5 h-1.5 rounded-full ${dark ? 'bg-white/20' : 'bg-black/20'}`} />
-                                    {sub.label}
-                                  </div>
-                                  {(sub as any).pro && <span className="text-[9px] bg-orange-500/20 text-orange-400 rounded px-1 py-0.5 font-bold">PRO</span>}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
+                          <div>
+                            <div className="font-medium">{item.label}</div>
+                            {item.desc && <div className={`text-[10px] mt-0.5 ${dark ? 'text-[#555]' : 'text-gray-400'}`}>{item.desc}</div>}
+                          </div>
+                          <Plus className={`w-3.5 h-3.5 opacity-0 group-hover:opacity-100 ${dark ? 'text-[#555]' : 'text-gray-400'}`} />
+                        </button>
                       ))}
                     </div>
                   )

@@ -72,18 +72,22 @@ export async function POST(req: NextRequest) {
       output = geminiResult.response.text()
     }
 
-    if (body.workflowRunId && body.nodeId) {
-      await prisma.nodeRun.create({
-        data: {
-          workflowRunId: body.workflowRunId,
-          nodeId: body.nodeId,
-          nodeType: 'llmNode',
-          status: 'success',
-          inputs: { model: body.model, userMessage: body.userMessage },
-          outputs: { text: output },
-          endedAt: new Date(),
-        },
-      })
+    if (body.workflowRunId && body.nodeId && !body.workflowRunId.startsWith('local-')) {
+      try {
+        await prisma.nodeRun.create({
+          data: {
+            workflowRunId: body.workflowRunId,
+            nodeId: body.nodeId,
+            nodeType: 'llmNode',
+            status: 'success',
+            inputs: { model: body.model, userMessage: body.userMessage },
+            outputs: { text: output },
+            endedAt: new Date(),
+          },
+        })
+      } catch (dbErr) {
+        console.warn('Could not save nodeRun record:', dbErr)
+      }
     }
 
     return NextResponse.json({ success: true, output })

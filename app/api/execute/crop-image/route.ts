@@ -48,18 +48,22 @@ export async function POST(req: NextRequest) {
       output = `data:image/png;base64,${croppedBuffer.toString('base64')}`
     }
 
-    if (workflowRunId && nodeId) {
-      await prisma.nodeRun.create({
-        data: {
-          workflowRunId,
-          nodeId,
-          nodeType: 'cropImageNode',
-          status: 'success',
-          inputs: { imageUrl, x, y, width, height },
-          outputs: { imageUrl: output },
-          endedAt: new Date(),
-        },
-      })
+    if (workflowRunId && nodeId && !workflowRunId.startsWith('local-')) {
+      try {
+        await prisma.nodeRun.create({
+          data: {
+            workflowRunId,
+            nodeId,
+            nodeType: 'cropImageNode',
+            status: 'success',
+            inputs: { imageUrl, x, y, width, height },
+            outputs: { imageUrl: output },
+            endedAt: new Date(),
+          },
+        })
+      } catch (dbErr) {
+        console.warn('Could not save nodeRun:', dbErr)
+      }
     }
 
     return NextResponse.json({ success: true, output })
