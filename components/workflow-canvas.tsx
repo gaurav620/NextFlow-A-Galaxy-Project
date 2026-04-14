@@ -403,9 +403,70 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
     } catch { setSaveStatus('idle') }
   }
 
+  // Drag and drop media files onto canvas
+  const onDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+  }, [])
+
+  const onDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    if (!reactFlowInstance) return
+    const files = Array.from(e.dataTransfer.files)
+    const position = reactFlowInstance.screenToFlowPosition({ x: e.clientX, y: e.clientY })
+    
+    files.forEach((file, idx) => {
+      const isVideo = file.type.startsWith('video/')
+      const isImage = file.type.startsWith('image/')
+      if (!isVideo && !isImage) return
+      
+      const reader = new FileReader()
+      reader.onload = () => {
+        const dataUrl = reader.result as string
+        setNodes([...safeNodes, {
+          id: crypto.randomUUID(),
+          type: isVideo ? 'videoUploadNode' : 'imageUploadNode',
+          position: { x: position.x + idx * 30, y: position.y + idx * 30 },
+          data: { label: file.name, uploadedUrl: dataUrl }
+        } as Node])
+      }
+      reader.readAsDataURL(file)
+    })
+  }, [reactFlowInstance, safeNodes, setNodes])
+
   return (
     <ReactFlowProvider>
       <div className={`relative h-full w-full overflow-hidden font-sans ${dark ? 'bg-[#0A0A0A]' : 'bg-[#F5F5F5]'}`}>
+
+        {/* ── LEFT NAV SIDEBAR (Krea-style icon rail) ── */}
+        <div className={`absolute top-0 left-0 bottom-0 w-[40px] z-30 flex flex-col items-center py-3 gap-1 pointer-events-auto ${dark ? 'bg-[#0A0A0A]/80 border-r border-white/[0.04]' : 'bg-[#F5F5F5]/80 border-r border-black/[0.04]'} backdrop-blur-md`}>
+          {/* Top icons */}
+          <button onClick={() => openNodeMenu()} title="Add node (N)" className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${dark ? 'text-gray-500 hover:bg-white/[0.06] hover:text-white' : 'text-gray-400 hover:bg-black/[0.06] hover:text-black'}`}>
+            <Plus className="w-4 h-4" />
+          </button>
+          <button onClick={() => addNodeAtCenter('imageGenNode')} title="Image node (I)" className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${dark ? 'text-gray-500 hover:bg-white/[0.06] hover:text-white' : 'text-gray-400 hover:bg-black/[0.06] hover:text-black'}`}>
+            <ImageIcon className="w-4 h-4" />
+          </button>
+          <button onClick={() => addNodeAtCenter('videoUploadNode')} title="Video node (V)" className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${dark ? 'text-gray-500 hover:bg-white/[0.06] hover:text-white' : 'text-gray-400 hover:bg-black/[0.06] hover:text-black'}`}>
+            <Film className="w-4 h-4" />
+          </button>
+          <button onClick={() => addNodeAtCenter('llmNode')} title="LLM node (L)" className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${dark ? 'text-gray-500 hover:bg-white/[0.06] hover:text-white' : 'text-gray-400 hover:bg-black/[0.06] hover:text-black'}`}>
+            <Sparkles className="w-4 h-4" />
+          </button>
+          <button onClick={() => addNodeAtCenter('textNode')} title="Text node (T)" className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${dark ? 'text-gray-500 hover:bg-white/[0.06] hover:text-white' : 'text-gray-400 hover:bg-black/[0.06] hover:text-black'}`}>
+            <Type className="w-4 h-4" />
+          </button>
+          <button onClick={() => addNodeAtCenter('cropImageNode')} title="Enhance node (E)" className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${dark ? 'text-gray-500 hover:bg-white/[0.06] hover:text-white' : 'text-gray-400 hover:bg-black/[0.06] hover:text-black'}`}>
+            <Crop className="w-4 h-4" />
+          </button>
+
+          <div className="flex-1" />
+
+          {/* Canvas Agent FAB */}
+          <button title="Canvas Agent" className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${dark ? 'bg-gradient-to-br from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40' : 'bg-gradient-to-br from-purple-500 to-blue-500 text-white shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40'}`}>
+            <Bot className="w-4.5 h-4.5" />
+          </button>
+        </div>
 
         {/* ── TOP BAR ── */}
         <div className="absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 pointer-events-none">
@@ -416,10 +477,35 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
               <span className={`text-[13px] font-medium outline-none max-w-[140px] truncate ${dark ? 'text-[#e0e0e0]' : 'text-gray-800'}`} contentEditable suppressContentEditableWarning onBlur={(e) => setWorkflowName(e.currentTarget.textContent || 'Untitled')}>{workflowName}</span>
               <ChevronDown className={`w-3 h-3 ${dark ? 'text-[#555]' : 'text-gray-400'}`} />
             </div>
+
+            {/* Node count badge */}
+            {safeNodes.length > 0 && (
+              <div className={`h-7 px-2.5 flex items-center gap-1.5 rounded-full text-[11px] font-medium ${dark ? 'bg-white/[0.05] text-gray-500' : 'bg-black/[0.03] text-gray-400'}`}>
+                <div className={`w-1.5 h-1.5 rounded-full ${isRunning ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`} />
+                {safeNodes.length} node{safeNodes.length !== 1 ? 's' : ''}
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center gap-2.5 pointer-events-auto">
-            <button onClick={() => setTheme(dark ? 'light' : 'dark')} className={`w-9 h-9 flex items-center justify-center rounded-full border transition-colors ${dark ? 'bg-[#161616] border-white/[0.08] text-white hover:bg-[#1E1E1E]' : 'bg-white border-black/[0.08] text-gray-700 hover:bg-gray-100'}`}>
+          <div className="flex items-center gap-2 pointer-events-auto">
+            {/* Run All Workflow */}
+            <button
+              onClick={handleRun}
+              disabled={isRunning || safeNodes.length === 0}
+              className={`h-9 px-3.5 flex items-center gap-2 rounded-full border text-[12px] font-semibold transition-all disabled:opacity-30 ${
+                isRunning
+                  ? (dark ? 'bg-green-500/20 border-green-500/30 text-green-400' : 'bg-green-500/10 border-green-500/30 text-green-600')
+                  : (dark ? 'bg-[#161616] border-white/[0.08] text-white hover:bg-[#1E1E1E] hover:border-white/20' : 'bg-white border-black/[0.08] text-black hover:bg-gray-50')
+              }`}
+            >
+              {isRunning ? (
+                <><div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" /> Running...</>
+              ) : (
+                <><Play className="w-3.5 h-3.5" /> Run All</>
+              )}
+            </button>
+
+            <button onClick={() => setTheme(dark ? 'light' : 'dark')} title={dark ? 'Switch to light mode' : 'Switch to dark mode'} className={`w-9 h-9 flex items-center justify-center rounded-full border transition-colors ${dark ? 'bg-[#161616] border-white/[0.08] text-white hover:bg-[#1E1E1E]' : 'bg-white border-black/[0.08] text-gray-700 hover:bg-gray-100'}`}>
               {dark ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
             </button>
 
@@ -427,8 +513,12 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
               <Share className="w-3.5 h-3.5" /> Share
             </button>
 
-            <button onClick={handleSave} className={`h-9 px-3 flex items-center gap-1.5 rounded-full border text-[12px] font-medium transition-colors ${dark ? 'bg-[#161616] border-white/[0.08] text-[#a0a0a0] hover:text-white hover:bg-[#1E1E1E]' : 'bg-white border-black/[0.08] text-gray-500 hover:text-black hover:bg-gray-50'}`}>
-              <Wand2 className="w-3.5 h-3.5" /> {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved ✓' : 'Turn workflow into app'}
+            <button onClick={handleSave} disabled={safeNodes.length === 0} className={`h-9 px-3 flex items-center gap-1.5 rounded-full border text-[12px] font-medium transition-colors disabled:opacity-40 ${
+              saveStatus === 'saved'
+                ? (dark ? 'bg-green-500/20 border-green-500/30 text-green-400' : 'bg-green-500/10 border-green-500/30 text-green-600')
+                : (dark ? 'bg-[#161616] border-white/[0.08] text-[#a0a0a0] hover:text-white hover:bg-[#1E1E1E]' : 'bg-white border-black/[0.08] text-gray-500 hover:text-black hover:bg-gray-50')
+            }`}>
+              <Wand2 className="w-3.5 h-3.5" /> {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved ✓' : 'Save & App'}
             </button>
 
             <div className={`w-9 h-9 rounded-full overflow-hidden border cursor-pointer ${dark ? 'border-white/[0.08]' : 'border-black/[0.08]'}`}>
@@ -535,7 +625,7 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
         )}
 
         {/* ── REACT FLOW CANVAS ── */}
-        <div ref={reactFlowWrapper} className="absolute inset-0 z-0">
+        <div ref={reactFlowWrapper} className="absolute inset-0 z-0" onDragOver={onDragOver} onDrop={onDrop}>
           <ReactFlow
             nodes={safeNodes} edges={safeEdges}
             onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect}
