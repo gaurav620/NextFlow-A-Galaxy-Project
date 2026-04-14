@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
-import { tasks } from '@trigger.dev/sdk/v3'
-import type { extractFrameTask } from '@/trigger/tasks/extract-frame'
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,19 +9,8 @@ export async function POST(req: NextRequest) {
 
     const { videoUrl, timestamp = 0, nodeId, workflowRunId } = await req.json()
 
-    let output: string
-
-    if (process.env.TRIGGER_SECRET_KEY) {
-      const result = await tasks.triggerAndWait<typeof extractFrameTask>('extract-frame-node', {
-        videoUrl, timestamp, nodeId, workflowRunId,
-      })
-
-      if (!result.ok) throw new Error('Extract frame task failed')
-      output = result.output.output
-    } else {
-      // Direct fallback — passthrough until FFmpeg worker is wired
-      output = videoUrl
-    }
+    // Direct passthrough until FFmpeg worker is wired
+    const output = videoUrl
 
     if (workflowRunId && nodeId && !workflowRunId.startsWith('local-')) {
       try {

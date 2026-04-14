@@ -217,7 +217,21 @@ export default function ImageGenNode({ id, data }: any) {
         {/* Result Image */}
         {resultUrl && !isNodeRunning && (
           <div className={`relative w-full rounded-xl overflow-hidden border ${dark ? 'border-white/[0.08]' : 'border-black/[0.08]'} group/img`}>
-            <img src={resultUrl} alt="Generated" className="w-full object-cover" loading="lazy" />
+            <img 
+              src={resultUrl} 
+              alt="Generated" 
+              className="w-full object-cover" 
+              loading="lazy"
+              crossOrigin="anonymous"
+              onError={(e) => {
+                // Retry once for Pollinations URLs that may need time to generate
+                const img = e.currentTarget;
+                if (!img.dataset.retried && resultUrl.includes('pollinations.ai')) {
+                  img.dataset.retried = 'true';
+                  setTimeout(() => { img.src = resultUrl + '&retry=1'; }, 2000);
+                }
+              }}
+            />
             
             {/* Hover Actions */}
             <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-0 group-hover/img:opacity-100 transition-opacity">
