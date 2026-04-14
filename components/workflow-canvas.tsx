@@ -4,6 +4,7 @@ import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ReactFlow,
+  ReactFlowProvider,
   Background,
   BackgroundVariant,
   MiniMap,
@@ -340,7 +341,8 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
   }
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-[#0A0A0A] font-sans selection:bg-white/20">
+    <ReactFlowProvider>
+      <div className="relative h-screen w-full overflow-hidden bg-[#0A0A0A] font-sans selection:bg-white/20">
       
       {/* --- TOP BAR (Krea Style) --- */}
       <div className="absolute top-0 left-0 right-0 z-40 flex items-center justify-between p-4 pointer-events-none">
@@ -568,6 +570,7 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
       {/* --- MODALS --- */}
       {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}
       
-    </div>
+      </div>
+    </ReactFlowProvider>
   )
 }
