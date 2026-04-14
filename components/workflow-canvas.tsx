@@ -370,15 +370,37 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
 
   async function handleRun() {
     if (!safeNodes.length) return
-    setIsRunning(true); resetOutputs()
+    setIsRunning(true)
+    resetOutputs()
+    
+    // Clear previous errors/outputs from all nodes
+    safeNodes.forEach(n => updateNodeData(n.id, { error: undefined, isExecuting: false }))
+    
     let workflowRunId = 'local-' + Date.now()
     if (currentWorkflowId) {
-      try { const res = await fetch(`/api/workflow/${currentWorkflowId}/runs`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ scope: 'full' }) }); const data = await res.json(); if (data.success) workflowRunId = data.run.id } catch {}
+      try {
+        const res = await fetch(`/api/workflow/${currentWorkflowId}/runs`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ scope: 'full' }) })
+        const data = await res.json()
+        if (data.success) workflowRunId = data.run.id
+      } catch (e) {
+        console.warn('Could not create workflow run record, using local ID')
+      }
     }
+    
     await executeWorkflow(safeNodes as any, safeEdges as any, workflowRunId, {
-      onNodeStart: (nodeId) => addExecutingNode(nodeId),
-      onNodeComplete: (nodeId, output) => { removeExecutingNode(nodeId); setNodeOutput(nodeId, output); updateNodeData(nodeId, { output: String(output || ''), error: undefined }) },
-      onNodeError: (nodeId, error) => { removeExecutingNode(nodeId); updateNodeData(nodeId, { error }) }
+      onNodeStart: (nodeId) => {
+        addExecutingNode(nodeId)
+        updateNodeData(nodeId, { isExecuting: true, error: undefined })
+      },
+      onNodeComplete: (nodeId, output) => {
+        removeExecutingNode(nodeId)
+        setNodeOutput(nodeId, output)
+        updateNodeData(nodeId, { output: String(output || ''), error: undefined, isExecuting: false })
+      },
+      onNodeError: (nodeId, error) => {
+        removeExecutingNode(nodeId)
+        updateNodeData(nodeId, { error, isExecuting: false })
+      }
     })
     setIsRunning(false)
   }
@@ -446,6 +468,15 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
           <div className={`flex items-center p-1.5 rounded-2xl border shadow-2xl gap-0.5 ${dark ? 'bg-[#1A1A1A] border-white/[0.08]' : 'bg-white border-black/[0.06]'}`}>
             <button onClick={() => { openNodeMenu() }} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${dark ? 'bg-[#2A2A2A] hover:bg-[#333] text-white' : 'bg-gray-100 hover:bg-gray-200 text-black'}`}>
               <Plus className="w-5 h-5" />
+            </button>
+            {/* RUN BUTTON */}
+            <button
+              onClick={() => handleRun()}
+              disabled={isRunning || safeNodes.length === 0}
+              title="Run workflow (⌘+Enter)"
+              className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all disabled:opacity-30 ${isRunning ? (dark ? 'bg-green-500/20 text-green-400' : 'bg-green-500/20 text-green-600') : (dark ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-black hover:bg-black/5')}`}
+            >
+              {isRunning ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Play className="w-[17px] h-[17px] relative left-[1px]" />}
             </button>
             <button onClick={() => setSelectedTool('select')} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${selectedTool === 'select' ? (dark ? 'bg-white/10 text-white' : 'bg-black/10 text-black') : (dark ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-black hover:bg-black/5')}`}>
               <MousePointer2 className="w-[17px] h-[17px]" />

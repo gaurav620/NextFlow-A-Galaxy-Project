@@ -4,7 +4,6 @@ import { Handle, Position } from '@xyflow/react';
 import { Copy, Check, Download, ChevronDown, Wand2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
-import Image from 'next/image';
 
 export default function ImageGenNode({ id, data }: any) {
   const { theme } = useTheme();
@@ -18,7 +17,7 @@ export default function ImageGenNode({ id, data }: any) {
   const promptConnected = data.promptConnected || false;
 
   useEffect(() => {
-    if (data.output && typeof data.output === 'string' && data.output.startsWith('http')) {
+    if (data.output && typeof data.output === 'string' && (data.output.startsWith('http') || data.output.startsWith('data:image'))) {
       setResultUrl(data.output);
     }
   }, [data.output]);
@@ -50,12 +49,17 @@ export default function ImageGenNode({ id, data }: any) {
           </div>
           <select 
             value={model} 
-            onChange={e => setModel(e.target.value)}
+            onChange={e => {
+              setModel(e.target.value);
+              import('@/store/workflowStore').then(({ useWorkflowStore }) => {
+                useWorkflowStore.getState().updateNodeData(id, { model: e.target.value });
+              });
+            }}
             className={`bg-transparent outline-none text-[13px] font-semibold cursor-pointer appearance-none ${dark ? 'text-[#E0E0E0]' : 'text-gray-800'}`}
           >
-            <option value="Flux 2">Flux 2</option>
-            <option value="Krea 1">Krea 1</option>
-            <option value="Nano Banana">Nano Banana</option>
+            <option value="nextflow1">NextFlow 1</option>
+            <option value="flux">Flux 2</option>
+            <option value="nano">Nano Banana</option>
           </select>
           <ChevronDown className={`w-3.5 h-3.5 ${dark ? 'text-gray-500' : 'text-gray-400'} ml-[-4px] pointer-events-none`} />
         </div>
@@ -70,7 +74,12 @@ export default function ImageGenNode({ id, data }: any) {
             {['1:1', '16:9', '9:16', '3:2'].map(ratio => (
               <button
                 key={ratio}
-                onClick={() => setAspectRatio(ratio)}
+                onClick={() => {
+                  setAspectRatio(ratio);
+                  import('@/store/workflowStore').then(({ useWorkflowStore }) => {
+                    useWorkflowStore.getState().updateNodeData(id, { aspectRatio: ratio });
+                  });
+                }}
                 className={`flex-1 py-1.5 text-[11px] font-medium rounded-lg transition-colors border ${
                   aspectRatio === ratio
                     ? dark ? 'bg-white/10 border-white/20 text-white' : 'bg-black/5 border-black/10 text-black'
@@ -117,7 +126,7 @@ export default function ImageGenNode({ id, data }: any) {
         {/* Result Image */}
         {resultUrl && !data.isExecuting && (
           <div className={`relative w-full aspect-[1/1] rounded-xl overflow-hidden border ${dark ? 'border-white/10' : 'border-black/10'} group`}>
-            <Image src={resultUrl} alt="Result" fill className="object-cover" />
+            <img src={resultUrl} alt="Result" className="w-full h-full object-cover" />
             
             {/* Quick Actions Hover */}
             <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">

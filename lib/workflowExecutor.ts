@@ -157,9 +157,9 @@ export async function executeWorkflow(
               body: JSON.stringify({
                 prompt: promptValue,
                 count: 1,
-                modelId: "krea1",
-                aspectRatio: "1:1",
-                resolution: "1K"
+                modelId: node.data.model || 'nextflow1',
+                aspectRatio: node.data.aspectRatio || '1:1',
+                resolution: '1K'
               }),
             })
             if (!res.ok) throw new Error(`API Error: ${res.statusText}`)
