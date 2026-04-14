@@ -1,50 +1,64 @@
 'use client';
 
 import { Handle, Position } from '@xyflow/react';
-import { Copy, Check, Loader2, Sparkles } from 'lucide-react';
+import { Copy, Check, Loader2, Sparkles, Play, Trash2, ChevronDown } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
-import { useWorkflowStore } from '@/store/workflowStore';
+import { useTheme } from 'next-themes';
+
+const LLM_MODELS = [
+  { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
+  { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
+  { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
+];
 
 export default function LLMNode({ id, data }: any) {
+  const { theme } = useTheme();
+  const dark = theme === 'dark';
+
   const [model, setModel] = useState(data.model || 'gemini-2.0-flash');
   const [systemPrompt, setSystemPrompt] = useState(data.systemPrompt || '');
   const [userMessage, setUserMessage] = useState(data.userMessage || '');
   const [result, setResult] = useState(data.result || '');
   const [isExecuting, setIsExecuting] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(true);
   const [copied, setCopied] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
-  const [resultHeight, setResultHeight] = useState(0);
 
   const systemConnected = data.systemConnected || false;
   const userConnected = data.userConnected || false;
-  const estimatedTokens = result ? Math.ceil(result.length / 4) : 0;
 
   useEffect(() => {
-    if (resultRef.current) {
-      setResultHeight(resultRef.current.scrollHeight);
+    if (data.output && typeof data.output === 'string') {
+      setResult(data.output);
     }
-  }, [result]);
+  }, [data.output]);
+
+  const syncToStore = (key: string, value: any) => {
+    import('@/store/workflowStore').then(({ useWorkflowStore }) => {
+      useWorkflowStore.getState().updateNodeData(id, { [key]: value });
+    });
+  };
 
   const handleRun = async () => {
-    const store = useWorkflowStore.getState();
-    store.addExecutingNode(id);
     setIsExecuting(true);
+    syncToStore('isExecuting', true);
+    syncToStore('error', undefined);
+    
     try {
+      const store = await import('@/store/workflowStore').then(m => m.useWorkflowStore.getState());
       const edges = store.edges;
       const sysSourceId = edges.find((e: any) => e.target === id && e.targetHandle === 'system_prompt')?.source;
       const userSourceId = edges.find((e: any) => e.target === id && e.targetHandle === 'user_message')?.source;
       const imgSourceIds = edges.filter((e: any) => e.target === id && e.targetHandle === 'images').map((e: any) => e.source);
 
       const finalSystemPrompt = sysSourceId ? String(store.nodeOutputs[sysSourceId] || '') : systemPrompt;
-      const finalUserMessage = userSourceId ? String(store.nodeOutputs[userSourceId] || '') : (userMessage || data.value || 'Hello');
-      const images = imgSourceIds.map((id: string) => store.nodeOutputs[id]).filter(Boolean);
+      const finalUserMessage = userSourceId ? String(store.nodeOutputs[userSourceId] || '') : (userMessage || 'Hello');
+      const images = imgSourceIds.map((sid: string) => store.nodeOutputs[sid]).filter(Boolean);
 
       const res = await fetch('/api/execute/llm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: model || 'gemini-2.0-flash',
+          model,
           systemPrompt: finalSystemPrompt,
           userMessage: finalUserMessage,
           images: images.length ? images : undefined,
@@ -61,12 +75,19 @@ export default function LLMNode({ id, data }: any) {
         setResult(`Error: ${resultData.error}`);
       }
     } catch (err: any) {
-      store.updateNodeData(id, { error: err.message });
+      syncToStore('error', err.message);
       setResult(`Error: ${err.message}`);
     } finally {
-      store.removeExecutingNode(id);
       setIsExecuting(false);
+      syncToStore('isExecuting', false);
     }
+  };
+
+  const handleDelete = () => {
+    import('@/store/workflowStore').then(({ useWorkflowStore }) => {
+      const store = useWorkflowStore.getState();
+      store.setNodes((store.nodes || []).filter((n: any) => n.id !== id));
+    });
   };
 
   const copyResult = () => {
@@ -76,114 +97,132 @@ export default function LLMNode({ id, data }: any) {
   };
 
   return (
-    <div
-      className="relative rounded-2xl w-[280px] transition-all bg-[#0d0d0d]/90 backdrop-blur-md shadow-2xl"
-      style={{
-        border: isExecuting ? '1px solid rgba(168,85,247,0.5)' : '1px solid rgba(255,255,255,0.1)',
-        boxShadow: isExecuting ? '0 0 20px rgba(168,85,247,0.15)' : '0 4px 24px rgba(0,0,0,0.4)',
-      }}
+    <div className={`relative rounded-2xl w-[300px] transition-all group ${dark ? 'bg-[#1A1A1A] border border-white/[0.08]' : 'bg-white border border-black/[0.08]'} shadow-xl hover:shadow-2xl`}
+      style={isExecuting ? { boxShadow: dark ? '0 0 20px rgba(168,85,247,0.15)' : '0 0 20px rgba(168,85,247,0.1)', borderColor: 'rgba(168,85,247,0.4)' } : undefined}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 cursor-grab active:cursor-grabbing border-b border-white/[0.04]">
+      <div className={`flex items-center justify-between px-4 py-2.5 cursor-grab active:cursor-grabbing border-b ${dark ? 'border-white/[0.05]' : 'border-black/[0.05]'} rounded-t-2xl`}>
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full shadow-[0_0_8px_#a855f7]" style={{ background: '#a855f7' }} />
-          <span className="text-[10px] font-semibold text-gray-300 tracking-wider uppercase">LLM Generation</span>
+          <div className={`w-6 h-6 flex items-center justify-center rounded-lg ${dark ? 'bg-purple-500/20' : 'bg-purple-500/10'}`}>
+            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+          </div>
+          <span className={`text-[13px] font-semibold ${dark ? 'text-[#E0E0E0]' : 'text-gray-800'}`}>LLM Generation</span>
         </div>
-        {isExecuting ? (
-          <Loader2 className="w-3 h-3 text-[#a855f7] animate-spin" />
-        ) : (
-           <Sparkles className="w-3 h-3 text-gray-500" />
-        )}
+        <div className="flex items-center gap-1">
+          <button onClick={handleRun} disabled={isExecuting} title="Run this node"
+            className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all disabled:opacity-30 ${
+              isExecuting ? (dark ? 'bg-purple-500/20 text-purple-400' : 'bg-purple-500/20 text-purple-600')
+                : (dark ? 'hover:bg-white/10 text-gray-500 hover:text-purple-400' : 'hover:bg-black/5 text-gray-400 hover:text-purple-600')
+            }`}>
+            {isExecuting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+          </button>
+          <button onClick={handleDelete} title="Delete" className={`w-6 h-6 flex items-center justify-center rounded-md transition-colors opacity-0 group-hover:opacity-100 ${dark ? 'hover:bg-red-500/20 text-gray-500 hover:text-red-400' : 'hover:bg-red-500/10 text-gray-400 hover:text-red-500'}`}>
+            <Trash2 className="w-3 h-3" />
+          </button>
+        </div>
       </div>
 
       {/* Body */}
-      <div className="p-2 space-y-2">
+      <div className="p-3 space-y-2.5">
         {/* Model selector */}
-        <div className="relative group">
-          <select
-            value={model}
-            onChange={(e) => { 
-               setModel(e.target.value); 
-               useWorkflowStore.getState().updateNodeData(id, { model: e.target.value });
-            }}
-            className="rounded-lg text-xs text-white px-2 py-1.5 w-full focus:outline-none bg-white/[0.02] border border-white/[0.04] appearance-none cursor-pointer pr-6 hover:bg-white/[0.04] transition-colors"
-          >
-            <option className="bg-[#111]">gemini-2.0-flash</option>
-            <option className="bg-[#111]">gemini-1.5-flash</option>
-            <option className="bg-[#111]">gemini-1.5-pro</option>
-          </select>
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500 text-[8px]">▼</div>
+        <div>
+          <div className={`text-[10px] font-semibold tracking-wider uppercase mb-1.5 ${dark ? 'text-gray-500' : 'text-gray-400'}`}>Model</div>
+          <div className="relative">
+            <select value={model} onChange={(e) => { setModel(e.target.value); syncToStore('model', e.target.value) }}
+              className={`w-full rounded-xl text-[12px] px-3 py-2 outline-none appearance-none cursor-pointer pr-7 transition-colors border ${
+                dark ? 'bg-[#111] text-[#E0E0E0] border-white/[0.06] hover:border-white/20' : 'bg-gray-50 text-gray-800 border-black/[0.06] hover:border-black/20'
+              }`}>
+              {LLM_MODELS.map(m => (
+                <option key={m.value} value={m.value}>{m.label}</option>
+              ))}
+            </select>
+            <ChevronDown className={`w-3 h-3 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${dark ? 'text-gray-500' : 'text-gray-400'}`} />
+          </div>
         </div>
 
         {/* System prompt */}
         {!systemConnected && (
-          <textarea
-            value={systemPrompt}
-            onChange={(e) => { 
-                setSystemPrompt(e.target.value); 
-                useWorkflowStore.getState().updateNodeData(id, { systemPrompt: e.target.value });
-            }}
-            placeholder="System prompt (optional)..."
-            className="rounded-lg text-gray-200 text-xs w-full p-2 resize-none h-12 placeholder-gray-600 focus:outline-none bg-transparent hover:bg-white/[0.02] transition-colors border border-transparent focus:border-white/10 shadow-inner"
-          />
+          <div>
+            <div className={`text-[10px] font-semibold tracking-wider uppercase mb-1.5 ${dark ? 'text-gray-500' : 'text-gray-400'}`}>System Prompt</div>
+            <textarea value={systemPrompt} onChange={(e) => { setSystemPrompt(e.target.value); syncToStore('systemPrompt', e.target.value) }}
+              placeholder="System prompt (optional)..."
+              rows={2}
+              className={`w-full rounded-xl text-[12px] p-3 resize-none outline-none transition-colors border leading-relaxed ${
+                dark ? 'bg-[#111] text-[#E0E0E0] border-white/[0.06] placeholder:text-gray-600 focus:border-purple-500/50' : 'bg-gray-50 text-gray-800 border-black/[0.06] placeholder:text-gray-400 focus:border-purple-500/50'
+              }`}
+            />
+          </div>
         )}
         {systemConnected && (
-          <div className="rounded-lg px-2 py-1.5 text-[10px] text-[#a855f7] bg-[#a855f7]/10 flex items-center gap-1.5 border border-[#a855f7]/20">
-            <div className="w-1 h-1 rounded-full bg-[#a855f7] animate-pulse" /> Linked
+          <div className={`rounded-xl px-3 py-2 text-[11px] font-medium border ${dark ? 'text-purple-400 bg-purple-500/10 border-purple-500/20' : 'text-purple-600 bg-purple-500/10 border-purple-500/20'}`}>
+            ✓ System prompt linked
           </div>
         )}
 
         {/* User message */}
         {!userConnected && (
-          <textarea
-            value={userMessage}
-            onChange={(e) => { 
-               setUserMessage(e.target.value); 
-               useWorkflowStore.getState().updateNodeData(id, { userMessage: e.target.value });
-            }}
-            placeholder="User message (required)..."
-            className="rounded-lg text-gray-200 text-xs w-full p-2 resize-none h-16 placeholder-gray-600 focus:outline-none bg-transparent hover:bg-white/[0.02] transition-colors border border-transparent focus:border-white/10 shadow-inner"
-          />
+          <div>
+            <div className={`text-[10px] font-semibold tracking-wider uppercase mb-1.5 ${dark ? 'text-gray-500' : 'text-gray-400'}`}>User Message</div>
+            <textarea value={userMessage} onChange={(e) => { setUserMessage(e.target.value); syncToStore('userMessage', e.target.value) }}
+              placeholder="User message (required)..."
+              rows={3}
+              className={`w-full rounded-xl text-[12px] p-3 resize-none outline-none transition-colors border leading-relaxed ${
+                dark ? 'bg-[#111] text-[#E0E0E0] border-white/[0.06] placeholder:text-gray-600 focus:border-blue-500/50' : 'bg-gray-50 text-gray-800 border-black/[0.06] placeholder:text-gray-400 focus:border-blue-500/50'
+              }`}
+            />
+          </div>
         )}
         {userConnected && (
-          <div className="rounded-lg px-2 py-1.5 text-[10px] text-[#a855f7] bg-[#a855f7]/10 flex items-center gap-1.5 border border-[#a855f7]/20 mt-1">
-            <div className="w-1 h-1 rounded-full bg-[#a855f7] animate-pulse" /> Linked
+          <div className={`rounded-xl px-3 py-2 text-[11px] font-medium border ${dark ? 'text-blue-400 bg-blue-500/10 border-blue-500/20' : 'text-blue-600 bg-blue-500/10 border-blue-500/20'}`}>
+            ✓ User message linked
           </div>
         )}
 
         {/* Response area */}
         {result && (
-          <div className="rounded-lg overflow-hidden border border-white/[0.04] bg-black/40">
-            <div className="flex items-center justify-between px-2 py-1.5 border-b border-white/[0.02]">
-              <span className="text-[9px] text-[#a855f7] font-medium tracking-widest uppercase">Output</span>
-              <button onClick={copyResult} className="p-1 hover:bg-white/10 rounded transition-colors text-gray-400 hover:text-white">
-                {copied ? <Check className="w-2.5 h-2.5 text-green-400" /> : <Copy className="w-2.5 h-2.5" />}
+          <div className={`rounded-xl overflow-hidden border ${dark ? 'border-white/[0.06] bg-[#111]' : 'border-black/[0.06] bg-gray-50'}`}>
+            <div className={`flex items-center justify-between px-3 py-2 border-b ${dark ? 'border-white/[0.04]' : 'border-black/[0.04]'}`}>
+              <span className={`text-[10px] font-semibold tracking-wider uppercase ${dark ? 'text-purple-400' : 'text-purple-600'}`}>Output</span>
+              <button onClick={copyResult} className={`p-1 rounded-md transition-colors ${dark ? 'hover:bg-white/10 text-gray-400 hover:text-white' : 'hover:bg-black/5 text-gray-400 hover:text-black'}`}>
+                {copied ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
               </button>
             </div>
-            <div
-              className="transition-all duration-300 ease-in-out overflow-hidden"
-              style={{ maxHeight: isExpanded ? `${resultHeight + 8}px` : '0px', opacity: isExpanded ? 1 : 0 }}
-            >
-              <div ref={resultRef} className="px-2 py-1.5 text-[11px] text-gray-300 leading-relaxed max-h-32 overflow-y-auto hide-scrollbar">
-                {result}
-              </div>
+            <div ref={resultRef} className={`px-3 py-2 text-[11px] leading-relaxed max-h-36 overflow-y-auto ${dark ? 'text-gray-300' : 'text-gray-700'}`}>
+              {result}
             </div>
+          </div>
+        )}
+
+        {/* Error */}
+        {data.error && !result.startsWith('Error:') && (
+          <div className="rounded-xl px-3 py-2 text-[11px] font-medium text-red-400 bg-red-500/10 border border-red-500/20">
+            ⚠ {data.error}
           </div>
         )}
       </div>
 
-      {/* Input Handles - left side */}
-      <Handle type="target" position={Position.Left} id="system_prompt" className="w-2 h-2 !border-2 !border-[#0d0d0d] !bg-[#6b7280]" style={{ left: -4, top: 78 }} />
-      <span className="absolute text-[8px] text-gray-500/70 font-medium tracking-wide right-[102%] pointer-events-none" style={{ top: 74 }}>SYS</span>
+      {/* Input Handles */}
+      <Handle type="target" position={Position.Left} id="system_prompt" 
+        className="!w-3 !h-3 !border-2 !border-gray-500/50 !bg-gray-500 !rounded-full" 
+        style={{ left: -6, top: 100 }} />
+      
+      <Handle type="target" position={Position.Left} id="user_message" 
+        className="!w-3 !h-3 !border-2 !border-blue-500/50 !bg-blue-500 !rounded-full" 
+        style={{ left: -6, top: 150 }} />
+      
+      <Handle type="target" position={Position.Left} id="images" 
+        className="!w-3 !h-3 !border-2 !border-green-500/50 !bg-green-500 !rounded-full" 
+        style={{ left: -6, top: 200 }} />
 
-      <Handle type="target" position={Position.Left} id="user_message" className="w-2 h-2 !border-2 !border-[#0d0d0d] !bg-[#3b82f6] shadow-[0_0_8px_#3b82f6]" style={{ left: -4, top: 120 }} />
-      <span className="absolute text-[8px] text-[#3b82f6]/70 font-medium tracking-wide right-[102%] pointer-events-none" style={{ top: 116 }}>PROMPT</span>
-
-      <Handle type="target" position={Position.Left} id="images" className="w-2 h-2 !border-2 !border-[#0d0d0d] !bg-[#22c55e] shadow-[0_0_8px_#22c55e]" style={{ left: -4, top: 180 }} />
-      <span className="absolute text-[8px] text-[#22c55e]/70 font-medium tracking-wide right-[102%] pointer-events-none" style={{ top: 176 }}>IMAGE</span>
-
-      {/* Output Handle - right side */}
-      <Handle type="source" position={Position.Right} id="output" className="w-2 h-2 !border-2 !border-[#0d0d0d] !bg-[#a855f7] shadow-[0_0_8px_#a855f7]" style={{ right: -4, bottom: 20 }} />
+      {/* Output Handle */}
+      <Handle type="source" position={Position.Right} id="output" 
+        className="!w-3 !h-3 !border-2 !border-purple-500/50 !bg-purple-500 !rounded-full" 
+        style={{ right: -6, bottom: 25 }} />
+      
+      {/* Handle Labels */}
+      <span className={`absolute text-[8px] font-medium pointer-events-none ${dark ? 'text-gray-600' : 'text-gray-400'}`} style={{ left: -30, top: 96 }}>SYS</span>
+      <span className={`absolute text-[8px] font-medium pointer-events-none ${dark ? 'text-blue-500/60' : 'text-blue-500/60'}`} style={{ left: -42, top: 146 }}>PROMPT</span>
+      <span className={`absolute text-[8px] font-medium pointer-events-none ${dark ? 'text-green-500/60' : 'text-green-500/60'}`} style={{ left: -36, top: 196 }}>IMAGE</span>
     </div>
   );
 }

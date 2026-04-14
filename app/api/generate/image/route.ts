@@ -86,9 +86,11 @@ export async function POST(req: NextRequest) {
     // Determine the Pollinations model mapping based on our frontend 'modelId'
     let polliModel = 'flux'; // Default to Flux
     const modelId = (body.modelId || '').toLowerCase();
-    if (modelId.includes('imagen3') || modelId.includes('krea1') || modelId.includes('nextflow')) polliModel = 'flux-pro';
-    if (modelId.includes('nano')) polliModel = 'turbo';
-    if (modelId.includes('recraft')) polliModel = 'flux';
+    if (modelId === 'nextflow1' || modelId.includes('nextflow')) polliModel = 'flux-pro';
+    else if (modelId === 'flux-klein') polliModel = 'flux';
+    else if (modelId === 'nano' || modelId === 'nano2' || modelId.includes('nano')) polliModel = 'turbo';
+    else if (modelId === 'recraft' || modelId.includes('recraft')) polliModel = 'flux';
+    else if (modelId === 'flux') polliModel = 'flux';
 
     const resolutionScaleMap: Record<string, number> = {
       '1k': 1,
