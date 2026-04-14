@@ -30,6 +30,7 @@ import ImageGenNode from '@/components/nodes/image-gen-node'
 import { useWorkflowStore } from '@/store/workflowStore'
 import { executeWorkflow } from '@/lib/workflowExecutor'
 import { useAssetStore } from '@/store/assets'
+import { useTheme } from 'next-themes'
 
 import {
   Undo2,
@@ -43,6 +44,7 @@ import {
   Wand2,
   Share,
   Moon,
+  Sun,
   ChevronRight,
   Workflow,
   X,
@@ -176,6 +178,7 @@ function KeyboardShortcutsModal({ onClose }: { onClose: () => void }) {
 // --- MAIN CANVAS COMPONENT ---
 export default function WorkflowCanvas({ id, router }: { id: string, router: any }) {
   const { user } = useClerk()
+  const { theme, setTheme } = useTheme()
   const {
     nodes, edges, setNodes, setEdges,
     workflowName, setWorkflowName,
@@ -245,20 +248,35 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
 
   // Handlers
   const onNodesChange = useCallback((changes: any) => setNodes(applyNodeChanges(changes, safeNodes)), [safeNodes, setNodes])
-  const onEdgesChange = useCallback((changes: any) => setEdges(applyEdgeChanges(changes, safeEdges)), [safeEdges, setEdges])
+  const onEdgesChange = useCallback((changes: any) => {
+    changes.forEach((change: any) => {
+      if (change.type === 'remove') {
+        const edge = safeEdges.find((e: any) => e.id === change.id)
+        if (edge && edge.targetHandle === 'prompt') {
+          updateNodeData(edge.target, { promptConnected: false })
+        }
+      }
+    })
+    setEdges(applyEdgeChanges(changes, safeEdges))
+  }, [safeEdges, setEdges, updateNodeData])
   
   const onConnect = useCallback((connection: Connection) => {
     if (connection.source && connection.target && hasCycle(connection.source, connection.target, safeEdges)) {
       alert("Circular connection blocked!") // Simple alert instead of toast for now
       return
     }
+
+    if (connection.targetHandle === 'prompt') {
+      updateNodeData(connection.target, { promptConnected: true })
+    }
+
     setEdges(addEdge({
       ...connection,
       animated: true,
       style: { stroke: '#a855f7', strokeWidth: 2 },
       markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' },
     }, safeEdges))
-  }, [setEdges, safeEdges])
+  }, [setEdges, safeEdges, updateNodeData])
 
   const handlePaneDoubleClick = (e: React.MouseEvent) => {
     if (e.target !== e.currentTarget && (e.target as Element).classList.contains('react-flow__pane')) {
@@ -342,7 +360,7 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
 
   return (
     <ReactFlowProvider>
-      <div className="relative h-screen w-full overflow-hidden bg-[#0A0A0A] font-sans selection:bg-white/20">
+      <div className="relative h-screen w-full overflow-hidden bg-white dark:bg-[#0A0A0A] font-sans selection:bg-black/20 dark:selection:bg-white/20">
       
       {/* --- TOP BAR (Krea Style) --- */}
       <div className="absolute top-0 left-0 right-0 z-40 flex items-center justify-between p-4 pointer-events-none">
@@ -371,8 +389,8 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
 
         {/* Right: Actions */}
         <div className="flex items-center gap-3 pointer-events-auto">
-          <button className="w-10 h-10 flex items-center justify-center bg-[#161616] hover:bg-[#1E1E1E] transition-colors rounded-full border border-white/[0.08] text-white tooltip-trigger">
-            <Moon className="w-[18px] h-[18px]" />
+          <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="w-10 h-10 flex items-center justify-center bg-white dark:bg-[#161616] hover:bg-gray-100 dark:hover:bg-[#1E1E1E] transition-colors rounded-full border border-gray-200 dark:border-white/[0.08] text-gray-700 dark:text-white shadow-sm">
+            {theme === 'dark' ? <Moon className="w-[18px] h-[18px]" /> : <Sun className="w-[18px] h-[18px]" />}
           </button>
           
           <button className="h-10 px-4 flex items-center gap-2 bg-[#161616] hover:bg-[#1E1E1E] transition-colors rounded-full border border-white/[0.08] text-[#a0a0a0] hover:text-white font-medium text-[13px] shadow-sm">
@@ -523,7 +541,7 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
             }
           }}
         >
-          <Background variant={BackgroundVariant.Dots} color="#333" gap={20} size={1} />
+          <Background variant={BackgroundVariant.Dots} color={theme === 'dark' ? '#333' : '#ccc'} gap={20} size={1} />
         </ReactFlow>
       </div>
 

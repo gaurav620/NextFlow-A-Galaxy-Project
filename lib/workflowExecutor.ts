@@ -70,7 +70,7 @@ export async function executeWorkflow(
           let output: any
 
           if (node.type === 'textNode') {
-            output = node.data.value || ''
+            output = node.data.content || ''
           } else if (node.type === 'imageUploadNode') {
             output = node.data.imageUrl || node.data.value || ''
           } else if (node.type === 'videoUploadNode') {
