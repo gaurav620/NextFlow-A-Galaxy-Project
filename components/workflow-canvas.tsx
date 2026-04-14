@@ -173,18 +173,6 @@ const presetTemplates = [
   },
 ]
 
-// ── LEFT SIDEBAR ICONS (Krea-exact vertical strip) ──
-const sidebarIcons = [
-  { icon: <div className="w-3.5 h-3.5 rounded-full bg-blue-500" />, label: 'Home', href: '/dashboard' },
-  { icon: <div className="w-3.5 h-3.5 rounded-full bg-red-500" />, label: 'Image', href: '/dashboard/image' },
-  { icon: <div className="w-3.5 h-3.5 rounded-full bg-yellow-500" />, label: 'Video', href: '/dashboard/video' },
-  { icon: <div className="w-3.5 h-3.5 rounded-full bg-indigo-500" />, label: 'Enhancer', href: '/dashboard/enhancer' },
-  { icon: <div className="w-3.5 h-3.5 rounded-full bg-green-500" />, label: 'Nano Banana', href: '/dashboard/nano' },
-  { icon: <div className="w-3.5 h-3.5 rounded-full bg-orange-500" />, label: 'Realtime', href: '/dashboard/realtime' },
-  { icon: <div className="w-3.5 h-3.5 rounded-full bg-pink-500" />, label: 'Edit', href: '/dashboard/edit' },
-  { icon: <div className="w-3.5 h-3.5 rounded-full bg-purple-500" />, label: 'Motion', href: '/dashboard/motion' },
-]
-
 // ── CYCLE CHECK ──
 function hasCycle(source: string, target: string, edges: Edge[]): boolean {
   const visited = new Set<string>()
@@ -408,35 +396,10 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
 
   return (
     <ReactFlowProvider>
-      <div className={`relative h-screen w-full overflow-hidden font-sans ${dark ? 'bg-[#0A0A0A]' : 'bg-[#F5F5F5]'}`}>
-
-        {/* ── LEFT SIDEBAR (Krea vertical icon strip) ── */}
-        <div className={`absolute top-0 left-0 bottom-0 w-[40px] z-50 flex flex-col items-center py-4 gap-3 ${dark ? 'bg-[#0e0e0e] border-r border-white/[0.06]' : 'bg-white border-r border-black/[0.06]'}`}>
-          {/* NextFlow Logo */}
-          <button onClick={() => router.push('/dashboard')} className={`w-7 h-7 rounded-lg flex items-center justify-center mb-2 font-bold text-sm ${dark ? 'bg-white text-black' : 'bg-black text-white'}`}>
-            N
-          </button>
-          
-          {sidebarIcons.map((item, i) => (
-            <button key={i} onClick={() => router.push(item.href)} title={item.label} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors">
-              {item.icon}
-            </button>
-          ))}
-          
-          <div className="flex-1" />
-          
-          {/* User Avatar */}
-          <div className={`w-7 h-7 rounded-full overflow-hidden border ${dark ? 'border-white/10' : 'border-black/10'}`}>
-            {user?.imageUrl ? (
-              <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-purple-500 to-blue-500" />
-            )}
-          </div>
-        </div>
+      <div className={`relative h-full w-full overflow-hidden font-sans ${dark ? 'bg-[#0A0A0A]' : 'bg-[#F5F5F5]'}`}>
 
         {/* ── TOP BAR ── */}
-        <div className="absolute top-0 left-[40px] right-0 z-40 flex items-center justify-between px-4 py-3 pointer-events-none">
+        <div className="absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 pointer-events-none">
           <div className="flex items-center gap-3 pointer-events-auto">
             {/* Logo + Name */}
             <div className={`flex items-center gap-2 px-3 h-9 rounded-full border ${dark ? 'bg-[#161616] border-white/[0.08]' : 'bg-white border-black/[0.08]'} shadow-sm`}>
@@ -466,7 +429,7 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
         </div>
 
         {/* ── BOTTOM LEFT: Undo/Redo + Shortcuts ── */}
-        <div className="absolute bottom-5 left-[52px] z-40 flex items-center gap-2 pointer-events-auto">
+        <div className="absolute bottom-5 left-5 z-40 flex items-center gap-2 pointer-events-auto">
           <button onClick={undo} disabled={past.length === 0} className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-colors disabled:opacity-30 ${dark ? 'bg-[#161616] border-white/[0.08] text-[#a0a0a0] hover:text-white' : 'bg-white border-black/[0.06] text-gray-500 hover:text-black'}`}>
             <Undo2 className="w-4 h-4" />
           </button>
@@ -572,7 +535,7 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
         )}
 
         {/* ── REACT FLOW CANVAS ── */}
-        <div ref={reactFlowWrapper} className="absolute top-0 left-[40px] right-0 bottom-0 z-0">
+        <div ref={reactFlowWrapper} className="absolute inset-0 z-0">
           <ReactFlow
             nodes={safeNodes} edges={safeEdges}
             onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect}
@@ -596,8 +559,8 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
         </div>
 
         {/* ── EMPTY STATE WITH PRESET TEMPLATES (Krea-exact) ── */}
-        {safeNodes.length === 0 && !showNodeMenu && (
-          <div className="absolute inset-0 left-[40px] flex flex-col items-center justify-center z-10 pointer-events-none">
+        {safeNodes.length === 0 && !showNodeMenu && !showShortcuts && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none">
             <div className="text-center pointer-events-auto">
               <p className={`text-[15px] font-medium mb-1 ${dark ? 'text-[#888]' : 'text-gray-500'}`}>
                 Add a node <span className={`font-normal ${dark ? 'text-[#555]' : 'text-gray-400'}`}> or drag and drop media files, or select a preset</span>
