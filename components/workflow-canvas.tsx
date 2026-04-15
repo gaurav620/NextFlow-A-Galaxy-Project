@@ -286,6 +286,7 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
       if (e.key === 'v' || e.key === 'V') { e.preventDefault(); addNodeAtCenter('videoUploadNode') }
       if (e.key === 'l' || e.key === 'L') { e.preventDefault(); addNodeAtCenter('llmNode') }
       if (e.key === 'e' || e.key === 'E') { e.preventDefault(); addNodeAtCenter('cropImageNode') }
+      if (e.key === 't' || e.key === 'T') { e.preventDefault(); addNodeAtCenter('textNode') }
       if (e.key === 'Escape') { setShowNodeMenu(false); setShowShortcuts(false) }
       if (e.metaKey || e.ctrlKey) {
         if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo() }
@@ -438,35 +439,7 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
     <ReactFlowProvider>
       <div className={`relative h-full w-full overflow-hidden font-sans ${dark ? 'bg-[#0A0A0A]' : 'bg-[#F5F5F5]'}`}>
 
-        {/* ── LEFT NAV SIDEBAR (Krea-style icon rail) ── */}
-        <div className={`absolute top-0 left-0 bottom-0 w-[40px] z-30 flex flex-col items-center py-3 gap-1 pointer-events-auto ${dark ? 'bg-[#0A0A0A]/80 border-r border-white/[0.04]' : 'bg-[#F5F5F5]/80 border-r border-black/[0.04]'} backdrop-blur-md`}>
-          {/* Top icons */}
-          <button onClick={() => openNodeMenu()} title="Add node (N)" className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${dark ? 'text-gray-500 hover:bg-white/[0.06] hover:text-white' : 'text-gray-400 hover:bg-black/[0.06] hover:text-black'}`}>
-            <Plus className="w-4 h-4" />
-          </button>
-          <button onClick={() => addNodeAtCenter('imageGenNode')} title="Image node (I)" className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${dark ? 'text-gray-500 hover:bg-white/[0.06] hover:text-white' : 'text-gray-400 hover:bg-black/[0.06] hover:text-black'}`}>
-            <ImageIcon className="w-4 h-4" />
-          </button>
-          <button onClick={() => addNodeAtCenter('videoUploadNode')} title="Video node (V)" className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${dark ? 'text-gray-500 hover:bg-white/[0.06] hover:text-white' : 'text-gray-400 hover:bg-black/[0.06] hover:text-black'}`}>
-            <Film className="w-4 h-4" />
-          </button>
-          <button onClick={() => addNodeAtCenter('llmNode')} title="LLM node (L)" className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${dark ? 'text-gray-500 hover:bg-white/[0.06] hover:text-white' : 'text-gray-400 hover:bg-black/[0.06] hover:text-black'}`}>
-            <Sparkles className="w-4 h-4" />
-          </button>
-          <button onClick={() => addNodeAtCenter('textNode')} title="Text node (T)" className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${dark ? 'text-gray-500 hover:bg-white/[0.06] hover:text-white' : 'text-gray-400 hover:bg-black/[0.06] hover:text-black'}`}>
-            <Type className="w-4 h-4" />
-          </button>
-          <button onClick={() => addNodeAtCenter('cropImageNode')} title="Enhance node (E)" className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${dark ? 'text-gray-500 hover:bg-white/[0.06] hover:text-white' : 'text-gray-400 hover:bg-black/[0.06] hover:text-black'}`}>
-            <Crop className="w-4 h-4" />
-          </button>
 
-          <div className="flex-1" />
-
-          {/* Canvas Agent FAB */}
-          <button title="Canvas Agent" className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${dark ? 'bg-gradient-to-br from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40' : 'bg-gradient-to-br from-purple-500 to-blue-500 text-white shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40'}`}>
-            <Bot className="w-4.5 h-4.5" />
-          </button>
-        </div>
 
         {/* ── TOP BAR ── */}
         <div className="absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 pointer-events-none">
