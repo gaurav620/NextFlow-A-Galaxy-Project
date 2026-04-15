@@ -33,8 +33,9 @@ import { useTheme } from 'next-themes'
 
 import {
   Undo2, Redo2, Search, Plus, MousePointer2, Hand, Scissors, Link2,
-  Wand2, Share, Moon, Sun, ChevronDown, X, Keyboard, Play, BoxSelect,
+  Wand2, Share, Moon, Sun, ChevronDown, ChevronUp, X, Keyboard, Play, BoxSelect,
   Image as ImageIcon, Video, Sparkles, Type, Film, Crop, Bot, Maximize,
+  ArrowLeft, Download, Upload, Users,
 } from 'lucide-react'
 
 // ── NODE TYPES ──
@@ -255,6 +256,8 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [selectedTool, setSelectedTool] = useState<'select' | 'pan' | 'cut' | 'group'>('select')
   const [showPresets, setShowPresets] = useState(true)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [hoveredTool, setHoveredTool] = useState<string | null>(null)
 
   const safeNodes = useMemo(() => Array.isArray(nodes) ? nodes : [], [nodes]) as Node[]
   const safeEdges = useMemo(() => Array.isArray(edges) ? edges : [], [edges]) as Edge[]
@@ -443,13 +446,75 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
 
         {/* ── TOP BAR ── */}
         <div className="absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 pointer-events-none">
-          <div className="flex items-center gap-3 pointer-events-auto">
-            {/* Logo + Name */}
-            <div className={`flex items-center gap-2 px-3 h-9 rounded-full border ${dark ? 'bg-[#161616] border-white/[0.08]' : 'bg-white border-black/[0.08]'} shadow-sm`}>
+          <div className="flex items-center gap-3 pointer-events-auto relative">
+            {/* Logo + Name + Dropdown Trigger */}
+            <button onClick={() => setShowDropdown(!showDropdown)} className={`flex items-center gap-2 px-3 h-9 rounded-full border cursor-pointer transition-colors ${dark ? 'bg-[#161616] border-white/[0.08] hover:border-white/20' : 'bg-white border-black/[0.08] hover:border-black/20'} shadow-sm`}>
               <div className={`w-5 h-5 rounded-md flex items-center justify-center font-bold text-[10px] ${dark ? 'bg-white/10 text-white' : 'bg-black/10 text-black'}`}>N</div>
-              <span className={`text-[13px] font-medium outline-none max-w-[140px] truncate ${dark ? 'text-[#e0e0e0]' : 'text-gray-800'}`} contentEditable suppressContentEditableWarning onBlur={(e) => setWorkflowName(e.currentTarget.textContent || 'Untitled')}>{workflowName}</span>
-              <ChevronDown className={`w-3 h-3 ${dark ? 'text-[#555]' : 'text-gray-400'}`} />
-            </div>
+              {showDropdown ? <ChevronUp className={`w-3 h-3 ${dark ? 'text-[#888]' : 'text-gray-500'}`} /> : <ChevronDown className={`w-3 h-3 ${dark ? 'text-[#555]' : 'text-gray-400'}`} />}
+              <span className={`text-[13px] font-medium max-w-[140px] truncate ${dark ? 'text-[#e0e0e0]' : 'text-gray-800'}`}>{workflowName}</span>
+            </button>
+
+            {/* ── TOP BAR DROPDOWN MENU ── */}
+            {showDropdown && (
+              <>
+                <div className="fixed inset-0 z-[60]" onClick={() => setShowDropdown(false)} />
+                <div className={`absolute top-12 left-0 z-[70] w-[260px] rounded-xl border shadow-2xl overflow-hidden ${dark ? 'bg-[#1A1A1A] border-white/[0.08]' : 'bg-white border-black/[0.08]'}`}>
+                  {/* Editable Name */}
+                  <div className={`px-4 pt-3 pb-2 border-b ${dark ? 'border-white/[0.06]' : 'border-black/[0.06]'}`}>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-6 h-6 rounded-lg flex items-center justify-center font-bold text-[11px] ${dark ? 'bg-white/10 text-white' : 'bg-black/10 text-black'}`}>N</div>
+                      <input
+                        type="text" value={workflowName}
+                        onChange={e => setWorkflowName(e.target.value)}
+                        className={`flex-1 bg-transparent text-[14px] font-medium outline-none border rounded-lg px-2 py-1 transition-colors ${dark ? 'text-white border-white/10 focus:border-white/30' : 'text-black border-black/10 focus:border-black/30'}`}
+                      />
+                    </div>
+                  </div>
+                  {/* Menu Items */}
+                  <div className="py-1.5">
+                    <button onClick={() => { setShowDropdown(false); router.push('/dashboard/workflows') }} className={`w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium transition-colors ${dark ? 'text-white hover:bg-white/[0.06]' : 'text-gray-800 hover:bg-gray-50'}`}>
+                      <ArrowLeft className="w-4 h-4" /> Back
+                    </button>
+                    <button onClick={() => { setShowDropdown(false); handleSave() }} className={`w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium transition-colors ${dark ? 'text-white hover:bg-white/[0.06]' : 'text-gray-800 hover:bg-gray-50'}`}>
+                      <Wand2 className="w-4 h-4" /> Turn into App
+                    </button>
+                    <button onClick={() => { setShowDropdown(false); document.getElementById('import-workflow-input')?.click() }} className={`w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium transition-colors ${dark ? 'text-white hover:bg-white/[0.06]' : 'text-gray-800 hover:bg-gray-50'}`}>
+                      <Upload className="w-4 h-4" /> Import
+                    </button>
+                    <button onClick={() => {
+                      setShowDropdown(false)
+                      const data = JSON.stringify({ name: workflowName, nodes: safeNodes, edges: safeEdges }, null, 2)
+                      const blob = new Blob([data], { type: 'application/json' })
+                      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${workflowName || 'workflow'}.json`; a.click()
+                    }} className={`w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium transition-colors ${dark ? 'text-white hover:bg-white/[0.06]' : 'text-gray-800 hover:bg-gray-50'}`}>
+                      <Download className="w-4 h-4" /> Export
+                    </button>
+                    <div className={`mx-3 my-1 border-t ${dark ? 'border-white/[0.06]' : 'border-black/[0.06]'}`} />
+                    <button className={`w-full flex items-center justify-between px-4 py-2.5 text-[13px] font-medium transition-colors ${dark ? 'text-white hover:bg-white/[0.06]' : 'text-gray-800 hover:bg-gray-50'}`}>
+                      <span className="flex items-center gap-3"><Users className="w-4 h-4" /> Workspaces</span>
+                      <ChevronDown className="w-3 h-3 -rotate-90" />
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Import hidden input */}
+            <input id="import-workflow-input" type="file" accept=".json" className="hidden" onChange={(e) => {
+              const file = e.target.files?.[0]; if (!file) return
+              const reader = new FileReader()
+              reader.onload = () => {
+                try {
+                  const data = JSON.parse(reader.result as string)
+                  if (data.nodes) { setNodes(data.nodes); setShowPresets(false) }
+                  if (data.edges) setEdges(data.edges)
+                  if (data.name) setWorkflowName(data.name)
+                  setTimeout(() => reactFlowInstance?.fitView({ padding: 0.3, duration: 400 }), 200)
+                } catch { console.error('Invalid workflow file') }
+              }
+              reader.readAsText(file)
+              e.target.value = ''
+            }} />
 
             {/* Node count badge */}
             {safeNodes.length > 0 && (
@@ -461,24 +526,17 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
           </div>
 
           <div className="flex items-center gap-2 pointer-events-auto">
-            {/* Run All Workflow */}
-            <button
-              onClick={handleRun}
-              disabled={isRunning || safeNodes.length === 0}
+            {/* Run All */}
+            <button onClick={handleRun} disabled={isRunning || safeNodes.length === 0}
               className={`h-9 px-3.5 flex items-center gap-2 rounded-full border text-[12px] font-semibold transition-all disabled:opacity-30 ${
-                isRunning
-                  ? (dark ? 'bg-green-500/20 border-green-500/30 text-green-400' : 'bg-green-500/10 border-green-500/30 text-green-600')
+                isRunning ? (dark ? 'bg-green-500/20 border-green-500/30 text-green-400' : 'bg-green-500/10 border-green-500/30 text-green-600')
                   : (dark ? 'bg-[#161616] border-white/[0.08] text-white hover:bg-[#1E1E1E] hover:border-white/20' : 'bg-white border-black/[0.08] text-black hover:bg-gray-50')
               }`}
             >
-              {isRunning ? (
-                <><div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" /> Running...</>
-              ) : (
-                <><Play className="w-3.5 h-3.5" /> Run All</>
-              )}
+              {isRunning ? <><div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" /> Running...</> : <><Play className="w-3.5 h-3.5" /> Run All</>}
             </button>
 
-            <button onClick={() => setTheme(dark ? 'light' : 'dark')} title={dark ? 'Switch to light mode' : 'Switch to dark mode'} className={`w-9 h-9 flex items-center justify-center rounded-full border transition-colors ${dark ? 'bg-[#161616] border-white/[0.08] text-white hover:bg-[#1E1E1E]' : 'bg-white border-black/[0.08] text-gray-700 hover:bg-gray-100'}`}>
+            <button onClick={() => setTheme(dark ? 'light' : 'dark')} title={dark ? 'Light mode' : 'Dark mode'} className={`w-9 h-9 flex items-center justify-center rounded-full border transition-colors ${dark ? 'bg-[#161616] border-white/[0.08] text-white hover:bg-[#1E1E1E]' : 'bg-white border-black/[0.08] text-gray-700 hover:bg-gray-100'}`}>
               {dark ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
             </button>
 
@@ -487,11 +545,10 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
             </button>
 
             <button onClick={handleSave} disabled={safeNodes.length === 0} className={`h-9 px-3 flex items-center gap-1.5 rounded-full border text-[12px] font-medium transition-colors disabled:opacity-40 ${
-              saveStatus === 'saved'
-                ? (dark ? 'bg-green-500/20 border-green-500/30 text-green-400' : 'bg-green-500/10 border-green-500/30 text-green-600')
+              saveStatus === 'saved' ? (dark ? 'bg-green-500/20 border-green-500/30 text-green-400' : 'bg-green-500/10 border-green-500/30 text-green-600')
                 : (dark ? 'bg-[#161616] border-white/[0.08] text-[#a0a0a0] hover:text-white hover:bg-[#1E1E1E]' : 'bg-white border-black/[0.08] text-gray-500 hover:text-black hover:bg-gray-50')
             }`}>
-              <Wand2 className="w-3.5 h-3.5" /> {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved ✓' : 'Save & App'}
+              <Wand2 className="w-3.5 h-3.5" /> {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved ✓' : 'Turn workflow into app'}
             </button>
 
             <div className={`w-9 h-9 rounded-full overflow-hidden border cursor-pointer ${dark ? 'border-white/[0.08]' : 'border-black/[0.08]'}`}>
@@ -500,55 +557,78 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
           </div>
         </div>
 
-        {/* ── BOTTOM LEFT: Undo/Redo + Shortcuts ── */}
-        <div className="absolute bottom-5 left-5 z-40 flex items-center gap-2 pointer-events-auto">
-          <button onClick={undo} disabled={past.length === 0} className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-colors disabled:opacity-30 ${dark ? 'bg-[#161616] border-white/[0.08] text-[#a0a0a0] hover:text-white' : 'bg-white border-black/[0.06] text-gray-500 hover:text-black'}`}>
-            <Undo2 className="w-4 h-4" />
-          </button>
-          <button onClick={redo} disabled={future.length === 0} className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-colors disabled:opacity-30 ${dark ? 'bg-[#161616] border-white/[0.08] text-[#a0a0a0] hover:text-white' : 'bg-white border-black/[0.06] text-gray-500 hover:text-black'}`}>
-            <Redo2 className="w-4 h-4" />
-          </button>
-          <button onClick={() => setShowShortcuts(true)} className={`h-9 px-3 flex items-center gap-1.5 rounded-xl border text-[12px] font-medium transition-colors ${dark ? 'bg-[#161616] border-white/[0.08] text-[#a0a0a0] hover:text-white' : 'bg-white border-black/[0.06] text-gray-500 hover:text-black'}`}>
+        {/* ── BOTTOM LEFT: Undo/Redo + Shortcuts (Krea-exact) ── */}
+        <div className="absolute bottom-4 left-4 z-40 flex items-center gap-1 pointer-events-auto">
+          <div className={`flex items-center rounded-xl border overflow-hidden ${dark ? 'bg-[#1A1A1A] border-white/[0.08]' : 'bg-white border-black/[0.06]'}`}>
+            <div className="relative" onMouseEnter={() => setHoveredTool('undo')} onMouseLeave={() => setHoveredTool(null)}>
+              <button onClick={undo} disabled={past.length === 0} className={`w-9 h-9 flex items-center justify-center transition-colors disabled:opacity-30 ${dark ? 'text-[#a0a0a0] hover:text-white hover:bg-white/[0.06]' : 'text-gray-500 hover:text-black hover:bg-black/[0.03]'}`}>
+                <Undo2 className="w-4 h-4" />
+              </button>
+              {hoveredTool === 'undo' && <div className={`absolute -top-9 left-1/2 -translate-x-1/2 px-2 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap shadow-lg border ${dark ? 'bg-[#2A2A2A] text-white border-white/10' : 'bg-white text-black border-black/10'}`}>Undo <span className={`ml-1 text-[10px] font-mono rounded px-1 py-0.5 ${dark ? 'bg-white/10' : 'bg-black/5'}`}>⌘Z</span></div>}
+            </div>
+            <div className="relative" onMouseEnter={() => setHoveredTool('redo')} onMouseLeave={() => setHoveredTool(null)}>
+              <button onClick={redo} disabled={future.length === 0} className={`w-9 h-9 flex items-center justify-center transition-colors disabled:opacity-30 ${dark ? 'text-[#a0a0a0] hover:text-white hover:bg-white/[0.06]' : 'text-gray-500 hover:text-black hover:bg-black/[0.03]'}`}>
+                <Redo2 className="w-4 h-4" />
+              </button>
+              {hoveredTool === 'redo' && <div className={`absolute -top-9 left-1/2 -translate-x-1/2 px-2 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap shadow-lg border ${dark ? 'bg-[#2A2A2A] text-white border-white/10' : 'bg-white text-black border-black/10'}`}>Redo <span className={`ml-1 text-[10px] font-mono rounded px-1 py-0.5 ${dark ? 'bg-white/10' : 'bg-black/5'}`}>⌘⇧Z</span></div>}
+            </div>
+          </div>
+          <button onClick={() => setShowShortcuts(true)} className={`h-9 px-3 flex items-center gap-1.5 rounded-xl border text-[12px] font-medium transition-colors ${dark ? 'bg-[#1A1A1A] border-white/[0.08] text-[#a0a0a0] hover:text-white' : 'bg-white border-black/[0.06] text-gray-500 hover:text-black'}`}>
             <Keyboard className="w-3.5 h-3.5" /> Keyboard shortcuts
           </button>
         </div>
 
-        {/* ── BOTTOM CENTER: Floating Toolbar ── */}
-        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-40 pointer-events-auto">
+        {/* ── BOTTOM CENTER: Floating Toolbar (Krea-exact with tooltips) ── */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 pointer-events-auto">
           <div className={`flex items-center p-1.5 rounded-2xl border shadow-2xl gap-0.5 ${dark ? 'bg-[#1A1A1A] border-white/[0.08]' : 'bg-white border-black/[0.06]'}`}>
-            <button onClick={() => { openNodeMenu() }} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${dark ? 'bg-[#2A2A2A] hover:bg-[#333] text-white' : 'bg-gray-100 hover:bg-gray-200 text-black'}`}>
-              <Plus className="w-5 h-5" />
-            </button>
-            {/* RUN BUTTON */}
-            <button
-              onClick={() => handleRun()}
-              disabled={isRunning || safeNodes.length === 0}
-              title="Run workflow (⌘+Enter)"
-              className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all disabled:opacity-30 ${isRunning ? (dark ? 'bg-green-500/20 text-green-400' : 'bg-green-500/20 text-green-600') : (dark ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-black hover:bg-black/5')}`}
-            >
-              {isRunning ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Play className="w-[17px] h-[17px] relative left-[1px]" />}
-            </button>
-            <button onClick={() => setSelectedTool('select')} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${selectedTool === 'select' ? (dark ? 'bg-white/10 text-white' : 'bg-black/10 text-black') : (dark ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-black hover:bg-black/5')}`}>
-              <MousePointer2 className="w-[17px] h-[17px]" />
-            </button>
-            <button onClick={() => setSelectedTool('pan')} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${selectedTool === 'pan' ? (dark ? 'bg-white/10 text-white' : 'bg-black/10 text-black') : (dark ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-black hover:bg-black/5')}`}>
-              <Hand className="w-[17px] h-[17px]" />
-            </button>
-            <button onClick={() => setSelectedTool('cut')} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${selectedTool === 'cut' ? (dark ? 'bg-white/10 text-white' : 'bg-black/10 text-black') : (dark ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-black hover:bg-black/5')}`}>
-              <Scissors className="w-[17px] h-[17px]" />
-            </button>
-            <button onClick={() => setSelectedTool('group')} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${selectedTool === 'group' ? (dark ? 'bg-white/10 text-white' : 'bg-black/10 text-black') : (dark ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-black hover:bg-black/5')}`}>
-              <BoxSelect className="w-[17px] h-[17px]" />
-            </button>
-            <button className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${dark ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-black hover:bg-black/5'}`}>
-              <Link2 className="w-[17px] h-[17px]" />
-            </button>
+            {/* + New Node */}
+            <div className="relative" onMouseEnter={() => setHoveredTool('newnode')} onMouseLeave={() => setHoveredTool(null)}>
+              <button onClick={() => openNodeMenu()} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors ${dark ? 'bg-[#2A2A2A] hover:bg-[#333] text-white' : 'bg-gray-100 hover:bg-gray-200 text-black'}`}>
+                <Plus className="w-5 h-5" />
+              </button>
+              {hoveredTool === 'newnode' && <div className={`absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap shadow-lg border ${dark ? 'bg-[#2A2A2A] text-white border-white/10' : 'bg-white text-black border-black/10'}`}>New Node <span className={`ml-1 text-[10px] font-mono rounded px-1 py-0.5 ${dark ? 'bg-white/10' : 'bg-black/5'}`}>N</span></div>}
+            </div>
+            {/* Drag Selection */}
+            <div className="relative" onMouseEnter={() => setHoveredTool('select')} onMouseLeave={() => setHoveredTool(null)}>
+              <button onClick={() => setSelectedTool('select')} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors ${selectedTool === 'select' ? (dark ? 'bg-white/10 text-white' : 'bg-black/10 text-black') : (dark ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-black hover:bg-black/5')}`}>
+                <MousePointer2 className="w-[18px] h-[18px]" />
+              </button>
+              {hoveredTool === 'select' && <div className={`absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap shadow-lg border ${dark ? 'bg-[#2A2A2A] text-white border-white/10' : 'bg-white text-black border-black/10'}`}>Drag Selection</div>}
+            </div>
+            {/* Pan */}
+            <div className="relative" onMouseEnter={() => setHoveredTool('pan')} onMouseLeave={() => setHoveredTool(null)}>
+              <button onClick={() => setSelectedTool('pan')} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors ${selectedTool === 'pan' ? (dark ? 'bg-white/10 text-white' : 'bg-black/10 text-black') : (dark ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-black hover:bg-black/5')}`}>
+                <Hand className="w-[18px] h-[18px]" />
+              </button>
+              {hoveredTool === 'pan' && <div className={`absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap shadow-lg border ${dark ? 'bg-[#2A2A2A] text-white border-white/10' : 'bg-white text-black border-black/10'}`}>Pan</div>}
+            </div>
+            {/* Cut Connections */}
+            <div className="relative" onMouseEnter={() => setHoveredTool('cut')} onMouseLeave={() => setHoveredTool(null)}>
+              <button onClick={() => setSelectedTool('cut')} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors ${selectedTool === 'cut' ? (dark ? 'bg-white/10 text-white' : 'bg-black/10 text-black') : (dark ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-black hover:bg-black/5')}`}>
+                <Scissors className="w-[18px] h-[18px]" />
+              </button>
+              {hoveredTool === 'cut' && <div className={`absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap shadow-lg border ${dark ? 'bg-[#2A2A2A] text-white border-white/10' : 'bg-white text-black border-black/10'}`}>Cut Connections</div>}
+            </div>
+            {/* Group */}
+            <div className="relative" onMouseEnter={() => setHoveredTool('group')} onMouseLeave={() => setHoveredTool(null)}>
+              <button onClick={() => setSelectedTool('group')} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors ${selectedTool === 'group' ? (dark ? 'bg-white/10 text-white' : 'bg-black/10 text-black') : (dark ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-black hover:bg-black/5')}`}>
+                <BoxSelect className="w-[18px] h-[18px]" />
+              </button>
+              {hoveredTool === 'group' && <div className={`absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap shadow-lg border ${dark ? 'bg-[#2A2A2A] text-white border-white/10' : 'bg-white text-black border-black/10'}`}>Group</div>}
+            </div>
+            {/* Link */}
+            <div className="relative" onMouseEnter={() => setHoveredTool('link')} onMouseLeave={() => setHoveredTool(null)}>
+              <button className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors ${dark ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-black hover:bg-black/5'}`}>
+                <Link2 className="w-[18px] h-[18px]" />
+              </button>
+              {hoveredTool === 'link' && <div className={`absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap shadow-lg border ${dark ? 'bg-[#2A2A2A] text-white border-white/10' : 'bg-white text-black border-black/10'}`}>Link</div>}
+            </div>
           </div>
         </div>
 
         {/* ── BOTTOM RIGHT: Minimap Toggle ── */}
-        <div className="absolute bottom-5 right-5 z-40 pointer-events-auto">
-          <button onClick={() => reactFlowInstance?.fitView({ padding: 0.2, duration: 400 })} className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-colors ${dark ? 'bg-[#161616] border-white/[0.08] text-[#a0a0a0] hover:text-white' : 'bg-white border-black/[0.06] text-gray-500 hover:text-black'}`}>
+        <div className="absolute bottom-4 right-4 z-40 pointer-events-auto">
+          <button onClick={() => reactFlowInstance?.fitView({ padding: 0.2, duration: 400 })} className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-colors ${dark ? 'bg-[#1A1A1A] border-white/[0.08] text-[#a0a0a0] hover:text-white' : 'bg-white border-black/[0.06] text-gray-500 hover:text-black'}`}>
             <Maximize className="w-4 h-4" />
           </button>
         </div>
