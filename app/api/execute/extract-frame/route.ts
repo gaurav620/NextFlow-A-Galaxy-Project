@@ -1,26 +1,72 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { tasks, runs } from '@trigger.dev/sdk/v3'
+import { z } from 'zod'
 import prisma from '@/lib/prisma'
+import type { extractFrameTask } from '@/trigger/tasks/extract-frame'
+
+const schema = z.object({
+  videoUrl: z.string(),
+  timestamp: z.union([z.number(), z.string()]).default(0),
+  nodeId: z.string().optional(),
+  workflowRunId: z.string().optional(),
+})
 
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { videoUrl, timestamp = 0, nodeId, workflowRunId } = await req.json()
+    const body = schema.parse(await req.json())
+    const triggerKey = process.env.TRIGGER_SECRET_KEY
 
-    // Direct passthrough until FFmpeg worker is wired
-    const output = videoUrl
+    let output: string
+    let executionMethod = 'trigger.dev'
 
-    if (workflowRunId && nodeId && !workflowRunId.startsWith('local-')) {
+    // Normalize timestamp to number
+    const timestamp = typeof body.timestamp === 'string'
+      ? (body.timestamp.includes('%') ? 0 : parseFloat(body.timestamp) || 0)
+      : body.timestamp
+
+    if (triggerKey) {
+      // ── PRIMARY: Execute via Trigger.dev task (uses FFmpeg/Transloadit) ──
+      try {
+        const handle = await tasks.trigger<typeof extractFrameTask>('extract-frame-node', {
+          videoUrl: body.videoUrl,
+          timestamp,
+          workflowRunId: body.workflowRunId,
+          nodeId: body.nodeId,
+        })
+        const run = await runs.poll(handle.id, { pollIntervalMs: 2000 })
+
+        if (run.status === 'COMPLETED' && run.output) {
+          output = (run.output as any).output
+        } else {
+          throw new Error(run.status === 'FAILED' ? 'Trigger.dev extract frame task failed' : 'Trigger.dev extract frame task timed out')
+        }
+      } catch (triggerErr: any) {
+        console.warn('Trigger.dev extract-frame failed, falling back to passthrough:', triggerErr.message)
+        executionMethod = 'passthrough-fallback'
+        // Passthrough: return video URL as frame URL (degraded experience)
+        output = body.videoUrl
+      }
+    } else {
+      // ── FALLBACK: Passthrough (no Trigger.dev configured) ──
+      executionMethod = 'passthrough'
+      console.warn('TRIGGER_SECRET_KEY not set — extract-frame returning video URL as passthrough')
+      output = body.videoUrl
+    }
+
+    // Save to DB (skip if Trigger.dev task already saved)
+    if (executionMethod !== 'trigger.dev' && body.workflowRunId && body.nodeId && !body.workflowRunId.startsWith('local-')) {
       try {
         await prisma.nodeRun.create({
           data: {
-            workflowRunId,
-            nodeId,
+            workflowRunId: body.workflowRunId,
+            nodeId: body.nodeId,
             nodeType: 'extractFrameNode',
             status: 'success',
-            inputs: { videoUrl, timestamp },
+            inputs: { videoUrl: body.videoUrl, timestamp },
             outputs: { imageUrl: output },
             endedAt: new Date(),
           },

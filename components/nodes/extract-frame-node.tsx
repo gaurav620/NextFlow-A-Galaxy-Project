@@ -2,7 +2,7 @@
 
 import { Handle, Position } from '@xyflow/react';
 import { Loader2, Film, Play, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 
 export default function ExtractFrameNode({ id, data }: any) {
@@ -11,6 +11,20 @@ export default function ExtractFrameNode({ id, data }: any) {
 
   const [timestamp, setTimestamp] = useState(data.timestamp || 0);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [resultUrl, setResultUrl] = useState('');
+  const [connectedHandles, setConnectedHandles] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    import('@/store/workflowStore').then(({ useWorkflowStore }) => {
+      const store = useWorkflowStore.getState();
+      const edges = store.edges || [];
+      const connected = new Set<string>();
+      edges.forEach((e: any) => {
+        if (e.target === id && e.targetHandle) connected.add(e.targetHandle);
+      });
+      setConnectedHandles(connected);
+    });
+  }, [id, data]);
 
   const syncToStore = (vals: Record<string, any>) => {
     import('@/store/workflowStore').then(({ useWorkflowStore }) => {
@@ -26,17 +40,21 @@ export default function ExtractFrameNode({ id, data }: any) {
       const store = await import('@/store/workflowStore').then(m => m.useWorkflowStore.getState());
       const edges = store.edges;
       const vidSourceId = edges.find((e: any) => e.target === id && e.targetHandle === 'video_url')?.source;
+      const tsSourceId = edges.find((e: any) => e.target === id && e.targetHandle === 'timestamp')?.source;
+
       const videoUrl = vidSourceId ? store.nodeOutputs[vidSourceId] : '';
+      const finalTimestamp = tsSourceId ? Number(store.nodeOutputs[tsSourceId]) : timestamp;
 
       if (!videoUrl) throw new Error('No video connected');
 
       const res = await fetch('/api/execute/extract-frame', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoUrl, timestamp, nodeId: id }),
+        body: JSON.stringify({ videoUrl, timestamp: finalTimestamp, nodeId: id }),
       });
       const resData = await res.json();
       if (resData.success) {
+        setResultUrl(resData.output);
         syncToStore({ output: resData.output });
         store.setNodeOutput(id, resData.output);
       } else {
@@ -58,7 +76,7 @@ export default function ExtractFrameNode({ id, data }: any) {
   };
 
   return (
-    <div className={`relative rounded-2xl w-[260px] transition-all group ${dark ? 'bg-[#1A1A1A] border border-white/[0.08]' : 'bg-white border border-black/[0.08]'} shadow-xl hover:shadow-2xl`}>
+    <div className={`relative rounded-2xl w-[260px] transition-all group ${dark ? 'bg-[#1A1A1A] border border-white/[0.08]' : 'bg-white border border-black/[0.08]'} shadow-xl hover:shadow-2xl ${data.isExecuting ? 'node-executing' : ''}`}>
       {/* Header */}
       <div className={`flex items-center justify-between px-4 py-2.5 cursor-grab active:cursor-grabbing border-b ${dark ? 'border-white/[0.05]' : 'border-black/[0.05]'} rounded-t-2xl`}>
         <div className="flex items-center gap-2">
@@ -85,14 +103,28 @@ export default function ExtractFrameNode({ id, data }: any) {
       <div className="p-3 space-y-2.5">
         <div>
           <div className={`text-[10px] font-semibold tracking-wider uppercase mb-1.5 ${dark ? 'text-gray-500' : 'text-gray-400'}`}>Timestamp (seconds)</div>
-          <input
-            type="number" min={0} step={0.1} value={timestamp}
-            onChange={e => { setTimestamp(Number(e.target.value)); syncToStore({ timestamp: Number(e.target.value) }) }}
-            className={`w-full rounded-xl text-[12px] px-3 py-2 outline-none transition-colors border ${
-              dark ? 'bg-[#111] text-white border-white/[0.06] focus:border-yellow-500/50' : 'bg-gray-50 text-gray-800 border-black/[0.06] focus:border-yellow-500/50'
-            }`}
-          />
+          {connectedHandles.has('timestamp') ? (
+            <div className={`rounded-xl px-3 py-2 text-[11px] font-medium border ${dark ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' : 'text-yellow-600 bg-yellow-500/10 border-yellow-500/20'}`}>✓ Timestamp linked</div>
+          ) : (
+            <input
+              type="number" min={0} step={0.1} value={timestamp}
+              onChange={e => { setTimestamp(Number(e.target.value)); syncToStore({ timestamp: Number(e.target.value) }) }}
+              className={`w-full rounded-xl text-[12px] px-3 py-2 outline-none transition-colors border ${
+                dark ? 'bg-[#111] text-white border-white/[0.06] focus:border-yellow-500/50' : 'bg-gray-50 text-gray-800 border-black/[0.06] focus:border-yellow-500/50'
+              }`}
+            />
+          )}
         </div>
+
+        {/* Inline Result Preview */}
+        {resultUrl && !isExecuting && (
+          <div className={`rounded-xl overflow-hidden border ${dark ? 'border-white/[0.08]' : 'border-black/[0.08]'}`}>
+            <img src={resultUrl} alt="Extracted frame" className="w-full object-cover" />
+            <div className={`px-2.5 py-1.5 text-[10px] font-medium ${dark ? 'text-gray-500 bg-[#111]' : 'text-gray-400 bg-gray-50'}`}>
+              Frame at {timestamp}s
+            </div>
+          </div>
+        )}
 
         {data.error && (
           <div className="rounded-xl px-3 py-2 text-[11px] font-medium text-red-400 bg-red-500/10 border border-red-500/20">
@@ -104,7 +136,14 @@ export default function ExtractFrameNode({ id, data }: any) {
       {/* Input Handle */}
       <Handle type="target" position={Position.Left} id="video_url"
         className="!w-3 !h-3 !border-2 !border-orange-500/50 !bg-orange-500 !rounded-full"
-        style={{ left: -6, top: '50%' }} />
+        style={{ left: -6, top: 55 }} />
+      <Handle type="target" position={Position.Left} id="timestamp"
+        className="!w-2.5 !h-2.5 !border-2 !border-yellow-500/40 !bg-yellow-500 !rounded-full"
+        style={{ left: -5, top: 105 }} />
+
+      {/* Handle Labels */}
+      <span className={`absolute text-[7px] font-medium pointer-events-none ${dark ? 'text-orange-500/60' : 'text-orange-500/60'}`} style={{ left: -30, top: 51 }}>VID</span>
+      <span className={`absolute text-[7px] font-medium pointer-events-none ${dark ? 'text-yellow-500/50' : 'text-yellow-500/50'}`} style={{ left: -16, top: 101 }}>T</span>
 
       {/* Output Handle */}
       <Handle type="source" position={Position.Right} id="output"

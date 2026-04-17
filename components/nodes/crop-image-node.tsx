@@ -2,7 +2,7 @@
 
 import { Handle, Position } from '@xyflow/react';
 import { Loader2, Crop, Play, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 
 export default function CropImageNode({ id, data }: any) {
@@ -15,6 +15,21 @@ export default function CropImageNode({ id, data }: any) {
   const [height, setHeight] = useState(data.height || 100);
   const [isExecuting, setIsExecuting] = useState(false);
   const [resultUrl, setResultUrl] = useState('');
+
+  // Detect which handles have connections
+  const [connectedHandles, setConnectedHandles] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    import('@/store/workflowStore').then(({ useWorkflowStore }) => {
+      const store = useWorkflowStore.getState();
+      const edges = store.edges || [];
+      const connected = new Set<string>();
+      edges.forEach((e: any) => {
+        if (e.target === id && e.targetHandle) connected.add(e.targetHandle);
+      });
+      setConnectedHandles(connected);
+    });
+  }, [id, data]);
 
   const syncToStore = (vals: Record<string, any>) => {
     import('@/store/workflowStore').then(({ useWorkflowStore }) => {
@@ -30,14 +45,23 @@ export default function CropImageNode({ id, data }: any) {
       const store = await import('@/store/workflowStore').then(m => m.useWorkflowStore.getState());
       const edges = store.edges;
       const imgSourceId = edges.find((e: any) => e.target === id && e.targetHandle === 'image_url')?.source;
+      const xSourceId = edges.find((e: any) => e.target === id && e.targetHandle === 'x_percent')?.source;
+      const ySourceId = edges.find((e: any) => e.target === id && e.targetHandle === 'y_percent')?.source;
+      const wSourceId = edges.find((e: any) => e.target === id && e.targetHandle === 'width_percent')?.source;
+      const hSourceId = edges.find((e: any) => e.target === id && e.targetHandle === 'height_percent')?.source;
+
       const imageUrl = imgSourceId ? store.nodeOutputs[imgSourceId] : '';
+      const finalX = xSourceId ? Number(store.nodeOutputs[xSourceId]) : x;
+      const finalY = ySourceId ? Number(store.nodeOutputs[ySourceId]) : y;
+      const finalW = wSourceId ? Number(store.nodeOutputs[wSourceId]) : width;
+      const finalH = hSourceId ? Number(store.nodeOutputs[hSourceId]) : height;
 
       if (!imageUrl) throw new Error('No image connected');
 
       const res = await fetch('/api/execute/crop-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl, x, y, width, height, nodeId: id }),
+        body: JSON.stringify({ imageUrl, x: finalX, y: finalY, width: finalW, height: finalH, nodeId: id }),
       });
       const resData = await res.json();
       if (resData.success) {
@@ -62,12 +86,16 @@ export default function CropImageNode({ id, data }: any) {
     });
   };
 
-  const inputClass = `w-full rounded-lg text-[12px] px-3 py-1.5 outline-none transition-colors border ${
-    dark ? 'bg-[#111] text-white border-white/[0.06] focus:border-pink-500/50' : 'bg-gray-50 text-gray-800 border-black/[0.06] focus:border-pink-500/50'
+  const inputClass = (disabled: boolean) => `w-full rounded-lg text-[12px] px-3 py-1.5 outline-none transition-colors border ${
+    disabled
+      ? (dark ? 'bg-purple-500/5 text-purple-400/50 border-purple-500/20 cursor-not-allowed' : 'bg-purple-500/5 text-purple-400/50 border-purple-500/20 cursor-not-allowed')
+      : (dark ? 'bg-[#111] text-white border-white/[0.06] focus:border-pink-500/50' : 'bg-gray-50 text-gray-800 border-black/[0.06] focus:border-pink-500/50')
   }`;
 
   return (
-    <div className={`relative rounded-2xl w-[260px] transition-all group ${dark ? 'bg-[#1A1A1A] border border-white/[0.08]' : 'bg-white border border-black/[0.08]'} shadow-xl hover:shadow-2xl`}>
+    <div
+      className={`relative rounded-2xl w-[280px] transition-all group ${dark ? 'bg-[#1A1A1A] border border-white/[0.08]' : 'bg-white border border-black/[0.08]'} shadow-xl hover:shadow-2xl ${data.isExecuting ? 'node-executing' : ''}`}
+    >
       {/* Header */}
       <div className={`flex items-center justify-between px-4 py-2.5 cursor-grab active:cursor-grabbing border-b ${dark ? 'border-white/[0.05]' : 'border-black/[0.05]'} rounded-t-2xl`}>
         <div className="flex items-center gap-2">
@@ -96,19 +124,35 @@ export default function CropImageNode({ id, data }: any) {
         <div className="grid grid-cols-2 gap-2">
           <div>
             <label className={`text-[9px] font-medium mb-0.5 block ${dark ? 'text-gray-500' : 'text-gray-400'}`}>X</label>
-            <input type="number" min={0} max={100} value={x} onChange={e => { setX(Number(e.target.value)); syncToStore({ x: Number(e.target.value) }) }} className={inputClass} />
+            {connectedHandles.has('x_percent') ? (
+              <div className={`rounded-lg px-3 py-1.5 text-[11px] font-medium border ${dark ? 'text-purple-400 bg-purple-500/10 border-purple-500/20' : 'text-purple-600 bg-purple-500/10 border-purple-500/20'}`}>✓ Linked</div>
+            ) : (
+              <input type="number" min={0} max={100} value={x} onChange={e => { setX(Number(e.target.value)); syncToStore({ x: Number(e.target.value) }) }} className={inputClass(false)} />
+            )}
           </div>
           <div>
             <label className={`text-[9px] font-medium mb-0.5 block ${dark ? 'text-gray-500' : 'text-gray-400'}`}>Y</label>
-            <input type="number" min={0} max={100} value={y} onChange={e => { setY(Number(e.target.value)); syncToStore({ y: Number(e.target.value) }) }} className={inputClass} />
+            {connectedHandles.has('y_percent') ? (
+              <div className={`rounded-lg px-3 py-1.5 text-[11px] font-medium border ${dark ? 'text-purple-400 bg-purple-500/10 border-purple-500/20' : 'text-purple-600 bg-purple-500/10 border-purple-500/20'}`}>✓ Linked</div>
+            ) : (
+              <input type="number" min={0} max={100} value={y} onChange={e => { setY(Number(e.target.value)); syncToStore({ y: Number(e.target.value) }) }} className={inputClass(false)} />
+            )}
           </div>
           <div>
             <label className={`text-[9px] font-medium mb-0.5 block ${dark ? 'text-gray-500' : 'text-gray-400'}`}>Width</label>
-            <input type="number" min={1} max={100} value={width} onChange={e => { setWidth(Number(e.target.value)); syncToStore({ width: Number(e.target.value) }) }} className={inputClass} />
+            {connectedHandles.has('width_percent') ? (
+              <div className={`rounded-lg px-3 py-1.5 text-[11px] font-medium border ${dark ? 'text-purple-400 bg-purple-500/10 border-purple-500/20' : 'text-purple-600 bg-purple-500/10 border-purple-500/20'}`}>✓ Linked</div>
+            ) : (
+              <input type="number" min={1} max={100} value={width} onChange={e => { setWidth(Number(e.target.value)); syncToStore({ width: Number(e.target.value) }) }} className={inputClass(false)} />
+            )}
           </div>
           <div>
             <label className={`text-[9px] font-medium mb-0.5 block ${dark ? 'text-gray-500' : 'text-gray-400'}`}>Height</label>
-            <input type="number" min={1} max={100} value={height} onChange={e => { setHeight(Number(e.target.value)); syncToStore({ height: Number(e.target.value) }) }} className={inputClass} />
+            {connectedHandles.has('height_percent') ? (
+              <div className={`rounded-lg px-3 py-1.5 text-[11px] font-medium border ${dark ? 'text-purple-400 bg-purple-500/10 border-purple-500/20' : 'text-purple-600 bg-purple-500/10 border-purple-500/20'}`}>✓ Linked</div>
+            ) : (
+              <input type="number" min={1} max={100} value={height} onChange={e => { setHeight(Number(e.target.value)); syncToStore({ height: Number(e.target.value) }) }} className={inputClass(false)} />
+            )}
           </div>
         </div>
 
@@ -126,10 +170,29 @@ export default function CropImageNode({ id, data }: any) {
         )}
       </div>
 
-      {/* Input Handle */}
+      {/* Input Handles — All 5 per spec */}
       <Handle type="target" position={Position.Left} id="image_url"
         className="!w-3 !h-3 !border-2 !border-green-500/50 !bg-green-500 !rounded-full"
-        style={{ left: -6, top: '50%' }} />
+        style={{ left: -6, top: 80 }} />
+      <Handle type="target" position={Position.Left} id="x_percent"
+        className="!w-2.5 !h-2.5 !border-2 !border-pink-500/40 !bg-pink-500 !rounded-full"
+        style={{ left: -5, top: 130 }} />
+      <Handle type="target" position={Position.Left} id="y_percent"
+        className="!w-2.5 !h-2.5 !border-2 !border-pink-500/40 !bg-pink-500 !rounded-full"
+        style={{ left: -5, top: 160 }} />
+      <Handle type="target" position={Position.Left} id="width_percent"
+        className="!w-2.5 !h-2.5 !border-2 !border-pink-500/40 !bg-pink-500 !rounded-full"
+        style={{ left: -5, top: 190 }} />
+      <Handle type="target" position={Position.Left} id="height_percent"
+        className="!w-2.5 !h-2.5 !border-2 !border-pink-500/40 !bg-pink-500 !rounded-full"
+        style={{ left: -5, top: 220 }} />
+
+      {/* Handle Labels */}
+      <span className={`absolute text-[7px] font-medium pointer-events-none ${dark ? 'text-green-500/60' : 'text-green-500/60'}`} style={{ left: -32, top: 76 }}>IMG</span>
+      <span className={`absolute text-[7px] font-medium pointer-events-none ${dark ? 'text-pink-500/50' : 'text-pink-500/50'}`} style={{ left: -16, top: 126 }}>X</span>
+      <span className={`absolute text-[7px] font-medium pointer-events-none ${dark ? 'text-pink-500/50' : 'text-pink-500/50'}`} style={{ left: -16, top: 156 }}>Y</span>
+      <span className={`absolute text-[7px] font-medium pointer-events-none ${dark ? 'text-pink-500/50' : 'text-pink-500/50'}`} style={{ left: -16, top: 186 }}>W</span>
+      <span className={`absolute text-[7px] font-medium pointer-events-none ${dark ? 'text-pink-500/50' : 'text-pink-500/50'}`} style={{ left: -16, top: 216 }}>H</span>
 
       {/* Output Handle */}
       <Handle type="source" position={Position.Right} id="output"

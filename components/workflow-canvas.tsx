@@ -26,6 +26,7 @@ import LLMNode from '@/components/nodes/llm-node'
 import CropImageNode from '@/components/nodes/crop-image-node'
 import ExtractFrameNode from '@/components/nodes/extract-frame-node'
 import ImageGenNode from '@/components/nodes/image-gen-node'
+import HistorySidebar from '@/components/history-sidebar'
 import { useWorkflowStore } from '@/store/workflowStore'
 import { executeWorkflow } from '@/lib/workflowExecutor'
 import { useAssetStore } from '@/store/assets'
@@ -35,7 +36,7 @@ import {
   Undo2, Redo2, Search, Plus, MousePointer2, Hand, Scissors, Link2,
   Wand2, Share, Moon, Sun, ChevronDown, ChevronUp, X, Keyboard, Play, BoxSelect,
   Image as ImageIcon, Video, Sparkles, Type, Film, Crop, Bot, Maximize,
-  ArrowLeft, Download, Upload, Users,
+  ArrowLeft, Download, Upload, Users, PanelRightOpen, PanelRightClose,
 } from 'lucide-react'
 
 // ── NODE TYPES ──
@@ -258,11 +259,29 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
   const [showPresets, setShowPresets] = useState(true)
   const [showDropdown, setShowDropdown] = useState(false)
   const [hoveredTool, setHoveredTool] = useState<string | null>(null)
+  const [showHistory, setShowHistory] = useState(false)
 
   const safeNodes = useMemo(() => Array.isArray(nodes) ? nodes : [], [nodes]) as Node[]
   const safeEdges = useMemo(() => Array.isArray(edges) ? edges : [], [edges]) as Edge[]
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
+  const autoSaveTimer = useRef<NodeJS.Timeout | null>(null)
   const dark = theme === 'dark'
+
+  // ── AUTO-SAVE (1s debounce) ──
+  useEffect(() => {
+    if (!safeNodes.length || !currentWorkflowId) return
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+    autoSaveTimer.current = setTimeout(async () => {
+      try {
+        await fetch('/api/workflow', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: workflowName || 'Untitled', data: { nodes: safeNodes, edges: safeEdges }, workflowId: currentWorkflowId }),
+        })
+      } catch {}
+    }, 1000)
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current) }
+  }, [safeNodes, safeEdges, currentWorkflowId, workflowName])
 
   // Load workflow from DB
   useEffect(() => {
@@ -334,6 +353,27 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
     setEdges(addEdge({ ...connection, animated: true, style: { stroke: '#a855f7', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' } }, safeEdges))
   }, [setEdges, safeEdges, updateNodeData])
 
+  // ── Type-safe connection validation ──
+  const isValidConnection = useCallback((connection: Edge | Connection) => {
+    const src = 'source' in connection ? connection.source : undefined
+    const tgt = 'target' in connection ? connection.target : undefined
+    if (!src || !tgt) return false
+    if (src === tgt) return false
+    // Prevent cycles
+    if (hasCycle(src, tgt, safeEdges)) return false
+
+    // Handle-type compatibility rules
+    const sourceNode = safeNodes.find(n => n.id === src)
+    const targetHandle = ('targetHandle' in connection ? connection.targetHandle : '') || ''
+
+    // Video handles should only accept video sources
+    if (targetHandle === 'video_url' && sourceNode?.type !== 'videoUploadNode') return false
+    // Image handles should only accept image-producing sources
+    if (targetHandle === 'image_url' && sourceNode?.type === 'videoUploadNode') return false
+
+    return true
+  }, [safeNodes, safeEdges])
+
   const addNode = (type: string, extraData?: Record<string, any>) => {
     if (!reactFlowInstance) return
     // Use menu position or fallback to center of screen
@@ -378,6 +418,7 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
       }
     }
     
+    let hasError = false
     await executeWorkflow(safeNodes as any, safeEdges as any, workflowRunId, {
       onNodeStart: (nodeId) => {
         addExecutingNode(nodeId)
@@ -389,10 +430,60 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
         updateNodeData(nodeId, { output: String(output || ''), error: undefined, isExecuting: false })
       },
       onNodeError: (nodeId, error) => {
+        hasError = true
         removeExecutingNode(nodeId)
         updateNodeData(nodeId, { error, isExecuting: false })
       }
     })
+
+    // ── Update WorkflowRun status ──
+    if (currentWorkflowId && !workflowRunId.startsWith('local-')) {
+      try {
+        await fetch(`/api/workflow/${currentWorkflowId}/runs`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ runId: workflowRunId, status: hasError ? 'failed' : 'success' }),
+        })
+      } catch {}
+    }
+
+    setIsRunning(false)
+  }
+
+  // ── Run Selected nodes via server-side engine ──
+  async function handleRunSelected() {
+    const selectedIds = safeNodes.filter(n => n.selected).map(n => n.id)
+    if (!selectedIds.length || !currentWorkflowId) return
+
+    // Save first so server has latest data
+    await handleSave()
+
+    setIsRunning(true)
+    selectedIds.forEach(id => updateNodeData(id, { isExecuting: true, error: undefined }))
+
+    try {
+      const res = await fetch(`/api/workflow/${currentWorkflowId}/run`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ selectedNodeIds: selectedIds }),
+      })
+      const data = await res.json()
+
+      if (data.results) {
+        Object.entries(data.results).forEach(([nodeId, output]) => {
+          setNodeOutput(nodeId, output as any)
+          updateNodeData(nodeId, { output: String(output || ''), isExecuting: false })
+        })
+      }
+      if (data.errors) {
+        Object.entries(data.errors).forEach(([nodeId, error]) => {
+          updateNodeData(nodeId, { error: error as string, isExecuting: false })
+        })
+      }
+    } catch (err: any) {
+      selectedIds.forEach(id => updateNodeData(id, { error: err.message, isExecuting: false }))
+    }
+
     setIsRunning(false)
   }
 
@@ -536,12 +627,25 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
               {isRunning ? <><div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" /> Running...</> : <><Play className="w-3.5 h-3.5" /> Run All</>}
             </button>
 
+            {/* Run Selected */}
+            {safeNodes.some(n => n.selected) && currentWorkflowId && (
+              <button onClick={handleRunSelected} disabled={isRunning}
+                className={`h-9 px-3 flex items-center gap-1.5 rounded-full border text-[12px] font-medium transition-all disabled:opacity-30 ${dark ? 'bg-purple-500/10 border-purple-500/30 text-purple-400 hover:bg-purple-500/20' : 'bg-purple-500/5 border-purple-500/30 text-purple-600 hover:bg-purple-500/10'}`}
+              >
+                <BoxSelect className="w-3.5 h-3.5" /> Run Selected
+              </button>
+            )}
+
             <button onClick={() => setTheme(dark ? 'light' : 'dark')} title={dark ? 'Light mode' : 'Dark mode'} className={`w-9 h-9 flex items-center justify-center rounded-full border transition-colors ${dark ? 'bg-[#161616] border-white/[0.08] text-white hover:bg-[#1E1E1E]' : 'bg-white border-black/[0.08] text-gray-700 hover:bg-gray-100'}`}>
               {dark ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
             </button>
 
             <button className={`h-9 px-3 flex items-center gap-1.5 rounded-full border text-[12px] font-medium transition-colors ${dark ? 'bg-[#161616] border-white/[0.08] text-[#a0a0a0] hover:text-white hover:bg-[#1E1E1E]' : 'bg-white border-black/[0.08] text-gray-500 hover:text-black hover:bg-gray-50'}`}>
               <Share className="w-3.5 h-3.5" /> Share
+            </button>
+
+            <button onClick={() => setShowHistory(!showHistory)} className={`w-9 h-9 flex items-center justify-center rounded-full border transition-colors ${showHistory ? (dark ? 'bg-purple-500/20 border-purple-500/30 text-purple-400' : 'bg-purple-500/10 border-purple-500/30 text-purple-600') : (dark ? 'bg-[#161616] border-white/[0.08] text-white hover:bg-[#1E1E1E]' : 'bg-white border-black/[0.08] text-gray-700 hover:bg-gray-100')}`} title="Toggle History">
+              {showHistory ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
             </button>
 
             <button onClick={handleSave} disabled={safeNodes.length === 0} className={`h-9 px-3 flex items-center gap-1.5 rounded-full border text-[12px] font-medium transition-colors disabled:opacity-40 ${
@@ -678,7 +782,16 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
         )}
 
         {/* ── REACT FLOW CANVAS ── */}
-        <div ref={reactFlowWrapper} className="absolute inset-0 z-0" onDragOver={onDragOver} onDrop={onDrop}>
+        <div
+          ref={reactFlowWrapper}
+          className="absolute inset-0 z-0"
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+          onDoubleClick={(e: React.MouseEvent<HTMLDivElement>) => {
+            const rect = reactFlowWrapper.current?.getBoundingClientRect()
+            if (rect) { setNodeMenuPos({ x: e.clientX - rect.left, y: e.clientY - rect.top }); setShowNodeMenu(true) }
+          }}
+        >
           <ReactFlow
             nodes={safeNodes} edges={safeEdges}
             onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect}
@@ -686,18 +799,30 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
             panOnScroll selectionOnDrag={selectedTool === 'select'}
             panOnDrag={selectedTool === 'pan' ? [0, 1, 2] : [1, 2]}
             deleteKeyCode="Backspace" proOptions={{ hideAttribution: true }}
+            isValidConnection={isValidConnection as any}
             className={dark ? 'bg-[#0A0A0A]' : 'bg-[#F5F5F5]'}
-            onPaneDoubleClick={(e) => {
-              const rect = reactFlowWrapper.current?.getBoundingClientRect()
-              if (rect) { setNodeMenuPos({ x: e.clientX - rect.left, y: e.clientY - rect.top }); setShowNodeMenu(true) }
-            }}
             onPaneContextMenu={(e) => {
               e.preventDefault()
+              const evt = e as React.MouseEvent<Element>
               const rect = reactFlowWrapper.current?.getBoundingClientRect()
-              if (rect) { setNodeMenuPos({ x: e.clientX - rect.left, y: e.clientY - rect.top }); setShowNodeMenu(true) }
+              if (rect) { setNodeMenuPos({ x: evt.clientX - rect.left, y: evt.clientY - rect.top }); setShowNodeMenu(true) }
             }}
           >
             <Background variant={BackgroundVariant.Dots} color={dark ? '#222' : '#ccc'} gap={20} size={1} />
+            <MiniMap
+              nodeColor={(n) => {
+                if (n.type === 'llmNode') return '#a855f7'
+                if (n.type === 'imageGenNode') return '#3b82f6'
+                if (n.type === 'cropImageNode') return '#ec4899'
+                if (n.type === 'extractFrameNode') return '#eab308'
+                if (n.type === 'imageUploadNode') return '#22c55e'
+                if (n.type === 'videoUploadNode') return '#f97316'
+                return '#666'
+              }}
+              maskColor={dark ? 'rgba(0,0,0,0.7)' : 'rgba(200,200,200,0.7)'}
+              style={{ background: dark ? '#111' : '#e5e5e5', borderRadius: 12, border: dark ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.06)' }}
+              pannable zoomable
+            />
           </ReactFlow>
         </div>
 
@@ -745,6 +870,13 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* ── HISTORY SIDEBAR ── */}
+        {showHistory && (
+          <div className="absolute top-0 right-0 bottom-0 z-30 w-[300px] shadow-2xl">
+            <HistorySidebar className="h-full" />
           </div>
         )}
 

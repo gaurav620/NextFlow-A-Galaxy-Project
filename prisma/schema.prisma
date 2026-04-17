@@ -6,9 +6,19 @@ datasource db {
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
+model User {
+  id        String     @id @default(cuid())
+  clerkId   String     @unique
+  email     String?
+  name      String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  workflows Workflow[]
+}
 model Workflow {
   id        String        @id @default(cuid())
   userId    String
+  user      User?         @relation(fields: [userId], references: [clerkId])
   name      String        @default("Untitled Workflow")
   data      Json
   createdAt DateTime      @default(now())
@@ -22,6 +32,7 @@ model WorkflowRun {
   userId     String
   status     String    @default("running")
   scope      String    @default("full")
+  duration   Int?
   startedAt  DateTime  @default(now())
   endedAt    DateTime?
   nodeRuns   NodeRun[]

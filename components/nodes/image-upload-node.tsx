@@ -1,7 +1,7 @@
 'use client';
 
 import { Handle, Position } from '@xyflow/react';
-import { Upload, Loader2, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { Upload, Loader2, Image as ImageIcon, Trash2, Cloud, HardDrive } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { useTheme } from 'next-themes';
 
@@ -12,24 +12,97 @@ export default function ImageUploadNode({ id, data }: any) {
   const [preview, setPreview] = useState<string | null>(data.preview || data.uploadedUrl || null);
   const [filename, setFilename] = useState(data.filename || '');
   const [uploading, setUploading] = useState(false);
+  const [uploadProvider, setUploadProvider] = useState<string | null>(data.uploadProvider || null);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const syncToStore = (vals: Record<string, any>) => {
+    import('@/store/workflowStore').then(({ useWorkflowStore }) => {
+      const store = useWorkflowStore.getState();
+      store.updateNodeData(id, vals);
+      if (vals.imageUrl) store.setNodeOutput(id, vals.imageUrl);
+    });
+  };
 
   const handleFileChange = async (file: File) => {
     if (!file.type.startsWith('image/')) return;
     setFilename(file.name);
     setError(null);
+    setUploading(true);
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      setPreview(dataUrl);
-      import('@/store/workflowStore').then(({ useWorkflowStore }) => {
-        useWorkflowStore.getState().updateNodeData(id, { imageUrl: dataUrl, value: dataUrl });
-        useWorkflowStore.getState().setNodeOutput(id, dataUrl);
+    // Show local preview immediately
+    const localUrl = URL.createObjectURL(file);
+    setPreview(localUrl);
+
+    try {
+      // Try Transloadit upload first
+      const signRes = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, type: 'image' }),
       });
-    };
-    reader.readAsDataURL(file);
+      const signData = await signRes.json();
+
+      if (signData.provider === 'transloadit' && signData.assembly) {
+        // Upload directly to Transloadit via tus
+        const formData = new FormData();
+        formData.append('params', signData.assembly.params);
+        formData.append('signature', signData.assembly.signature);
+        formData.append('file', file);
+
+        const assemblyRes = await fetch('https://api2.transloadit.com/assemblies', {
+          method: 'POST',
+          body: formData,
+        });
+        const assemblyData = await assemblyRes.json();
+
+        // Poll assembly for completion
+        if (assemblyData.assembly_ssl_url) {
+          let result = assemblyData;
+          while (result.ok !== 'ASSEMBLY_COMPLETED' && result.ok !== 'ASSEMBLY_EXECUTING') {
+            if (result.error) throw new Error(result.error);
+            await new Promise(r => setTimeout(r, 1500));
+            const pollRes = await fetch(result.assembly_ssl_url);
+            result = await pollRes.json();
+          }
+
+          const cdnUrl = result.results?.[':original']?.[0]?.ssl_url ||
+                         result.results?.exported?.[0]?.ssl_url ||
+                         result.uploads?.[0]?.ssl_url;
+
+          if (cdnUrl) {
+            setPreview(cdnUrl);
+            setUploadProvider('transloadit');
+            syncToStore({ imageUrl: cdnUrl, value: cdnUrl, filename: file.name, uploadProvider: 'transloadit' });
+            setUploading(false);
+            return;
+          }
+        }
+      }
+
+      // Fallback: use base64 data URL
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        setPreview(dataUrl);
+        setUploadProvider('local');
+        syncToStore({ imageUrl: dataUrl, value: dataUrl, filename: file.name, uploadProvider: 'local' });
+        setUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      console.warn('Upload failed, using local data URL:', err.message);
+      // Fallback: use base64 data URL
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        setPreview(dataUrl);
+        setUploadProvider('local');
+        syncToStore({ imageUrl: dataUrl, value: dataUrl, filename: file.name, uploadProvider: 'local' });
+        setUploading(false);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleDelete = () => {
@@ -78,14 +151,26 @@ export default function ImageUploadNode({ id, data }: any) {
             )}
             {!uploading && (
               <div className="absolute top-2 right-2 opacity-0 group-hover/img:opacity-100 transition-opacity">
-                <button onClick={() => { setPreview(null); setFilename(''); }} className="w-7 h-7 flex items-center justify-center bg-black/70 rounded-lg backdrop-blur-md hover:bg-red-500/80 transition-colors text-white">
+                <button onClick={() => { setPreview(null); setFilename(''); setUploadProvider(null); }} className="w-7 h-7 flex items-center justify-center bg-black/70 rounded-lg backdrop-blur-md hover:bg-red-500/80 transition-colors text-white">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
           </div>
         )}
-        {filename && <p className={`text-[10px] mt-1.5 truncate ${dark ? 'text-gray-600' : 'text-gray-400'}`}>{filename}</p>}
+        <div className="flex items-center justify-between mt-1.5">
+          {filename && <p className={`text-[10px] truncate flex-1 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>{filename}</p>}
+          {uploadProvider && (
+            <div className={`flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-md ${
+              uploadProvider === 'transloadit'
+                ? (dark ? 'text-green-400 bg-green-500/10' : 'text-green-600 bg-green-500/10')
+                : (dark ? 'text-gray-500 bg-gray-500/10' : 'text-gray-400 bg-gray-500/10')
+            }`}>
+              {uploadProvider === 'transloadit' ? <Cloud className="w-2.5 h-2.5" /> : <HardDrive className="w-2.5 h-2.5" />}
+              {uploadProvider === 'transloadit' ? 'CDN' : 'Local'}
+            </div>
+          )}
+        </div>
         {error && <p className="text-[10px] text-red-400 mt-1.5 truncate">{error}</p>}
       </div>
 

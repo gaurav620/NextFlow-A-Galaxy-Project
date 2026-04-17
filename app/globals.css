@@ -254,3 +254,21 @@ html.light * {
   scrollbar-width: none;  
 }
 
+/* ── Node Executing Glow Animation ── */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(168, 85, 247, 0.3), 0 0 20px rgba(168, 85, 247, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(168, 85, 247, 0.6), 0 0 40px rgba(168, 85, 247, 0.3);
+  }
+}
+
+.node-executing {
+  animation: pulse-glow 1.5s ease-in-out infinite;
+  border-color: rgba(168, 85, 247, 0.5) !important;
+}
+
+/* Scrollbar styling for history sidebar */
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }

@@ -36,12 +36,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = await params
+    await params // validate route
     const { userId } = await auth()
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const { status } = await req.json()
+    const { status, runId } = await req.json()
+    if (!runId) return NextResponse.json({ error: 'runId required' }, { status: 400 })
     const run = await prisma.workflowRun.update({
-      where: { id },
+      where: { id: runId },
       data: { status, endedAt: new Date() },
     })
     return NextResponse.json({ success: true, run })

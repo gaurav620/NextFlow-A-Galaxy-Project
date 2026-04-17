@@ -6,7 +6,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useTheme } from 'next-themes';
 
 const LLM_MODELS = [
+  { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+  { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
   { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
+  { value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite' },
   { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
   { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
 ];
@@ -97,7 +100,7 @@ export default function LLMNode({ id, data }: any) {
   };
 
   return (
-    <div className={`relative rounded-2xl w-[300px] transition-all group ${dark ? 'bg-[#1A1A1A] border border-white/[0.08]' : 'bg-white border border-black/[0.08]'} shadow-xl hover:shadow-2xl`}
+    <div className={`relative rounded-2xl w-[300px] transition-all group ${dark ? 'bg-[#1A1A1A] border border-white/[0.08]' : 'bg-white border border-black/[0.08]'} shadow-xl hover:shadow-2xl ${data.isExecuting ? 'node-executing' : ''}`}
       style={isExecuting ? { boxShadow: dark ? '0 0 20px rgba(168,85,247,0.15)' : '0 0 20px rgba(168,85,247,0.1)', borderColor: 'rgba(168,85,247,0.4)' } : undefined}
     >
       {/* Header */}

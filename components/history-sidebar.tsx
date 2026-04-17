@@ -26,6 +26,8 @@ interface NodeRunEntry {
   startedAt: string
   endedAt?: string
   error?: string
+  inputs?: Record<string, any> | null
+  outputs?: Record<string, any> | null
 }
 
 interface WorkflowRunEntry {
@@ -44,16 +46,22 @@ interface HistorySidebarProps {
 const getNodeIcon = (nodeType: string) => {
   const iconProps = { className: 'w-3 h-3' }
   switch (nodeType) {
+    case 'textNode':
     case 'text':
       return <Type {...iconProps} className="w-3 h-3 text-blue-400" />
+    case 'imageUploadNode':
     case 'image':
       return <ImageIcon {...iconProps} className="w-3 h-3 text-green-400" />
+    case 'videoUploadNode':
     case 'video':
       return <Video {...iconProps} className="w-3 h-3 text-orange-400" />
+    case 'llmNode':
     case 'llm':
       return <BrainCircuit {...iconProps} className="w-3 h-3 text-purple-400" />
+    case 'cropImageNode':
     case 'crop':
       return <Scissors {...iconProps} className="w-3 h-3 text-pink-400" />
+    case 'extractFrameNode':
     case 'frame':
       return <Film {...iconProps} className="w-3 h-3 text-yellow-400" />
     default:
@@ -270,6 +278,39 @@ export default function HistorySidebar({ className }: HistorySidebarProps) {
                         {nodeRun.error && (
                           <div className="text-xs text-red-400 mt-0.5 pl-6">
                             {nodeRun.error}
+                          </div>
+                        )}
+                        {/* Outputs */}
+                        {nodeRun.outputs && Object.keys(nodeRun.outputs).length > 0 && (
+                          <div className="pl-6 mt-1">
+                            {Object.entries(nodeRun.outputs).map(([key, val]) => {
+                              const strVal = String(val || '')
+                              const isImage = strVal.startsWith('data:image') || /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(strVal)
+                              return (
+                                <div key={key} className="mb-1">
+                                  {isImage ? (
+                                    <img src={strVal} alt="output" className="w-full max-w-[200px] rounded-lg border border-gray-700 mt-1" />
+                                  ) : (
+                                    <div className="text-[10px] text-gray-500 leading-relaxed bg-gray-800/40 rounded-md px-2 py-1 break-words">
+                                      <span className="text-gray-600 font-medium">{key}: </span>
+                                      {strVal.length > 120 ? strVal.slice(0, 120) + '…' : strVal}
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                        {/* Inputs summary */}
+                        {nodeRun.inputs && Object.keys(nodeRun.inputs).length > 0 && (
+                          <div className="pl-6 mt-1">
+                            <div className="text-[10px] text-gray-600 bg-gray-800/30 rounded-md px-2 py-1 break-words">
+                              <span className="font-medium text-gray-500">Inputs: </span>
+                              {Object.entries(nodeRun.inputs).map(([k, v]) => {
+                                const s = String(v || '')
+                                return `${k}=${s.length > 40 ? s.slice(0, 40) + '…' : s}`
+                              }).join(', ')}
+                            </div>
                           </div>
                         )}
                         {index < run.nodeRuns.length - 1 && (

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { tasks, runs } from '@trigger.dev/sdk/v3'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
+import type { llmTask } from '@/trigger/tasks/llm'
 
 const schema = z.object({
   model: z.string().default('gemini-2.0-flash'),
@@ -14,7 +16,7 @@ const schema = z.object({
 })
 
 // ── FREE FALLBACK: Pollinations AI text generation (no API key needed) ──
-async function pollinationsFallback(systemPrompt: string, userMessage: string, model: string): Promise<string> {
+async function pollinationsFallback(systemPrompt: string, userMessage: string): Promise<string> {
   const messages: any[] = []
   if (systemPrompt) messages.push({ role: 'system', content: systemPrompt })
   messages.push({ role: 'user', content: userMessage })
@@ -22,15 +24,10 @@ async function pollinationsFallback(systemPrompt: string, userMessage: string, m
   const res = await fetch('https://text.pollinations.ai/openai', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'openai',
-      messages,
-      max_tokens: 2048,
-    }),
+    body: JSON.stringify({ model: 'openai', messages, max_tokens: 2048 }),
   })
 
   if (!res.ok) {
-    // Try direct text endpoint as last resort
     const directRes = await fetch(`https://text.pollinations.ai/${encodeURIComponent(
       (systemPrompt ? `System: ${systemPrompt}\n\n` : '') + userMessage
     )}`)
@@ -42,8 +39,8 @@ async function pollinationsFallback(systemPrompt: string, userMessage: string, m
   return data.choices?.[0]?.message?.content || data.choices?.[0]?.text || 'No response generated'
 }
 
-// ── GEMINI with retry ──
-async function geminiGenerate(apiKey: string, model: string, systemPrompt: string | undefined, userMessage: string, images?: string[]): Promise<string> {
+// ── DIRECT GEMINI (used as fallback when Trigger.dev is not available) ──
+async function geminiDirect(apiKey: string, model: string, systemPrompt: string | undefined, userMessage: string, images?: string[]): Promise<string> {
   const genAI = new GoogleGenerativeAI(apiKey)
   const geminiModel = genAI.getGenerativeModel({ model })
 
@@ -81,48 +78,83 @@ export async function POST(req: NextRequest) {
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = schema.parse(await req.json())
+    const triggerKey = process.env.TRIGGER_SECRET_KEY
     const apiKey = process.env.GEMINI_API_KEY
 
     let output: string
-    let usedFallback = false
+    let executionMethod = 'trigger.dev'
 
-    // Strategy: Try Gemini first, fall back to Pollinations if quota exceeded
-    if (apiKey) {
+    // ═══════════════════════════════════════════════════════════════
+    // STRATEGY: Trigger.dev → Direct Gemini → Pollinations fallback
+    // ═══════════════════════════════════════════════════════════════
+
+    if (triggerKey) {
+      // ── PRIMARY: Execute via Trigger.dev task ──
       try {
-        output = await geminiGenerate(apiKey, body.model, body.systemPrompt, body.userMessage, body.images)
-      } catch (geminiErr: any) {
-        const isQuotaError = geminiErr.message?.includes('429') || geminiErr.message?.includes('quota') || geminiErr.message?.includes('Too Many Requests')
-        
-        if (isQuotaError) {
-          console.warn('Gemini quota exceeded, trying retry after delay...')
-          
-          // Try once more after a short delay
+        const handle = await tasks.trigger<typeof llmTask>('llm-node', {
+          model: body.model,
+          systemPrompt: body.systemPrompt,
+          userMessage: body.userMessage,
+          images: body.images,
+          workflowRunId: body.workflowRunId,
+          nodeId: body.nodeId,
+        })
+        const run = await runs.poll(handle.id, { pollIntervalMs: 1000 })
+
+        if (run.status === 'COMPLETED' && run.output) {
+          output = (run.output as any).output
+        } else {
+          throw new Error(run.status === 'FAILED' ? 'Trigger.dev task failed' : 'Trigger.dev task timed out')
+        }
+      } catch (triggerErr: any) {
+        console.warn('Trigger.dev execution failed, falling back to direct:', triggerErr.message)
+        executionMethod = 'direct-fallback'
+
+        // Fall through to direct execution
+        if (apiKey) {
           try {
-            await new Promise(r => setTimeout(r, 3000))
-            output = await geminiGenerate(apiKey, body.model, body.systemPrompt, body.userMessage, body.images)
-          } catch (retryErr: any) {
-            const stillQuota = retryErr.message?.includes('429') || retryErr.message?.includes('quota')
-            if (stillQuota) {
-              // Fall back to free Pollinations AI
-              console.warn('Gemini still rate-limited, falling back to Pollinations AI')
-              output = await pollinationsFallback(body.systemPrompt || '', body.userMessage, body.model)
-              usedFallback = true
+            output = await geminiDirect(apiKey, body.model, body.systemPrompt, body.userMessage, body.images)
+          } catch (geminiErr: any) {
+            const isQuota = geminiErr.message?.includes('429') || geminiErr.message?.includes('quota')
+            if (isQuota) {
+              output = await pollinationsFallback(body.systemPrompt || '', body.userMessage)
+              executionMethod = 'pollinations-fallback'
             } else {
-              throw retryErr
+              throw geminiErr
             }
+          }
+        } else {
+          output = await pollinationsFallback(body.systemPrompt || '', body.userMessage)
+          executionMethod = 'pollinations-fallback'
+        }
+      }
+    } else if (apiKey) {
+      // ── FALLBACK: Direct Gemini (no Trigger.dev configured) ──
+      executionMethod = 'direct-gemini'
+      try {
+        output = await geminiDirect(apiKey, body.model, body.systemPrompt, body.userMessage, body.images)
+      } catch (geminiErr: any) {
+        const isQuota = geminiErr.message?.includes('429') || geminiErr.message?.includes('quota')
+        if (isQuota) {
+          await new Promise(r => setTimeout(r, 3000))
+          try {
+            output = await geminiDirect(apiKey, body.model, body.systemPrompt, body.userMessage, body.images)
+          } catch {
+            output = await pollinationsFallback(body.systemPrompt || '', body.userMessage)
+            executionMethod = 'pollinations-fallback'
           }
         } else {
           throw geminiErr
         }
       }
     } else {
-      // No Gemini key at all — use Pollinations
-      output = await pollinationsFallback(body.systemPrompt || '', body.userMessage, body.model)
-      usedFallback = true
+      // ── LAST RESORT: Pollinations free API ──
+      executionMethod = 'pollinations-fallback'
+      output = await pollinationsFallback(body.systemPrompt || '', body.userMessage)
     }
 
-    // Save to DB if applicable
-    if (body.workflowRunId && body.nodeId && !body.workflowRunId.startsWith('local-')) {
+    // Save to DB if applicable (skip if Trigger.dev task already saved)
+    if (executionMethod !== 'trigger.dev' && body.workflowRunId && body.nodeId && !body.workflowRunId.startsWith('local-')) {
       try {
         await prisma.nodeRun.create({
           data: {
@@ -140,10 +172,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       output,
-      ...(usedFallback ? { note: 'Used free fallback (Pollinations AI) — Gemini quota exceeded' } : {})
+      ...(executionMethod !== 'trigger.dev' ? { note: `Executed via ${executionMethod}` } : {}),
     })
   } catch (error: any) {
     console.error('LLM Error:', error)

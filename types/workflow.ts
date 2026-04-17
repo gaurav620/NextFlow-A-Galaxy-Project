@@ -5,13 +5,17 @@ export type NodeType =
   | 'llmNode'
   | 'cropImageNode'
   | 'extractFrameNode'
+  | 'imageGenNode'
 
 export interface WorkflowNodeData {
   label?: string
   value?: string
+  content?: string
   model?: string
   systemPrompt?: string
   userMessage?: string
+  prompt?: string
+  aspectRatio?: string
   x?: number
   y?: number
   width?: number
@@ -19,16 +23,22 @@ export interface WorkflowNodeData {
   timestamp?: number
   imageUrl?: string
   videoUrl?: string
+  filename?: string
+  uploadProvider?: string
   output?: string
   error?: string
   isExecuting?: boolean
+  promptConnected?: boolean
+  [key: string]: any  // Allow additional dynamic properties
 }
 
 export interface WorkflowNode {
   id: string
-  type: NodeType
+  type?: string
   position: { x: number; y: number }
   data: WorkflowNodeData
+  selected?: boolean
+  [key: string]: any
 }
 
 export interface WorkflowEdge {
