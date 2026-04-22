@@ -4,29 +4,66 @@ import { useState, useEffect } from 'react';
 import { ArrowRight, Loader2, Play, Users, Link as LinkIcon, Blocks } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import type { WorkflowData, WorkflowTemplate, WorkflowTemplateCatalog } from '@/types/workflow';
+
+const EMPTY_TEMPLATE_CATALOG: WorkflowTemplateCatalog = {
+  apps: [],
+  examples: [],
+  templates: [],
+};
+
+function cloneWorkflowData(workflow: WorkflowData): WorkflowData {
+  return JSON.parse(JSON.stringify(workflow)) as WorkflowData;
+}
 
 export default function WorkflowsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('projects');
   const [workflows, setWorkflows] = useState<any[]>([]);
+  const [templateCatalog, setTemplateCatalog] = useState<WorkflowTemplateCatalog>(EMPTY_TEMPLATE_CATALOG);
   const [isLoading, setIsLoading] = useState(true);
+  const [isTemplatesLoading, setIsTemplatesLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
-    async function fetchWorkflows() {
+    let isMounted = true;
+
+    async function fetchPageData() {
       try {
-        const res = await fetch('/api/workflow');
-        const data = await res.json();
-        if (data.success) {
-          setWorkflows(data.workflows);
+        const [workflowsRes, templatesRes] = await Promise.all([
+          fetch('/api/workflow'),
+          fetch('/api/workflow/templates'),
+        ]);
+
+        const [workflowsData, templatesData] = await Promise.all([
+          workflowsRes.json(),
+          templatesRes.json(),
+        ]);
+
+        if (!isMounted) return;
+
+        if (workflowsData.success && Array.isArray(workflowsData.workflows)) {
+          setWorkflows(workflowsData.workflows);
+        }
+
+        if (templatesData.success && templatesData.templates) {
+          setTemplateCatalog(templatesData.templates as WorkflowTemplateCatalog);
         }
       } catch (error) {
-        console.error('Failed to fetch workflows:', error);
+        console.error('Failed to fetch workflow page data:', error);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+          setIsTemplatesLoading(false);
+        }
       }
     }
-    fetchWorkflows();
+
+    fetchPageData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const tabs = [
@@ -36,81 +73,13 @@ export default function WorkflowsPage() {
     { id: 'templates', label: 'Templates' },
   ];
 
-  // Mock data for the other tabs to match Krea's rich ecosystem
-  const MOCK_APPS = [
-    { id: 1, name: 'B&W Fashion Portrait', desc: 'Convert an ordinary selfie into an extremely fashionable black and white photo.', author: 'Krea Team', emoji: '🖤' },
-    { id: 2, name: 'Studio Product Shot', desc: 'Place your product in a professional studio lighting setup.', author: 'Krea Team', emoji: '📸' },
-    { id: 3, name: 'Anime Character', desc: 'Turn anyone into a high-quality anime character with dynamic lighting.', author: 'Community', emoji: '✨' },
-    { id: 4, name: 'Claymation Style', desc: 'Transform images into a cute, tactile claymation style 3D render.', author: 'Community', emoji: '🌟' }
-  ];
-
-  const MOCK_EXAMPLES = [
-    { id: 1, title: 'Multi-LoRA Chaining', nodes: '8 Nodes', complexity: 'Advanced' },
-    { id: 2, title: 'ControlNet Edge Detection', nodes: '5 Nodes', complexity: 'Intermediate' },
-    { id: 3, title: 'Basic Text to Image', nodes: '3 Nodes', complexity: 'Beginner' },
-    { id: 4, title: 'Video Interpolation Flow', nodes: '12 Nodes', complexity: 'Advanced' },
-    { id: 5, title: 'Face Swap Pipeline', nodes: '6 Nodes', complexity: 'Intermediate' },
-    { id: 6, title: 'Background Replacement', nodes: '4 Nodes', complexity: 'Beginner' }
-  ];
-
-  const MOCK_TEMPLATES = [
-    { id: 1, title: 'Cinematic Movie Poster', uses: '45.2k' },
-    { id: 2, title: 'Youtube Thumbnail Gen', uses: '12.8k' },
-    { id: 3, title: 'Consistent Character Sheet', uses: '89.1k' },
-    { id: 4, title: 'Architecture Pre-viz', uses: '3.4k' }
-  ];
-
-  const handleCreateWorkflow = async (name: string = 'Untitled Workflow') => {
+  const handleCreateWorkflow = async (name: string = 'Untitled Workflow', initialData?: WorkflowData) => {
     if (isCreating) return;
     setIsCreating(true);
 
-    let initialNodes: any[] = [];
-    let initialEdges: any[] = [];
-
-    // Utility to generate compact valid IDs
-    const n1 = "node_" + Math.random().toString(36).substring(2, 9);
-    const n2 = "node_" + Math.random().toString(36).substring(2, 9);
-    const n3 = "node_" + Math.random().toString(36).substring(2, 9);
-
-    if (name === 'Studio Product Shot' || name === 'B&W Fashion Portrait') {
-       initialNodes = [
-         { id: n1, type: 'imageUploadNode', position: { x: 100, y: 200 }, data: { label: 'Source Image' } },
-         { id: n2, type: 'llmNode', position: { x: 450, y: 200 }, data: { label: 'Prompt Generator', systemPrompt: name === 'Studio Product Shot' ? 'Describe a brilliant professional studio lighting setup for the provided object.' : 'Describe a moody, highly fashionable black and white portrait setup.' } },
-         { id: n3, type: 'imageGenNode', position: { x: 850, y: 200 }, data: { label: 'Final Output' } }
-       ];
-       initialEdges = [
-         { id: `edge_${n1}_${n2}`, source: n1, target: n2, sourceHandle: 'output', targetHandle: 'images', animated: true, style: { stroke: '#a855f7', strokeWidth: 2 } },
-         { id: `edge_${n2}_${n3}`, source: n2, target: n3, sourceHandle: 'output', targetHandle: 'prompt', animated: true, style: { stroke: '#0ea5e9', strokeWidth: 2 } }
-       ];
-    } else if (name === 'Multi-LoRA Chaining' || name === 'Anime Character') {
-       initialNodes = [
-         { id: n1, type: 'textNode', position: { x: 100, y: 200 }, data: { label: 'Subject Prompt', content: 'A brave adventurer looking into the distance' } },
-         { id: n2, type: 'textNode', position: { x: 100, y: 350 }, data: { label: 'Style Prompt', content: '1990s anime style, studio ghibli, high quality' } },
-         { id: n3, type: 'llmNode', position: { x: 400, y: 250 }, data: { label: 'Prompt Merger', systemPrompt: 'Combine the subject and style into a single high quality image generation prompt without adding unnecessary words.' } },
-         { id: "node_gen", type: 'imageGenNode', position: { x: 750, y: 250 }, data: { label: 'Anime Output' } }
-       ];
-       initialEdges = [
-         { id: `edge_${n1}_${n3}`, source: n1, target: n3, sourceHandle: 'output', targetHandle: 'user_message', animated: true, style: { stroke: '#a855f7', strokeWidth: 2 } },
-         { id: `edge_${n2}_${n3}`, source: n2, target: n3, sourceHandle: 'output', targetHandle: 'system_prompt', animated: true, style: { stroke: '#a855f7', strokeWidth: 2 } },
-         { id: `edge_${n3}_node_gen`, source: n3, target: "node_gen", sourceHandle: 'output', targetHandle: 'prompt', animated: true, style: { stroke: '#0ea5e9', strokeWidth: 2 } }
-       ];
-    } else if (name === 'Video Interpolation Flow' || name === 'Extract') {
-       initialNodes = [
-         { id: n1, type: 'videoUploadNode', position: { x: 100, y: 150 }, data: { label: 'Source Video' } },
-         { id: n2, type: 'extractFrameNode', position: { x: 450, y: 150 }, data: { label: 'Frame Extractor', timestamp: 0 } },
-       ];
-       initialEdges = [
-         { id: `edge_${n1}_${n2}`, source: n1, target: n2, sourceHandle: 'output', targetHandle: 'video_url', animated: true, style: { stroke: '#eab308', strokeWidth: 2 } },
-       ];
-    } else if (name !== 'Untitled Workflow') { // Fallback generic text to image for templates
-       initialNodes = [
-         { id: n1, type: 'textNode', position: { x: 200, y: 250 }, data: { content: `${name} aesthetic design` } },
-         { id: n2, type: 'imageGenNode', position: { x: 600, y: 250 }, data: { label: 'Generation' } }
-       ];
-       initialEdges = [
-         { id: `edge_${n1}_${n2}`, source: n1, target: n2, sourceHandle: 'output', targetHandle: 'prompt', animated: true, style: { stroke: '#0ea5e9', strokeWidth: 2 } }
-       ];
-    }
+    const dataPayload: WorkflowData = initialData
+      ? cloneWorkflowData(initialData)
+      : { nodes: [], edges: [] };
 
     try {
       const res = await fetch('/api/workflow', {
@@ -118,7 +87,7 @@ export default function WorkflowsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name,
-          data: { nodes: initialNodes, edges: initialEdges }
+          data: dataPayload,
         })
       });
       const data = await res.json();
@@ -133,6 +102,10 @@ export default function WorkflowsPage() {
       alert('Error creating workflow');
       setIsCreating(false);
     }
+  };
+
+  const handleCreateFromTemplate = (template: WorkflowTemplate) => {
+    handleCreateWorkflow(template.name, template.workflow);
   };
 
   const NodeIcon = ({ className = "" }: { className?: string }) => (
@@ -323,15 +296,20 @@ export default function WorkflowsPage() {
 
         {/* APPS TAB */}
         {activeTab === 'apps' && (
+          isTemplatesLoading ? (
+            <div className="flex items-center justify-center mt-32">
+              <Loader2 className="w-6 h-6 text-gray-500 animate-spin" />
+            </div>
+          ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 p-5 sm:p-8 md:px-16 py-8 sm:py-12">
-            {MOCK_APPS.map((app) => (
+            {templateCatalog.apps.map((app) => (
               <div 
                 key={app.id} 
-                onClick={() => handleCreateWorkflow(app.name)}
+                onClick={() => handleCreateFromTemplate(app)}
                 className="flex flex-col gap-3 group cursor-pointer"
               >
                 <div className="w-full aspect-[4/3] bg-[#1a1a1a] rounded-xl relative flex flex-col p-6 overflow-hidden border border-white/5 transition-colors group-hover:border-white/10 group-hover:bg-[#222]">
-                  <div className="text-4xl mb-auto">{app.emoji}</div>
+                  <div className="text-4xl mb-auto">{app.emoji || '✨'}</div>
                   <div className="flex items-center gap-2 mt-4 text-xs text-green-400 bg-green-400/10 w-fit px-2 py-1 rounded-full border border-green-400/20">
                     <Play className="w-3 h-3 fill-current" /> App
                   </div>
@@ -341,22 +319,28 @@ export default function WorkflowsPage() {
                     {app.name}
                   </h3>
                   <p className="text-[13px] text-gray-500 mt-1 line-clamp-2 leading-relaxed">
-                    {app.desc}
+                    {app.description}
                   </p>
-                  <p className="text-[12px] text-gray-600 mt-2 font-medium">By {app.author}</p>
+                  <p className="text-[12px] text-gray-600 mt-2 font-medium">By {app.author || 'NextFlow Team'}</p>
                 </div>
               </div>
             ))}
           </div>
+          )
         )}
 
         {/* EXAMPLES TAB */}
         {activeTab === 'examples' && (
+          isTemplatesLoading ? (
+            <div className="flex items-center justify-center mt-32">
+              <Loader2 className="w-6 h-6 text-gray-500 animate-spin" />
+            </div>
+          ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 p-5 sm:p-8 md:px-16 py-8 sm:py-12">
-            {MOCK_EXAMPLES.map((ex) => (
+            {templateCatalog.examples.map((ex) => (
               <div 
                 key={ex.id} 
-                onClick={() => handleCreateWorkflow(ex.title)}
+                onClick={() => handleCreateFromTemplate(ex)}
                 className="flex gap-4 p-4 bg-[#1a1a1a] rounded-xl border border-white/5 transition-colors hover:border-white/10 hover:bg-[#222] cursor-pointer group"
               >
                 <div className="w-16 h-16 rounded-lg bg-[#2a2a2a] flex items-center justify-center flex-shrink-0">
@@ -364,29 +348,35 @@ export default function WorkflowsPage() {
                 </div>
                 <div className="flex flex-col justify-center">
                   <h3 className="text-[15px] font-medium text-white/90 group-hover:text-white transition-colors">
-                    {ex.title}
+                    {ex.name}
                   </h3>
                   <div className="flex items-center gap-3 mt-1.5">
                     <span className="text-[12px] text-gray-500 flex items-center gap-1 border border-white/10 px-2 py-0.5 rounded-md bg-[#111]">
-                      <NodeIcon className="w-3 h-3" /> {ex.nodes}
+                      <NodeIcon className="w-3 h-3" /> {ex.nodeCount || ex.workflow.nodes.length} Nodes
                     </span>
                     <span className="text-[12px] text-gray-500 hover:text-white transition-colors">
-                      {ex.complexity}
+                      {ex.complexity || 'Intermediate'}
                     </span>
                   </div>
                 </div>
               </div>
             ))}
           </div>
+          )
         )}
 
         {/* TEMPLATES TAB */}
         {activeTab === 'templates' && (
+          isTemplatesLoading ? (
+            <div className="flex items-center justify-center mt-32">
+              <Loader2 className="w-6 h-6 text-gray-500 animate-spin" />
+            </div>
+          ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 p-5 sm:p-8 md:px-16 py-8 sm:py-12">
-            {MOCK_TEMPLATES.map((tmpl) => (
+            {templateCatalog.templates.map((tmpl) => (
               <div 
                 key={tmpl.id} 
-                onClick={() => handleCreateWorkflow(tmpl.title)}
+                onClick={() => handleCreateFromTemplate(tmpl)}
                 className="flex flex-col gap-3 group cursor-pointer"
               >
                 <div className="w-full aspect-video bg-gradient-to-br from-[#2a2a2a] to-[#111] rounded-xl relative flex items-center justify-center overflow-hidden border border-white/5 transition-colors group-hover:border-white/10 group-hover:shadow-[0_0_30px_rgba(255,255,255,0.03)]">
@@ -400,16 +390,17 @@ export default function WorkflowsPage() {
                 </div>
                 <div className="flex justify-between items-start">
                   <h3 className="text-[15px] font-medium text-white/90 group-hover:text-white transition-colors mt-0.5">
-                    {tmpl.title}
+                    {tmpl.name}
                   </h3>
                   <div className="flex items-center gap-1 text-[12px] text-gray-500 bg-white/5 px-2 py-1 rounded-full whitespace-nowrap border border-white/5">
                     <Users className="w-3 h-3" />
-                    {tmpl.uses}
+                    {tmpl.uses || 'New'}
                   </div>
                 </div>
               </div>
             ))}
           </div>
+          )
         )}
       </div>
     </div>

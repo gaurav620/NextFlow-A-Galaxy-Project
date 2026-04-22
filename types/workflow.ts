@@ -56,6 +56,26 @@ export interface WorkflowData {
   edges: WorkflowEdge[]
 }
 
+export type WorkflowTemplateComplexity = 'Beginner' | 'Intermediate' | 'Advanced'
+
+export interface WorkflowTemplate {
+  id: string
+  name: string
+  description: string
+  author?: string
+  emoji?: string
+  nodeCount?: number
+  complexity?: WorkflowTemplateComplexity
+  uses?: string
+  workflow: WorkflowData
+}
+
+export interface WorkflowTemplateCatalog {
+  apps: WorkflowTemplate[]
+  examples: WorkflowTemplate[]
+  templates: WorkflowTemplate[]
+}
+
 export type ExecutionStatus = 'idle' | 'running' | 'success' | 'error'
 
 export interface NodeRunResult {
