@@ -332,26 +332,61 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
     if (!reactFlowInstance) return
     const position = reactFlowInstance.screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 })
     const newNode: Node = { id: crypto.randomUUID(), type, position: { x: position.x + (Math.random() - 0.5) * 60, y: position.y + (Math.random() - 0.5) * 60 }, data: { label: type } }
-    setNodes([...safeNodes, newNode])
+    setNodes((prevNodes) => ([...(Array.isArray(prevNodes) ? prevNodes : []), newNode]))
     setShowPresets(false)
   }
 
-  const onNodesChange = useCallback((changes: any) => setNodes(applyNodeChanges(changes, safeNodes)), [safeNodes, setNodes])
+  const onNodesChange = useCallback((changes: any) => {
+    setNodes((prevNodes) => applyNodeChanges(changes, Array.isArray(prevNodes) ? (prevNodes as Node[]) : []))
+  }, [setNodes])
+
   const onEdgesChange = useCallback((changes: any) => {
-    changes.forEach((change: any) => {
-      if (change.type === 'remove') {
-        const edge = safeEdges.find((e: any) => e.id === change.id)
-        if (edge && edge.targetHandle === 'prompt') updateNodeData(edge.target, { promptConnected: false })
+    setEdges((prevEdges) => {
+      const currentEdges = Array.isArray(prevEdges) ? (prevEdges as Edge[]) : []
+      const removedPromptTargets = new Set<string>()
+
+      changes.forEach((change: any) => {
+        if (change.type === 'remove') {
+          const edge = currentEdges.find((e: any) => e.id === change.id)
+          if (edge && edge.targetHandle === 'prompt') removedPromptTargets.add(edge.target)
+        }
+      })
+
+      const nextEdges = applyEdgeChanges(changes, currentEdges)
+      if (removedPromptTargets.size > 0) {
+        removedPromptTargets.forEach((targetId) => {
+          const stillConnected = nextEdges.some((e: any) => e.target === targetId && e.targetHandle === 'prompt')
+          if (!stillConnected) updateNodeData(targetId, { promptConnected: false })
+        })
       }
+
+      return nextEdges
     })
-    setEdges(applyEdgeChanges(changes, safeEdges))
-  }, [safeEdges, setEdges, updateNodeData])
+  }, [setEdges, updateNodeData])
 
   const onConnect = useCallback((connection: Connection) => {
     if (connection.source && connection.target && hasCycle(connection.source, connection.target, safeEdges)) return
     if (connection.targetHandle === 'prompt') updateNodeData(connection.target, { promptConnected: true })
-    setEdges(addEdge({ ...connection, animated: true, style: { stroke: '#a855f7', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' } }, safeEdges))
+    setEdges((prevEdges) => addEdge(
+      { ...connection, animated: true, style: { stroke: '#a855f7', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' } },
+      Array.isArray(prevEdges) ? (prevEdges as Edge[]) : []
+    ))
   }, [setEdges, safeEdges, updateNodeData])
+
+  const onEdgeClick = useCallback((_: React.MouseEvent, edge: Edge) => {
+    if (selectedTool !== 'cut') return
+    setEdges((prevEdges) => {
+      const currentEdges = Array.isArray(prevEdges) ? (prevEdges as Edge[]) : []
+      const nextEdges = currentEdges.filter((e) => e.id !== edge.id)
+
+      if (edge.targetHandle === 'prompt') {
+        const stillConnected = nextEdges.some((e: any) => e.target === edge.target && e.targetHandle === 'prompt')
+        if (!stillConnected) updateNodeData(edge.target, { promptConnected: false })
+      }
+
+      return nextEdges
+    })
+  }, [selectedTool, setEdges, updateNodeData])
 
   // ── Type-safe connection validation ──
   const isValidConnection = useCallback((connection: Edge | Connection) => {
@@ -386,7 +421,7 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
       position: { x: position.x + (Math.random() - 0.5) * 40, y: position.y + (Math.random() - 0.5) * 40 },
       data: { label: type, ...extraData }
     }
-    setNodes([...safeNodes, newNode])
+    setNodes((prevNodes) => ([...(Array.isArray(prevNodes) ? prevNodes : []), newNode]))
     setShowNodeMenu(false)
     setShowPresets(false)
   }
@@ -518,16 +553,17 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
       const reader = new FileReader()
       reader.onload = () => {
         const dataUrl = reader.result as string
-        setNodes([...safeNodes, {
+        const droppedNode: Node = {
           id: crypto.randomUUID(),
           type: isVideo ? 'videoUploadNode' : 'imageUploadNode',
           position: { x: position.x + idx * 30, y: position.y + idx * 30 },
           data: { label: file.name, uploadedUrl: dataUrl }
-        } as Node])
+        }
+        setNodes((prevNodes) => ([...(Array.isArray(prevNodes) ? prevNodes : []), droppedNode]))
       }
       reader.readAsDataURL(file)
     })
-  }, [reactFlowInstance, safeNodes, setNodes])
+  }, [reactFlowInstance, setNodes])
 
   return (
     <ReactFlowProvider>
@@ -795,6 +831,7 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
           <ReactFlow
             nodes={safeNodes} edges={safeEdges}
             onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect}
+            onEdgeClick={onEdgeClick}
             nodeTypes={nodeTypes as any} onInit={setReactFlowInstance}
             panOnScroll selectionOnDrag={selectedTool === 'select'}
             panOnDrag={selectedTool === 'pan' ? [0, 1, 2] : [1, 2]}

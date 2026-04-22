@@ -2,8 +2,9 @@
 
 import { Handle, Position } from '@xyflow/react';
 import { Loader2, Crop, Play, Trash2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useTheme } from 'next-themes';
+import { useWorkflowStore } from '@/store/workflowStore';
 
 export default function CropImageNode({ id, data }: any) {
   const { theme } = useTheme();
@@ -15,21 +16,16 @@ export default function CropImageNode({ id, data }: any) {
   const [height, setHeight] = useState(data.height || 100);
   const [isExecuting, setIsExecuting] = useState(false);
   const [resultUrl, setResultUrl] = useState('');
+  const edges = useWorkflowStore((state) => state.edges);
 
-  // Detect which handles have connections
-  const [connectedHandles, setConnectedHandles] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    import('@/store/workflowStore').then(({ useWorkflowStore }) => {
-      const store = useWorkflowStore.getState();
-      const edges = store.edges || [];
-      const connected = new Set<string>();
-      edges.forEach((e: any) => {
-        if (e.target === id && e.targetHandle) connected.add(e.targetHandle);
-      });
-      setConnectedHandles(connected);
+  const connectedHandles = useMemo(() => {
+    const connected = new Set<string>();
+    const edgeList = Array.isArray(edges) ? edges : [];
+    edgeList.forEach((e: any) => {
+      if (e.target === id && e.targetHandle) connected.add(e.targetHandle);
     });
-  }, [id, data]);
+    return connected;
+  }, [edges, id]);
 
   const syncToStore = (vals: Record<string, any>) => {
     import('@/store/workflowStore').then(({ useWorkflowStore }) => {
@@ -82,7 +78,7 @@ export default function CropImageNode({ id, data }: any) {
   const handleDelete = () => {
     import('@/store/workflowStore').then(({ useWorkflowStore }) => {
       const store = useWorkflowStore.getState();
-      store.setNodes((store.nodes || []).filter((n: any) => n.id !== id));
+      store.setNodes((prevNodes: any) => (Array.isArray(prevNodes) ? prevNodes : []).filter((n: any) => n.id !== id));
     });
   };
 

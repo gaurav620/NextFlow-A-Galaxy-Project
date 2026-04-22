@@ -2,8 +2,9 @@
 
 import { Handle, Position } from '@xyflow/react';
 import { Copy, Check, Loader2, Sparkles, Play, Trash2, ChevronDown } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTheme } from 'next-themes';
+import { useWorkflowStore } from '@/store/workflowStore';
 
 const LLM_MODELS = [
   { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
@@ -25,9 +26,15 @@ export default function LLMNode({ id, data }: any) {
   const [isExecuting, setIsExecuting] = useState(false);
   const [copied, setCopied] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
+  const edges = useWorkflowStore((state) => state.edges);
 
-  const systemConnected = data.systemConnected || false;
-  const userConnected = data.userConnected || false;
+  const { systemConnected, userConnected } = useMemo(() => {
+    const edgeList = Array.isArray(edges) ? edges : [];
+    return {
+      systemConnected: edgeList.some((e: any) => e.target === id && e.targetHandle === 'system_prompt'),
+      userConnected: edgeList.some((e: any) => e.target === id && e.targetHandle === 'user_message'),
+    };
+  }, [edges, id]);
 
   useEffect(() => {
     if (data.output && typeof data.output === 'string') {
@@ -89,7 +96,7 @@ export default function LLMNode({ id, data }: any) {
   const handleDelete = () => {
     import('@/store/workflowStore').then(({ useWorkflowStore }) => {
       const store = useWorkflowStore.getState();
-      store.setNodes((store.nodes || []).filter((n: any) => n.id !== id));
+      store.setNodes((prevNodes: any) => (Array.isArray(prevNodes) ? prevNodes : []).filter((n: any) => n.id !== id));
     });
   };
 

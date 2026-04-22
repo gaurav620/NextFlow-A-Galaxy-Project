@@ -2,8 +2,9 @@
 
 import { Handle, Position } from '@xyflow/react';
 import { Copy, Check, Download, ChevronDown, Wand2, Play, Trash2, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTheme } from 'next-themes';
+import { useWorkflowStore } from '@/store/workflowStore';
 
 const MODELS = [
   { value: 'nextflow1', label: 'NextFlow 1', badge: null },
@@ -26,8 +27,12 @@ export default function ImageGenNode({ id, data }: any) {
   const [resultUrl, setResultUrl] = useState(data.resultUrl || '');
   const [copied, setCopied] = useState(false);
   const [isNodeRunning, setIsNodeRunning] = useState(false);
+  const edges = useWorkflowStore((state) => state.edges);
 
-  const promptConnected = data.promptConnected || false;
+  const promptConnected = useMemo(() => {
+    const edgeList = Array.isArray(edges) ? edges : [];
+    return edgeList.some((e: any) => e.target === id && e.targetHandle === 'prompt') || !!data.promptConnected;
+  }, [edges, id, data.promptConnected]);
 
   useEffect(() => {
     if (data.output && typeof data.output === 'string' && (data.output.startsWith('http') || data.output.startsWith('data:image'))) {
@@ -99,7 +104,7 @@ export default function ImageGenNode({ id, data }: any) {
   const handleDelete = () => {
     import('@/store/workflowStore').then(({ useWorkflowStore }) => {
       const store = useWorkflowStore.getState();
-      store.setNodes((store.nodes || []).filter((n: any) => n.id !== id));
+      store.setNodes((prevNodes: any) => (Array.isArray(prevNodes) ? prevNodes : []).filter((n: any) => n.id !== id));
     });
   };
 

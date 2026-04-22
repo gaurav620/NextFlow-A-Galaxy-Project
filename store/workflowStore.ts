@@ -6,6 +6,9 @@ interface HistoryEntry {
   edges: WorkflowEdge[]
 }
 
+type NodesUpdater = WorkflowNode[] | ((prevNodes: WorkflowNode[]) => WorkflowNode[])
+type EdgesUpdater = WorkflowEdge[] | ((prevEdges: WorkflowEdge[]) => WorkflowEdge[])
+
 interface WorkflowStore {
   nodes: WorkflowNode[]
   edges: WorkflowEdge[]
@@ -17,8 +20,8 @@ interface WorkflowStore {
   // Undo/Redo
   past: HistoryEntry[]
   future: HistoryEntry[]
-  setNodes: (nodes: WorkflowNode[]) => void
-  setEdges: (edges: WorkflowEdge[]) => void
+  setNodes: (nodes: NodesUpdater) => void
+  setEdges: (edges: EdgesUpdater) => void
   setNodesAndEdges: (nodes: WorkflowNode[], edges: WorkflowEdge[]) => void
   setWorkflowName: (name: string) => void
   setNodeOutput: (nodeId: string, output: any) => void
@@ -54,13 +57,21 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
     })
   },
 
-  setNodes: (nodes) => {
+  setNodes: (nodesOrUpdater) => {
     get().snapshot()
-    set({ nodes })
+    set((state) => ({
+      nodes: typeof nodesOrUpdater === 'function'
+        ? (nodesOrUpdater as (prevNodes: WorkflowNode[]) => WorkflowNode[])(state.nodes)
+        : nodesOrUpdater,
+    }))
   },
-  setEdges: (edges) => {
+  setEdges: (edgesOrUpdater) => {
     get().snapshot()
-    set({ edges })
+    set((state) => ({
+      edges: typeof edgesOrUpdater === 'function'
+        ? (edgesOrUpdater as (prevEdges: WorkflowEdge[]) => WorkflowEdge[])(state.edges)
+        : edgesOrUpdater,
+    }))
   },
   setNodesAndEdges: (nodes, edges) => {
     get().snapshot()
