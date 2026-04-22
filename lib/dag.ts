@@ -40,11 +40,13 @@ export function topologicalSort<T extends DAGNode>(nodes: T[], edges: DAGEdge[])
   })
 
   const levels: T[][] = []
+  let processedCount = 0
   let currentIds = [...inDegree.entries()]
     .filter(([, deg]) => deg === 0)
     .map(([id]) => id)
 
   while (currentIds.length > 0) {
+    processedCount += currentIds.length
     const currentLevel = currentIds.map(id => nodeMap.get(id)!).filter(Boolean)
     levels.push(currentLevel)
 
@@ -58,6 +60,10 @@ export function topologicalSort<T extends DAGNode>(nodes: T[], edges: DAGEdge[])
       })
     })
     currentIds = nextIds
+  }
+
+  if (processedCount !== nodeMap.size) {
+    throw new Error('Workflow graph contains a cycle. Remove circular node connections and try again.')
   }
 
   return levels

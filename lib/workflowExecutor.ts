@@ -29,9 +29,11 @@ function topologicalSort(nodes: WorkflowNode[], edges: WorkflowEdge[]): Workflow
   })
 
   const levels: WorkflowNode[][] = []
+  let processedCount = 0
   let currentLevel = nodes.filter(n => (inDegree.get(n.id) || 0) === 0)
 
   while (currentLevel.length > 0) {
+    processedCount += currentLevel.length
     levels.push(currentLevel)
     const nextLevel: WorkflowNode[] = []
     currentLevel.forEach(node => {
@@ -45,6 +47,11 @@ function topologicalSort(nodes: WorkflowNode[], edges: WorkflowEdge[]): Workflow
     })
     currentLevel = nextLevel
   }
+
+  if (processedCount !== nodes.length) {
+    throw new Error('Workflow graph contains a cycle. Remove circular node connections and try again.')
+  }
+
   return levels
 }
 
@@ -60,7 +67,18 @@ export async function executeWorkflow(
 ): Promise<{ success: boolean; results: Map<string, any>; errors: Map<string, string> }> {
   const results = new Map<string, any>()
   const errors = new Map<string, string>()
-  const levels = topologicalSort(nodes, edges)
+
+  let levels: WorkflowNode[][]
+  try {
+    levels = topologicalSort(nodes, edges)
+  } catch (err: any) {
+    const message = err?.message || 'Invalid workflow graph'
+    nodes.forEach((node) => {
+      errors.set(node.id, message)
+      callbacks.onNodeError(node.id, message)
+    })
+    return { success: false, results, errors }
+  }
 
   for (const level of levels) {
     await Promise.all(

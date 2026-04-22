@@ -51,13 +51,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       ? getSubgraph(allNodes, allEdges, selectedNodeIds)
       : { nodes: allNodes, edges: allEdges }
 
-    // 3. Create WorkflowRun record
+    // 3. Topological sort (throws for cyclic graphs)
+    const levels = topologicalSort(nodes, edges)
+
+    // 4. Create WorkflowRun record
     const workflowRun = await prisma.workflowRun.create({
       data: { workflowId, userId, scope, status: 'running' },
     })
 
-    // 4. Topological sort
-    const levels = topologicalSort(nodes, edges)
     const results = new Map<string, any>()
     const errors = new Map<string, string>()
     const baseUrl = req.nextUrl.origin
@@ -204,7 +205,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       errors: Object.keys(errorObj).length > 0 ? errorObj : undefined,
     })
   } catch (error: any) {
+    const message = error?.message || 'Unknown workflow run error'
+    const statusCode = /cycle/i.test(message) ? 400 : 500
     console.error('Workflow run error:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: message }, { status: statusCode })
   }
 }
