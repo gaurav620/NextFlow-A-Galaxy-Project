@@ -40,6 +40,27 @@ import {
   ArrowLeft, Download, Upload, Users, PanelRightOpen, PanelRightClose,
 } from 'lucide-react'
 
+interface RunNodeErrorMeta {
+  nodeId: string
+  nodeType: string
+  attempt: number
+  maxAttempts: number
+  retryable: boolean
+  statusCode?: number
+  message: string
+}
+
+interface RunApiResponse {
+  success?: boolean
+  runId?: string
+  scope?: 'full' | 'partial' | 'single'
+  nodesExecuted?: number
+  results?: Record<string, unknown>
+  errors?: Record<string, string>
+  errorMeta?: Record<string, RunNodeErrorMeta>
+  error?: string
+}
+
 // ── NODE TYPES ──
 const nodeTypes = {
   textNode: TextNode,
@@ -462,11 +483,11 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
     resetOutputs()
 
     // Clear previous errors and mark all nodes ready for server execution
-    safeNodes.forEach(n => updateNodeData(n.id, { error: undefined, isExecuting: false }))
+    safeNodes.forEach(n => updateNodeData(n.id, { error: undefined, errorMeta: undefined, isExecuting: false }))
 
     safeNodes.forEach((node) => {
       addExecutingNode(node.id)
-      updateNodeData(node.id, { isExecuting: true, error: undefined })
+      updateNodeData(node.id, { isExecuting: true, error: undefined, errorMeta: undefined })
     })
 
     try {
@@ -474,11 +495,13 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       })
-      const data = await res.json()
+      const data: RunApiResponse = await res.json()
 
-      if (!res.ok || !data.success) {
+      if (!res.ok) {
         throw new Error(data.error || 'Workflow execution failed')
       }
+
+      logRunDiagnostics('full', workflowId, data)
 
       const successfulNodeIds = new Set<string>()
       const failedNodeIds = new Set<string>()
@@ -488,7 +511,7 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
           successfulNodeIds.add(nodeId)
           removeExecutingNode(nodeId)
           setNodeOutput(nodeId, output as any)
-          updateNodeData(nodeId, { output: String(output || ''), isExecuting: false, error: undefined })
+          updateNodeData(nodeId, { output: String(output || ''), isExecuting: false, error: undefined, errorMeta: undefined })
         })
       }
 
@@ -496,8 +519,16 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
         Object.entries(data.errors).forEach(([nodeId, error]) => {
           failedNodeIds.add(nodeId)
           removeExecutingNode(nodeId)
-          updateNodeData(nodeId, { error: error as string, isExecuting: false })
+          updateNodeData(nodeId, {
+            error: formatNodeErrorMessage(nodeId, error as string, data.errorMeta),
+            errorMeta: data.errorMeta?.[nodeId],
+            isExecuting: false,
+          })
         })
+      }
+
+      if (!data.success && !data.errors && data.error) {
+        throw new Error(data.error)
       }
 
       safeNodes.forEach((node) => {
@@ -508,6 +539,7 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
       })
     } catch (err: any) {
       const message = err?.message || 'Workflow execution failed'
+      console.error('[Workflow Run][full] Request failed:', err)
       safeNodes.forEach((node) => {
         removeExecutingNode(node.id)
         updateNodeData(node.id, { error: message, isExecuting: false })
@@ -526,7 +558,7 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
     if (!workflowId) return
 
     setIsRunning(true)
-    selectedIds.forEach(id => updateNodeData(id, { isExecuting: true, error: undefined }))
+    selectedIds.forEach(id => updateNodeData(id, { isExecuting: true, error: undefined, errorMeta: undefined }))
 
     try {
       const res = await fetch(`/api/workflow/${workflowId}/run`, {
@@ -534,29 +566,40 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ selectedNodeIds: selectedIds }),
       })
-      const data = await res.json()
+      const data: RunApiResponse = await res.json()
 
-      if (!res.ok || !data.success) {
+      if (!res.ok) {
         throw new Error(data.error || 'Workflow execution failed')
       }
+
+      logRunDiagnostics('selected', workflowId, data)
 
       if (data.results) {
         Object.entries(data.results).forEach(([nodeId, output]) => {
           removeExecutingNode(nodeId)
           setNodeOutput(nodeId, output as any)
-          updateNodeData(nodeId, { output: String(output || ''), isExecuting: false })
+          updateNodeData(nodeId, { output: String(output || ''), isExecuting: false, error: undefined, errorMeta: undefined })
         })
       }
       if (data.errors) {
         Object.entries(data.errors).forEach(([nodeId, error]) => {
           removeExecutingNode(nodeId)
-          updateNodeData(nodeId, { error: error as string, isExecuting: false })
+          updateNodeData(nodeId, {
+            error: formatNodeErrorMessage(nodeId, error as string, data.errorMeta),
+            errorMeta: data.errorMeta?.[nodeId],
+            isExecuting: false,
+          })
         })
       }
+
+      if (!data.success && !data.errors && data.error) {
+        throw new Error(data.error)
+      }
     } catch (err: any) {
+      console.error('[Workflow Run][selected] Request failed:', err)
       selectedIds.forEach((id) => {
         removeExecutingNode(id)
-        updateNodeData(id, { error: err.message, isExecuting: false })
+        updateNodeData(id, { error: err?.message || 'Workflow execution failed', isExecuting: false })
       })
     }
 
@@ -614,6 +657,37 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
       reader.readAsDataURL(file)
     })
   }, [reactFlowInstance, setNodes])
+
+  const formatNodeErrorMessage = (nodeId: string, fallbackError?: string, errorMeta?: Record<string, RunNodeErrorMeta>) => {
+    const meta = errorMeta?.[nodeId]
+    const baseMessage = meta?.message || fallbackError || 'Node execution failed'
+    if (!meta) return baseMessage
+
+    const parts: string[] = []
+    if (meta.statusCode) parts.push(`status ${meta.statusCode}`)
+    parts.push(`attempt ${meta.attempt}/${meta.maxAttempts}`)
+    if (meta.retryable) parts.push('retryable')
+
+    return `${baseMessage} (${parts.join(', ')})`
+  }
+
+  const logRunDiagnostics = (mode: 'full' | 'selected', workflowId: string, response: RunApiResponse) => {
+    const errorCount = Object.keys(response.errors || {}).length
+    const resultCount = Object.keys(response.results || {}).length
+
+    console.groupCollapsed(
+      `[Workflow Run][${mode}] success=${Boolean(response.success)} runId=${response.runId || 'n/a'} results=${resultCount} errors=${errorCount}`
+    )
+    console.info('Workflow ID:', workflowId)
+    console.info('Scope:', response.scope || mode)
+    console.info('Nodes Executed:', response.nodesExecuted)
+    if (resultCount > 0) console.info('Node Results:', response.results)
+    if (errorCount > 0) console.error('Node Errors:', response.errors)
+    if (response.errorMeta && Object.keys(response.errorMeta).length > 0) {
+      console.error('Node Error Meta:', response.errorMeta)
+    }
+    console.groupEnd()
+  }
 
   return (
     <ReactFlowProvider>
