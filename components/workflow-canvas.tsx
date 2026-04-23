@@ -36,7 +36,7 @@ import { useTheme } from 'next-themes'
 import {
   Undo2, Redo2, Search, Plus, MousePointer2, Hand, Scissors, Link2,
   Wand2, Share, Moon, Sun, ChevronDown, ChevronUp, X, Keyboard, Play, BoxSelect,
-  Image as ImageIcon, Video, Sparkles, Maximize, MonitorPlay,
+  Image as ImageIcon, Video, Sparkles, Maximize, MonitorPlay, Bot,
   ArrowLeft, Download, Upload, Users, PanelRightOpen, PanelRightClose,
 } from 'lucide-react'
 
@@ -251,13 +251,13 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
   const { user } = useClerk()
   const { theme, setTheme } = useTheme()
   const {
-    nodes, edges, setNodes, setEdges,
+    nodes, edges, setNodes, setNodesQuiet, setEdges,
     workflowName, setWorkflowName,
     currentWorkflowId, setCurrentWorkflowId,
     isRunning, setIsRunning,
     resetOutputs, addExecutingNode,
     removeExecutingNode, setNodeOutput, updateNodeData,
-    undo, redo, past, future,
+    undo, redo, past, future, snapshot,
   } = useWorkflowStore()
 
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null)
@@ -318,7 +318,7 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
       if (e.key === 'i' || e.key === 'I') { e.preventDefault(); addNodeAtCenter('imageGenNode') }
       if (e.key === 'v' || e.key === 'V') { e.preventDefault(); addNodeAtCenter('videoUploadNode') }
       if (e.key === 'l' || e.key === 'L') { e.preventDefault(); addNodeAtCenter('llmNode') }
-      if (e.key === 'e' || e.key === 'E') { e.preventDefault(); addNodeAtCenter('cropImageNode') }
+      if (e.key === 'e' || e.key === 'E') { e.preventDefault(); addNodeAtCenter('enhanceNode') }
       if (e.key === 't' || e.key === 'T') { e.preventDefault(); addNodeAtCenter('textNode') }
       if (e.key === 'Escape') { setShowNodeMenu(false); setShowShortcuts(false) }
       if (e.metaKey || e.ctrlKey) {
@@ -348,8 +348,15 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
   }
 
   const onNodesChange = useCallback((changes: any) => {
-    setNodes((prevNodes) => applyNodeChanges(changes, Array.isArray(prevNodes) ? (prevNodes as Node[]) : []))
-  }, [setNodes])
+    const isPositionOrSelect = changes.every((c: any) => c.type === 'position' || c.type === 'select' || c.type === 'dimensions')
+    if (isPositionOrSelect) {
+      setNodesQuiet((prev) => applyNodeChanges(changes, Array.isArray(prev) ? (prev as Node[]) : []))
+    } else {
+      setNodes((prev) => applyNodeChanges(changes, Array.isArray(prev) ? (prev as Node[]) : []))
+    }
+  }, [setNodes, setNodesQuiet])
+
+  const onNodeDragStop = useCallback(() => { snapshot() }, [snapshot])
 
   const onEdgesChange = useCallback((changes: any) => {
     setEdges((prevEdges) => {
@@ -744,13 +751,13 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
         <div className="absolute bottom-4 left-4 z-40 flex items-center gap-1 pointer-events-auto">
           <div className={`flex items-center rounded-xl border overflow-hidden ${dark ? 'bg-[#1A1A1A] border-white/[0.08]' : 'bg-white border-black/[0.06]'}`}>
             <div className="relative" onMouseEnter={() => setHoveredTool('undo')} onMouseLeave={() => setHoveredTool(null)}>
-              <button onClick={undo} disabled={past.length === 0} className={`w-9 h-9 flex items-center justify-center transition-colors disabled:opacity-30 ${dark ? 'text-[#a0a0a0] hover:text-white hover:bg-white/[0.06]' : 'text-gray-500 hover:text-black hover:bg-black/[0.03]'}`}>
+              <button aria-label="Undo" onClick={undo} disabled={past.length === 0} className={`w-9 h-9 flex items-center justify-center transition-colors disabled:opacity-30 ${dark ? 'text-[#a0a0a0] hover:text-white hover:bg-white/[0.06]' : 'text-gray-500 hover:text-black hover:bg-black/[0.03]'}`}>
                 <Undo2 className="w-4 h-4" />
               </button>
               {hoveredTool === 'undo' && <div className={`absolute -top-9 left-1/2 -translate-x-1/2 px-2 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap shadow-lg border ${dark ? 'bg-[#2A2A2A] text-white border-white/10' : 'bg-white text-black border-black/10'}`}>Undo <span className={`ml-1 text-[10px] font-mono rounded px-1 py-0.5 ${dark ? 'bg-white/10' : 'bg-black/5'}`}>⌘Z</span></div>}
             </div>
             <div className="relative" onMouseEnter={() => setHoveredTool('redo')} onMouseLeave={() => setHoveredTool(null)}>
-              <button onClick={redo} disabled={future.length === 0} className={`w-9 h-9 flex items-center justify-center transition-colors disabled:opacity-30 ${dark ? 'text-[#a0a0a0] hover:text-white hover:bg-white/[0.06]' : 'text-gray-500 hover:text-black hover:bg-black/[0.03]'}`}>
+              <button aria-label="Redo" onClick={redo} disabled={future.length === 0} className={`w-9 h-9 flex items-center justify-center transition-colors disabled:opacity-30 ${dark ? 'text-[#a0a0a0] hover:text-white hover:bg-white/[0.06]' : 'text-gray-500 hover:text-black hover:bg-black/[0.03]'}`}>
                 <Redo2 className="w-4 h-4" />
               </button>
               {hoveredTool === 'redo' && <div className={`absolute -top-9 left-1/2 -translate-x-1/2 px-2 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap shadow-lg border ${dark ? 'bg-[#2A2A2A] text-white border-white/10' : 'bg-white text-black border-black/10'}`}>Redo <span className={`ml-1 text-[10px] font-mono rounded px-1 py-0.5 ${dark ? 'bg-white/10' : 'bg-black/5'}`}>⌘⇧Z</span></div>}
@@ -766,35 +773,35 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
           <div className={`flex items-center p-1.5 rounded-2xl border shadow-2xl gap-0.5 ${dark ? 'bg-[#1A1A1A] border-white/[0.08]' : 'bg-white border-black/[0.06]'}`}>
             {/* + New Node */}
             <div className="relative" onMouseEnter={() => setHoveredTool('newnode')} onMouseLeave={() => setHoveredTool(null)}>
-              <button onClick={() => openNodeMenu()} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors ${dark ? 'bg-[#2A2A2A] hover:bg-[#333] text-white' : 'bg-gray-100 hover:bg-gray-200 text-black'}`}>
+              <button aria-label="New Node" onClick={() => openNodeMenu()} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors ${dark ? 'bg-[#2A2A2A] hover:bg-[#333] text-white' : 'bg-gray-100 hover:bg-gray-200 text-black'}`}>
                 <Plus className="w-5 h-5" />
               </button>
               {hoveredTool === 'newnode' && <div className={`absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap shadow-lg border ${dark ? 'bg-[#2A2A2A] text-white border-white/10' : 'bg-white text-black border-black/10'}`}>New Node <span className={`ml-1 text-[10px] font-mono rounded px-1 py-0.5 ${dark ? 'bg-white/10' : 'bg-black/5'}`}>N</span></div>}
             </div>
             {/* Drag Selection */}
             <div className="relative" onMouseEnter={() => setHoveredTool('select')} onMouseLeave={() => setHoveredTool(null)}>
-              <button onClick={() => setSelectedTool('select')} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors ${selectedTool === 'select' ? (dark ? 'bg-white/10 text-white' : 'bg-black/10 text-black') : (dark ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-black hover:bg-black/5')}`}>
+              <button aria-label="Select tool" onClick={() => setSelectedTool('select')} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors ${selectedTool === 'select' ? (dark ? 'bg-white/10 text-white' : 'bg-black/10 text-black') : (dark ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-black hover:bg-black/5')}`}>
                 <MousePointer2 className="w-[18px] h-[18px]" />
               </button>
               {hoveredTool === 'select' && <div className={`absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap shadow-lg border ${dark ? 'bg-[#2A2A2A] text-white border-white/10' : 'bg-white text-black border-black/10'}`}>Drag Selection</div>}
             </div>
             {/* Pan */}
             <div className="relative" onMouseEnter={() => setHoveredTool('pan')} onMouseLeave={() => setHoveredTool(null)}>
-              <button onClick={() => setSelectedTool('pan')} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors ${selectedTool === 'pan' ? (dark ? 'bg-white/10 text-white' : 'bg-black/10 text-black') : (dark ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-black hover:bg-black/5')}`}>
+              <button aria-label="Pan tool" onClick={() => setSelectedTool('pan')} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors ${selectedTool === 'pan' ? (dark ? 'bg-white/10 text-white' : 'bg-black/10 text-black') : (dark ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-black hover:bg-black/5')}`}>
                 <Hand className="w-[18px] h-[18px]" />
               </button>
               {hoveredTool === 'pan' && <div className={`absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap shadow-lg border ${dark ? 'bg-[#2A2A2A] text-white border-white/10' : 'bg-white text-black border-black/10'}`}>Pan</div>}
             </div>
             {/* Cut Connections */}
             <div className="relative" onMouseEnter={() => setHoveredTool('cut')} onMouseLeave={() => setHoveredTool(null)}>
-              <button onClick={() => setSelectedTool('cut')} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors ${selectedTool === 'cut' ? (dark ? 'bg-white/10 text-white' : 'bg-black/10 text-black') : (dark ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-black hover:bg-black/5')}`}>
+              <button aria-label="Cut connections tool" onClick={() => setSelectedTool('cut')} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors ${selectedTool === 'cut' ? (dark ? 'bg-white/10 text-white' : 'bg-black/10 text-black') : (dark ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-black hover:bg-black/5')}`}>
                 <Scissors className="w-[18px] h-[18px]" />
               </button>
               {hoveredTool === 'cut' && <div className={`absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap shadow-lg border ${dark ? 'bg-[#2A2A2A] text-white border-white/10' : 'bg-white text-black border-black/10'}`}>Cut Connections</div>}
             </div>
             {/* Group */}
             <div className="relative" onMouseEnter={() => setHoveredTool('group')} onMouseLeave={() => setHoveredTool(null)}>
-              <button onClick={() => setSelectedTool('group')} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors ${selectedTool === 'group' ? (dark ? 'bg-white/10 text-white' : 'bg-black/10 text-black') : (dark ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-black hover:bg-black/5')}`}>
+              <button aria-label="Group nodes tool" onClick={() => setSelectedTool('group')} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors ${selectedTool === 'group' ? (dark ? 'bg-white/10 text-white' : 'bg-black/10 text-black') : (dark ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-black hover:bg-black/5')}`}>
                 <BoxSelect className="w-[18px] h-[18px]" />
               </button>
               {hoveredTool === 'group' && <div className={`absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap shadow-lg border ${dark ? 'bg-[#2A2A2A] text-white border-white/10' : 'bg-white text-black border-black/10'}`}>Group</div>}
@@ -874,7 +881,7 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
           <ReactFlow
             nodes={safeNodes} edges={safeEdges}
             onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect}
-            onEdgeClick={onEdgeClick}
+            onNodeDragStop={onNodeDragStop} onEdgeClick={onEdgeClick}
             nodeTypes={nodeTypes as any} onInit={setReactFlowInstance}
             panOnScroll selectionOnDrag={selectedTool === 'select'}
             panOnDrag={selectedTool === 'pan' ? [0, 1, 2] : [1, 2]}
@@ -894,9 +901,12 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
                 if (n.type === 'llmNode') return '#a855f7'
                 if (n.type === 'imageGenNode') return '#3b82f6'
                 if (n.type === 'cropImageNode') return '#ec4899'
+                if (n.type === 'enhanceNode') return '#ec4899'
                 if (n.type === 'extractFrameNode') return '#eab308'
                 if (n.type === 'imageUploadNode') return '#22c55e'
                 if (n.type === 'videoUploadNode') return '#f97316'
+                if (n.type === 'videoGenNode') return '#f97316'
+                if (n.type === 'outputNode') return '#22c55e'
                 return '#666'
               }}
               maskColor={dark ? 'rgba(0,0,0,0.7)' : 'rgba(200,200,200,0.7)'}
