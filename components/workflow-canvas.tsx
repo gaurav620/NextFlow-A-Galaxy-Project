@@ -26,15 +26,17 @@ import LLMNode from '@/components/nodes/llm-node'
 import CropImageNode from '@/components/nodes/crop-image-node'
 import ExtractFrameNode from '@/components/nodes/extract-frame-node'
 import ImageGenNode from '@/components/nodes/image-gen-node'
+import VideoGenNode from '@/components/nodes/video-gen-node'
+import EnhanceNode from '@/components/nodes/enhance-node'
+import OutputNode from '@/components/nodes/output-node'
 import HistorySidebar from '@/components/history-sidebar'
 import { useWorkflowStore } from '@/store/workflowStore'
-import { useAssetStore } from '@/store/assets'
 import { useTheme } from 'next-themes'
 
 import {
   Undo2, Redo2, Search, Plus, MousePointer2, Hand, Scissors, Link2,
   Wand2, Share, Moon, Sun, ChevronDown, ChevronUp, X, Keyboard, Play, BoxSelect,
-  Image as ImageIcon, Video, Sparkles, Type, Film, Crop, Bot, Maximize,
+  Image as ImageIcon, Video, Sparkles, Maximize, MonitorPlay,
   ArrowLeft, Download, Upload, Users, PanelRightOpen, PanelRightClose,
 } from 'lucide-react'
 
@@ -47,6 +49,9 @@ const nodeTypes = {
   cropImageNode: CropImageNode,
   extractFrameNode: ExtractFrameNode,
   imageGenNode: ImageGenNode,
+  videoGenNode: VideoGenNode,
+  enhanceNode: EnhanceNode,
+  outputNode: OutputNode,
 }
 
 // ── NODE MENU (Krea-exact categories with sub-items + models) ──
@@ -56,7 +61,7 @@ const nodeMenuCategories = [
     icon: <ImageIcon className="w-3.5 h-3.5" />,
     items: [
       { label: 'Generate Image', type: 'imageGenNode', desc: 'Text to Image' },
-      { label: 'Enhance Image', type: 'cropImageNode', desc: 'Upscale & enhance' },
+      { label: 'Enhance Image', type: 'enhanceNode', desc: 'Upscale & enhance' },
       { label: 'Edit Image', type: 'cropImageNode', desc: 'Crop & transform' },
       { label: 'Image Utility', type: 'imageUploadNode', desc: 'Upload an image' },
     ]
@@ -65,7 +70,7 @@ const nodeMenuCategories = [
     label: 'Video',
     icon: <Video className="w-3.5 h-3.5" />,
     items: [
-      { label: 'Generate Video', type: 'videoUploadNode', desc: 'Text to Video' },
+      { label: 'Generate Video', type: 'videoGenNode', desc: 'Text to Video' },
       { label: 'Enhance Video', type: 'extractFrameNode', desc: 'Upscale video' },
       { label: 'Motion Transfer', type: 'extractFrameNode', desc: 'Transfer motion' },
       { label: 'Lipsync', type: 'videoUploadNode', desc: 'Sync audio to video' },
@@ -78,6 +83,13 @@ const nodeMenuCategories = [
     items: [
       { label: 'LLM Node', type: 'llmNode', desc: 'Run Gemini / GPT' },
       { label: 'Text / Prompt', type: 'textNode', desc: 'Enter text' },
+    ]
+  },
+  {
+    label: 'Output',
+    icon: <MonitorPlay className="w-3.5 h-3.5" />,
+    items: [
+      { label: 'Output', type: 'outputNode', desc: 'Display result' },
     ]
   },
 ]
