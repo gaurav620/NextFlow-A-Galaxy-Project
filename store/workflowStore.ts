@@ -21,6 +21,7 @@ interface WorkflowStore {
   past: HistoryEntry[]
   future: HistoryEntry[]
   setNodes: (nodes: NodesUpdater) => void
+  setNodesQuiet: (nodes: NodesUpdater) => void
   setEdges: (edges: EdgesUpdater) => void
   setNodesAndEdges: (nodes: WorkflowNode[], edges: WorkflowEdge[]) => void
   setWorkflowName: (name: string) => void
@@ -59,6 +60,13 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
 
   setNodes: (nodesOrUpdater) => {
     get().snapshot()
+    set((state) => ({
+      nodes: typeof nodesOrUpdater === 'function'
+        ? (nodesOrUpdater as (prevNodes: WorkflowNode[]) => WorkflowNode[])(state.nodes)
+        : nodesOrUpdater,
+    }))
+  },
+  setNodesQuiet: (nodesOrUpdater) => {
     set((state) => ({
       nodes: typeof nodesOrUpdater === 'function'
         ? (nodesOrUpdater as (prevNodes: WorkflowNode[]) => WorkflowNode[])(state.nodes)
