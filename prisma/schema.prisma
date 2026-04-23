@@ -32,7 +32,6 @@ model WorkflowRun {
   userId     String
   status     String    @default("running")
   scope      String    @default("full")
-  duration   Int?
   startedAt  DateTime  @default(now())
   endedAt    DateTime?
   nodeRuns   NodeRun[]
