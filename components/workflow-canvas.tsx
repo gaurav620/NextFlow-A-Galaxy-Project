@@ -28,7 +28,6 @@ import ExtractFrameNode from '@/components/nodes/extract-frame-node'
 import ImageGenNode from '@/components/nodes/image-gen-node'
 import HistorySidebar from '@/components/history-sidebar'
 import { useWorkflowStore } from '@/store/workflowStore'
-import { executeWorkflow } from '@/lib/workflowExecutor'
 import { useAssetStore } from '@/store/assets'
 import { useTheme } from 'next-themes'
 
@@ -436,50 +435,64 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
 
   async function handleRun() {
     if (!safeNodes.length) return
+
+    const workflowId = currentWorkflowId || await handleSave()
+    if (!workflowId) return
+
     setIsRunning(true)
     resetOutputs()
-    
-    // Clear previous errors/outputs from all nodes
+
+    // Clear previous errors and mark all nodes ready for server execution
     safeNodes.forEach(n => updateNodeData(n.id, { error: undefined, isExecuting: false }))
-    
-    let workflowRunId = 'local-' + Date.now()
-    if (currentWorkflowId) {
-      try {
-        const res = await fetch(`/api/workflow/${currentWorkflowId}/runs`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ scope: 'full' }) })
-        const data = await res.json()
-        if (data.success) workflowRunId = data.run.id
-      } catch (e) {
-        console.warn('Could not create workflow run record, using local ID')
-      }
-    }
-    
-    let hasError = false
-    await executeWorkflow(safeNodes as any, safeEdges as any, workflowRunId, {
-      onNodeStart: (nodeId) => {
-        addExecutingNode(nodeId)
-        updateNodeData(nodeId, { isExecuting: true, error: undefined })
-      },
-      onNodeComplete: (nodeId, output) => {
-        removeExecutingNode(nodeId)
-        setNodeOutput(nodeId, output)
-        updateNodeData(nodeId, { output: String(output || ''), error: undefined, isExecuting: false })
-      },
-      onNodeError: (nodeId, error) => {
-        hasError = true
-        removeExecutingNode(nodeId)
-        updateNodeData(nodeId, { error, isExecuting: false })
-      }
+
+    safeNodes.forEach((node) => {
+      addExecutingNode(node.id)
+      updateNodeData(node.id, { isExecuting: true, error: undefined })
     })
 
-    // ── Update WorkflowRun status ──
-    if (currentWorkflowId && !workflowRunId.startsWith('local-')) {
-      try {
-        await fetch(`/api/workflow/${currentWorkflowId}/runs`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ runId: workflowRunId, status: hasError ? 'failed' : 'success' }),
+    try {
+      const res = await fetch(`/api/workflow/${workflowId}/run`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const data = await res.json()
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Workflow execution failed')
+      }
+
+      const successfulNodeIds = new Set<string>()
+      const failedNodeIds = new Set<string>()
+
+      if (data.results) {
+        Object.entries(data.results).forEach(([nodeId, output]) => {
+          successfulNodeIds.add(nodeId)
+          removeExecutingNode(nodeId)
+          setNodeOutput(nodeId, output as any)
+          updateNodeData(nodeId, { output: String(output || ''), isExecuting: false, error: undefined })
         })
-      } catch {}
+      }
+
+      if (data.errors) {
+        Object.entries(data.errors).forEach(([nodeId, error]) => {
+          failedNodeIds.add(nodeId)
+          removeExecutingNode(nodeId)
+          updateNodeData(nodeId, { error: error as string, isExecuting: false })
+        })
+      }
+
+      safeNodes.forEach((node) => {
+        if (!successfulNodeIds.has(node.id) && !failedNodeIds.has(node.id)) {
+          removeExecutingNode(node.id)
+          updateNodeData(node.id, { isExecuting: false })
+        }
+      })
+    } catch (err: any) {
+      const message = err?.message || 'Workflow execution failed'
+      safeNodes.forEach((node) => {
+        removeExecutingNode(node.id)
+        updateNodeData(node.id, { error: message, isExecuting: false })
+      })
     }
 
     setIsRunning(false)
@@ -488,49 +501,67 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
   // ── Run Selected nodes via server-side engine ──
   async function handleRunSelected() {
     const selectedIds = safeNodes.filter(n => n.selected).map(n => n.id)
-    if (!selectedIds.length || !currentWorkflowId) return
+    if (!selectedIds.length) return
 
-    // Save first so server has latest data
-    await handleSave()
+    const workflowId = currentWorkflowId || await handleSave()
+    if (!workflowId) return
 
     setIsRunning(true)
     selectedIds.forEach(id => updateNodeData(id, { isExecuting: true, error: undefined }))
 
     try {
-      const res = await fetch(`/api/workflow/${currentWorkflowId}/run`, {
+      const res = await fetch(`/api/workflow/${workflowId}/run`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ selectedNodeIds: selectedIds }),
       })
       const data = await res.json()
 
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Workflow execution failed')
+      }
+
       if (data.results) {
         Object.entries(data.results).forEach(([nodeId, output]) => {
+          removeExecutingNode(nodeId)
           setNodeOutput(nodeId, output as any)
           updateNodeData(nodeId, { output: String(output || ''), isExecuting: false })
         })
       }
       if (data.errors) {
         Object.entries(data.errors).forEach(([nodeId, error]) => {
+          removeExecutingNode(nodeId)
           updateNodeData(nodeId, { error: error as string, isExecuting: false })
         })
       }
     } catch (err: any) {
-      selectedIds.forEach(id => updateNodeData(id, { error: err.message, isExecuting: false }))
+      selectedIds.forEach((id) => {
+        removeExecutingNode(id)
+        updateNodeData(id, { error: err.message, isExecuting: false })
+      })
     }
 
     setIsRunning(false)
   }
 
-  async function handleSave() {
-    if (!safeNodes.length) return
+  async function handleSave(): Promise<string | null> {
+    if (!safeNodes.length) return null
     setSaveStatus('saving')
     try {
       const res = await fetch('/api/workflow', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: workflowName || 'Untitled', data: { nodes: safeNodes, edges: safeEdges }, workflowId: currentWorkflowId }) })
       const data = await res.json()
-      if (data.success) { setCurrentWorkflowId(data.workflow.id); setSaveStatus('saved'); setTimeout(() => setSaveStatus('idle'), 2000) }
-      else setSaveStatus('idle')
-    } catch { setSaveStatus('idle') }
+      if (data.success) {
+        setCurrentWorkflowId(data.workflow.id)
+        setSaveStatus('saved')
+        setTimeout(() => setSaveStatus('idle'), 2000)
+        return data.workflow.id as string
+      }
+      setSaveStatus('idle')
+      return null
+    } catch {
+      setSaveStatus('idle')
+      return null
+    }
   }
 
   // Drag and drop media files onto canvas

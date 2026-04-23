@@ -16,6 +16,75 @@ interface WFEdge {
   targetHandle?: string
 }
 
+interface NodeErrorMeta {
+  nodeId: string
+  nodeType: string
+  attempt: number
+  maxAttempts: number
+  retryable: boolean
+  statusCode?: number
+  message: string
+}
+
+class NodeExecutionError extends Error {
+  statusCode?: number
+  retryable: boolean
+  attempt: number
+  maxAttempts: number
+
+  constructor(message: string, retryable = false, statusCode?: number, attempt = 1, maxAttempts = 1) {
+    super(message)
+    this.name = 'NodeExecutionError'
+    this.retryable = retryable
+    this.statusCode = statusCode
+    this.attempt = attempt
+    this.maxAttempts = maxAttempts
+  }
+}
+
+async function callNodeApiWithRetry(
+  baseUrl: string,
+  path: string,
+  payload: Record<string, any>,
+  maxAttempts = 2
+) {
+  let lastError: NodeExecutionError | null = null
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const res = await fetch(`${baseUrl}${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      const data = await res.json().catch(() => null)
+      if (!res.ok) {
+        const retryable = res.status >= 500
+        const message = data?.error || `Request failed with status ${res.status}`
+        throw new NodeExecutionError(message, retryable, res.status, attempt, maxAttempts)
+      }
+
+      if (!data?.success) {
+        throw new NodeExecutionError(data?.error || 'Node execution failed', false, res.status, attempt, maxAttempts)
+      }
+
+      return { data, attempt }
+    } catch (error: any) {
+      const normalizedError = error instanceof NodeExecutionError
+        ? error
+        : new NodeExecutionError(error?.message || 'Unknown node execution error', true, undefined, attempt, maxAttempts)
+
+      lastError = normalizedError
+      if (!normalizedError.retryable || attempt >= maxAttempts) {
+        break
+      }
+    }
+  }
+
+  throw lastError || new NodeExecutionError('Node execution failed')
+}
+
 /**
  * POST /api/workflow/[id]/run
  * 
@@ -61,6 +130,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     const results = new Map<string, any>()
     const errors = new Map<string, string>()
+    const errorMeta = new Map<string, NodeErrorMeta>()
     const baseUrl = req.nextUrl.origin
 
     // 5. Execute level-by-level
@@ -90,20 +160,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             const userSrc = getConnectedSource(node.id, 'user_message', edges)
             const imageSrcs = getConnectedSources(node.id, 'images', edges)
 
-            const res = await fetch(`${baseUrl}/api/execute/llm`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
+            const { data } = await callNodeApiWithRetry(baseUrl, '/api/execute/llm', {
                 model: node.data?.model || 'gemini-2.0-flash',
                 systemPrompt: systemSrc ? String(results.get(systemSrc) || '') : node.data?.systemPrompt,
                 userMessage: userSrc ? String(results.get(userSrc) || '') : (node.data?.userMessage || node.data?.value || 'Hello'),
                 images: imageSrcs.map(id => results.get(id)).filter(Boolean),
                 workflowRunId: workflowRun.id,
                 nodeId: node.id,
-              }),
             })
-            const data = await res.json()
-            if (!data.success) throw new Error(data.error || 'LLM failed')
             output = data.output
           } else if (node.type === 'cropImageNode') {
             const imgSrc = getConnectedSource(node.id, 'image_url', edges)
@@ -112,10 +176,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             const wSrc = getConnectedSource(node.id, 'width_percent', edges)
             const hSrc = getConnectedSource(node.id, 'height_percent', edges)
 
-            const res = await fetch(`${baseUrl}/api/execute/crop-image`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
+            const { data } = await callNodeApiWithRetry(baseUrl, '/api/execute/crop-image', {
                 imageUrl: imgSrc ? results.get(imgSrc) : node.data?.imageUrl,
                 x: xSrc ? Number(results.get(xSrc)) : (node.data?.x || 0),
                 y: ySrc ? Number(results.get(ySrc)) : (node.data?.y || 0),
@@ -123,46 +184,37 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
                 height: hSrc ? Number(results.get(hSrc)) : (node.data?.height || 100),
                 workflowRunId: workflowRun.id,
                 nodeId: node.id,
-              }),
             })
-            const data = await res.json()
-            if (!data.success) throw new Error(data.error || 'Crop failed')
             output = data.output
           } else if (node.type === 'extractFrameNode') {
             const vidSrc = getConnectedSource(node.id, 'video_url', edges)
             const tsSrc = getConnectedSource(node.id, 'timestamp', edges)
 
-            const res = await fetch(`${baseUrl}/api/execute/extract-frame`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
+            const { data } = await callNodeApiWithRetry(baseUrl, '/api/execute/extract-frame', {
                 videoUrl: vidSrc ? results.get(vidSrc) : node.data?.videoUrl,
                 timestamp: tsSrc ? Number(results.get(tsSrc)) : (node.data?.timestamp || 0),
                 workflowRunId: workflowRun.id,
                 nodeId: node.id,
-              }),
             })
-            const data = await res.json()
-            if (!data.success) throw new Error(data.error || 'Extract failed')
             output = data.output
           } else if (node.type === 'imageGenNode') {
             const promptSrc = getConnectedSource(node.id, 'prompt', edges)
             const prompt = promptSrc ? String(results.get(promptSrc) || '') : node.data?.prompt
 
-            const res = await fetch(`${baseUrl}/api/generate/image`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
+            if (!prompt) {
+              throw new NodeExecutionError('Prompt is required for image generation', false, 400)
+            }
+
+            const { data } = await callNodeApiWithRetry(baseUrl, '/api/generate/image', {
                 prompt,
                 count: 1,
                 modelId: node.data?.model || 'nextflow1',
                 aspectRatio: node.data?.aspectRatio || '1:1',
                 resolution: '1K',
-              }),
             })
-            const data = await res.json()
-            if (!data.success) throw new Error(data.error || 'Image gen failed')
             output = data.images?.[0] || ''
+          } else {
+            throw new NodeExecutionError(`Unsupported node type: ${node.type || 'unknown'}`, false, 400)
           }
 
           results.set(node.id, output)
@@ -172,10 +224,30 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             data: { status: 'success', outputs: { result: output }, endedAt: new Date() },
           })
         } catch (err: any) {
-          errors.set(node.id, err.message)
+          const nodeError = err instanceof NodeExecutionError
+            ? err
+            : new NodeExecutionError(err?.message || 'Node execution failed', false)
+
+          const meta: NodeErrorMeta = {
+            nodeId: node.id,
+            nodeType: node.type || 'unknown',
+            attempt: nodeError.attempt,
+            maxAttempts: nodeError.maxAttempts,
+            retryable: nodeError.retryable,
+            statusCode: nodeError.statusCode,
+            message: nodeError.message,
+          }
+
+          errors.set(node.id, nodeError.message)
+          errorMeta.set(node.id, meta)
           await prisma.nodeRun.update({
             where: { id: nodeRun.id },
-            data: { status: 'failed', error: err.message, endedAt: new Date() },
+            data: {
+              status: 'failed',
+              error: nodeError.message,
+              outputs: { errorMeta: meta },
+              endedAt: new Date(),
+            },
           })
         }
       }))
@@ -195,6 +267,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     results.forEach((v, k) => { resultObj[k] = v })
     const errorObj: Record<string, string> = {}
     errors.forEach((v, k) => { errorObj[k] = v })
+    const errorMetaObj: Record<string, NodeErrorMeta> = {}
+    errorMeta.forEach((v, k) => { errorMetaObj[k] = v })
 
     return NextResponse.json({
       success: errors.size === 0,
@@ -203,6 +277,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       nodesExecuted: nodes.length,
       results: resultObj,
       errors: Object.keys(errorObj).length > 0 ? errorObj : undefined,
+      errorMeta: Object.keys(errorMetaObj).length > 0 ? errorMetaObj : undefined,
     })
   } catch (error: any) {
     const message = error?.message || 'Unknown workflow run error'
