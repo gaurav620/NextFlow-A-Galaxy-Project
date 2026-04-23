@@ -36,7 +36,27 @@ export async function POST(req: NextRequest) {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const body = schema.parse(await req.json());
+    const rawBody = await req.json();
+    const parsed = schema.safeParse(rawBody);
+    if (!parsed.success) {
+      const validationErrors = parsed.error.issues.map((issue) => ({
+        path: issue.path.join('.'),
+        message: issue.message,
+        code: issue.code,
+        received: (issue as any).received,
+      }));
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid image generation request payload',
+          validationErrors,
+        },
+        { status: 400 }
+      );
+    }
+
+    const body = parsed.data;
     const apiKey = process.env.GEMINI_API_KEY;
 
     let fullPrompt = body.style && body.style !== 'None'
@@ -119,6 +139,9 @@ export async function POST(req: NextRequest) {
     
   } catch (error: any) {
     console.error('Generate image error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: error?.message || 'Image generation failed' },
+      { status: 500 }
+    );
   }
 }

@@ -28,11 +28,24 @@ export default function ImageGenNode({ id, data }: any) {
   const [copied, setCopied] = useState(false);
   const [isNodeRunning, setIsNodeRunning] = useState(false);
   const edges = useWorkflowStore((state) => state.edges);
+  const nodes = useWorkflowStore((state) => state.nodes);
 
   const promptConnected = useMemo(() => {
     const edgeList = Array.isArray(edges) ? edges : [];
     return edgeList.some((e: any) => e.target === id && e.targetHandle === 'prompt') || !!data.promptConnected;
   }, [edges, id, data.promptConnected]);
+
+  const connectedPromptValue = useMemo(() => {
+    const edgeList = Array.isArray(edges) ? edges : [];
+    const nodeList = Array.isArray(nodes) ? nodes : [];
+    const promptEdge = edgeList.find((e: any) => e.target === id && e.targetHandle === 'prompt');
+    if (!promptEdge?.source) return '';
+
+    const sourceNode = nodeList.find((n: any) => n.id === promptEdge.source);
+    const sourceData = sourceNode?.data || {};
+    const rawValue = sourceData.output ?? sourceData.content ?? sourceData.value ?? sourceData.prompt;
+    return typeof rawValue === 'string' ? rawValue : String(rawValue || '');
+  }, [edges, nodes, id]);
 
   useEffect(() => {
     if (data.output && typeof data.output === 'string' && (data.output.startsWith('http') || data.output.startsWith('data:image'))) {
@@ -67,8 +80,19 @@ export default function ImageGenNode({ id, data }: any) {
 
   // Run just this single node
   const handleRunNode = async () => {
-    const currentPrompt = prompt || data.prompt;
-    if (!currentPrompt && !promptConnected) return;
+    const currentPrompt = (prompt || data.prompt || connectedPromptValue || '').trim();
+    if (!currentPrompt) {
+      const message = promptConnected
+        ? 'Prompt connection found but upstream node output is empty. Run the upstream node first or enter a prompt manually.'
+        : 'Prompt is required. Enter prompt text or connect a prompt source node.';
+      syncToStore('error', message);
+      console.error('[Image Node] Missing prompt for generation', {
+        nodeId: id,
+        promptConnected,
+        connectedPromptValue,
+      });
+      return;
+    }
     
     setIsNodeRunning(true);
     syncToStore('isExecuting', true);
@@ -90,11 +114,27 @@ export default function ImageGenNode({ id, data }: any) {
       if (resData.success && resData.images?.[0]) {
         setResultUrl(resData.images[0]);
         syncToStore('output', resData.images[0]);
+        syncToStore('error', undefined);
+        syncToStore('errorMeta', undefined);
       } else {
-        syncToStore('error', resData.error || 'Generation failed');
+        const message = resData.error || 'Generation failed';
+        syncToStore('error', message);
+        syncToStore('errorMeta', resData.validationErrors ? { validationErrors: resData.validationErrors } : undefined);
+        console.error('[Image Node] Generation failed', {
+          nodeId: id,
+          status: res.status,
+          error: message,
+          validationErrors: resData.validationErrors,
+          requestPayload: {
+            prompt: currentPrompt,
+            modelId: model,
+            aspectRatio,
+          },
+        });
       }
     } catch (err: any) {
       syncToStore('error', err.message);
+      console.error('[Image Node] Request exception', { nodeId: id, error: err });
     } finally {
       setIsNodeRunning(false);
       syncToStore('isExecuting', false);
