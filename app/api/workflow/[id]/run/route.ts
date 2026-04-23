@@ -245,7 +245,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             data: {
               status: 'failed',
               error: nodeError.message,
-              outputs: { errorMeta: meta },
+              outputs: { errorMeta: JSON.parse(JSON.stringify(meta)) },
               endedAt: new Date(),
             },
           })
