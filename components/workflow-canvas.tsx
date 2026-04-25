@@ -179,6 +179,40 @@ const presetTemplates = [
     ],
     edges: [],
   },
+  {
+    id: 'marketing-kit',
+    name: 'Product Marketing Kit Generator',
+    description: 'Full parallel workflow — image + video + LLM convergence',
+    icon: <Sparkles className="w-8 h-8 text-purple-400" />,
+    nodes: [
+      // ── Branch A: Image Processing ──
+      { id: 'mk-img', type: 'imageUploadNode', position: { x: 80, y: 80 }, data: {} },
+      { id: 'mk-crop', type: 'cropImageNode', position: { x: 460, y: 80 }, data: { x: 10, y: 10, width: 80, height: 80 } },
+      { id: 'mk-sys1', type: 'textNode', position: { x: 80, y: 320 }, data: { content: 'You are a professional marketing copywriter. Analyze the product image and details to write compelling marketing copy.' } },
+      { id: 'mk-prod', type: 'textNode', position: { x: 80, y: 540 }, data: { content: 'Product: Wireless Bluetooth Headphones. Key features: 40hr battery, noise cancellation, premium sound quality, foldable design. Target audience: remote workers and audiophiles.' } },
+      { id: 'mk-llm1', type: 'llmNode', position: { x: 840, y: 220 }, data: { model: 'gemini-2.0-flash', systemPrompt: '' } },
+      // ── Branch B: Video Frame Extraction ──
+      { id: 'mk-vid', type: 'videoUploadNode', position: { x: 80, y: 780 }, data: {} },
+      { id: 'mk-frame', type: 'extractFrameNode', position: { x: 460, y: 780 }, data: { timestamp: '50%' } },
+      // ── Convergence: Final LLM ──
+      { id: 'mk-sys2', type: 'textNode', position: { x: 840, y: 680 }, data: { content: 'You are a social media expert. Create a compelling product marketing tweet and Instagram caption using the product description and visual assets provided.' } },
+      { id: 'mk-llm2', type: 'llmNode', position: { x: 1240, y: 440 }, data: { model: 'gemini-2.0-flash', systemPrompt: '' } },
+    ],
+    edges: [
+      // Branch A connections
+      { id: 'mk-e1', source: 'mk-img', sourceHandle: 'output', target: 'mk-crop', targetHandle: 'image_url', animated: true, style: { stroke: '#a855f7', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' } },
+      { id: 'mk-e2', source: 'mk-sys1', sourceHandle: 'output', target: 'mk-llm1', targetHandle: 'system_prompt', animated: true, style: { stroke: '#a855f7', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' } },
+      { id: 'mk-e3', source: 'mk-prod', sourceHandle: 'output', target: 'mk-llm1', targetHandle: 'user_message', animated: true, style: { stroke: '#a855f7', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' } },
+      { id: 'mk-e4', source: 'mk-crop', sourceHandle: 'output', target: 'mk-llm1', targetHandle: 'images', animated: true, style: { stroke: '#a855f7', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' } },
+      // Branch B connections
+      { id: 'mk-e5', source: 'mk-vid', sourceHandle: 'output', target: 'mk-frame', targetHandle: 'video_url', animated: true, style: { stroke: '#a855f7', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' } },
+      // Convergence connections
+      { id: 'mk-e6', source: 'mk-sys2', sourceHandle: 'output', target: 'mk-llm2', targetHandle: 'system_prompt', animated: true, style: { stroke: '#a855f7', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' } },
+      { id: 'mk-e7', source: 'mk-llm1', sourceHandle: 'output', target: 'mk-llm2', targetHandle: 'user_message', animated: true, style: { stroke: '#a855f7', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' } },
+      { id: 'mk-e8', source: 'mk-crop', sourceHandle: 'output', target: 'mk-llm2', targetHandle: 'images', animated: true, style: { stroke: '#a855f7', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' } },
+      { id: 'mk-e9', source: 'mk-frame', sourceHandle: 'output', target: 'mk-llm2', targetHandle: 'images', animated: true, style: { stroke: '#a855f7', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' } },
+    ],
+  },
 ]
 
 // ── CYCLE CHECK ──
