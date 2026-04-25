@@ -36,7 +36,7 @@ import { useTheme } from 'next-themes'
 import {
   Undo2, Redo2, Search, Plus, MousePointer2, Hand, Scissors, Link2,
   Wand2, Share, Moon, Sun, ChevronDown, ChevronUp, X, Keyboard, Play, BoxSelect,
-  Image as ImageIcon, Video, Sparkles, Maximize, MonitorPlay, Bot,
+  Image as ImageIcon, Video, Sparkles, Maximize, Bot,
   ArrowLeft, Download, Upload, Users, PanelRightOpen, PanelRightClose,
 } from 'lucide-react'
 
@@ -78,39 +78,33 @@ const nodeTypes = {
 // ── NODE MENU (Krea-exact categories with sub-items + models) ──
 const nodeMenuCategories = [
   {
+    label: 'Text',
+    icon: <Sparkles className="w-3.5 h-3.5" />,
+    items: [
+      { label: 'Text / Prompt', type: 'textNode', desc: 'Enter text or prompt' },
+    ]
+  },
+  {
     label: 'Image',
     icon: <ImageIcon className="w-3.5 h-3.5" />,
     items: [
-      { label: 'Generate Image', type: 'imageGenNode', desc: 'Text to Image' },
-      { label: 'Enhance Image', type: 'enhanceNode', desc: 'Upscale & enhance' },
-      { label: 'Edit Image', type: 'cropImageNode', desc: 'Crop & transform' },
-      { label: 'Image Utility', type: 'imageUploadNode', desc: 'Upload an image' },
+      { label: 'Upload Image', type: 'imageUploadNode', desc: 'Upload jpg/png/webp/gif' },
+      { label: 'Crop Image', type: 'cropImageNode', desc: 'Crop & transform image' },
     ]
   },
   {
     label: 'Video',
     icon: <Video className="w-3.5 h-3.5" />,
     items: [
-      { label: 'Generate Video', type: 'videoGenNode', desc: 'Text to Video' },
-      { label: 'Enhance Video', type: 'extractFrameNode', desc: 'Upscale video' },
-      { label: 'Motion Transfer', type: 'extractFrameNode', desc: 'Transfer motion' },
-      { label: 'Lipsync', type: 'videoUploadNode', desc: 'Sync audio to video' },
-      { label: 'Video Utility', type: 'videoUploadNode', desc: 'Upload a video' },
+      { label: 'Upload Video', type: 'videoUploadNode', desc: 'Upload mp4/mov/webm' },
+      { label: 'Extract Frame', type: 'extractFrameNode', desc: 'Extract frame from video' },
     ]
   },
   {
     label: 'LLM',
-    icon: <Sparkles className="w-3.5 h-3.5" />,
+    icon: <Bot className="w-3.5 h-3.5" />,
     items: [
-      { label: 'LLM Node', type: 'llmNode', desc: 'Run Gemini / GPT' },
-      { label: 'Text / Prompt', type: 'textNode', desc: 'Enter text' },
-    ]
-  },
-  {
-    label: 'Output',
-    icon: <MonitorPlay className="w-3.5 h-3.5" />,
-    items: [
-      { label: 'Output', type: 'outputNode', desc: 'Display result' },
+      { label: 'Run Any LLM', type: 'llmNode', desc: 'Run Gemini with vision' },
     ]
   },
 ]
@@ -214,11 +208,11 @@ function KeyboardShortcutsModal({ onClose }: { onClose: () => void }) {
       { label: 'Canvas Agent', keys: ['^', '⌘', 'C'] },
     ]},
     { category: 'Node Creation', items: [
-      { label: 'New node', keys: ['N'] },
-      { label: 'Image node', keys: ['I'] },
-      { label: 'Video node', keys: ['V'] },
+      { label: 'New node menu', keys: ['N'] },
+      { label: 'Upload Image node', keys: ['I'] },
+      { label: 'Upload Video node', keys: ['V'] },
       { label: 'LLM node', keys: ['L'] },
-      { label: 'Enhance node', keys: ['E'] },
+      { label: 'Text node', keys: ['T'] },
     ]},
     { category: 'Node Operations', items: [
       { label: 'Copy', keys: ['⌘', 'C'] }, { label: 'Paste', keys: ['⌘', 'V'] },
@@ -336,10 +330,9 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
     const handler = (e: KeyboardEvent) => {
       if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA' || (document.activeElement as any)?.contentEditable === 'true') return
       if (e.key === 'n' || e.key === 'N') { e.preventDefault(); openNodeMenu() }
-      if (e.key === 'i' || e.key === 'I') { e.preventDefault(); addNodeAtCenter('imageGenNode') }
+      if (e.key === 'i' || e.key === 'I') { e.preventDefault(); addNodeAtCenter('imageUploadNode') }
       if (e.key === 'v' || e.key === 'V') { e.preventDefault(); addNodeAtCenter('videoUploadNode') }
       if (e.key === 'l' || e.key === 'L') { e.preventDefault(); addNodeAtCenter('llmNode') }
-      if (e.key === 'e' || e.key === 'E') { e.preventDefault(); addNodeAtCenter('enhanceNode') }
       if (e.key === 't' || e.key === 'T') { e.preventDefault(); addNodeAtCenter('textNode') }
       if (e.key === 'Escape') { setShowNodeMenu(false); setShowShortcuts(false) }
       if (e.metaKey || e.ctrlKey) {
