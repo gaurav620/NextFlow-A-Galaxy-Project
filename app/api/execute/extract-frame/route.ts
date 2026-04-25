@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { tasks, runs } from '@trigger.dev/sdk/v3'
+
+export const maxDuration = 60
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import type { extractFrameTask } from '@/trigger/tasks/extract-frame'

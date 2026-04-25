@@ -3,6 +3,8 @@ import { auth } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
 import { topologicalSort, getConnectedSource, getConnectedSources, getSubgraph } from '@/lib/dag'
 
+export const maxDuration = 300
+
 interface WFNode {
   id: string
   type?: string

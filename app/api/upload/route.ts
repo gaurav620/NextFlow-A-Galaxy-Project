@@ -33,19 +33,13 @@ export async function POST(req: NextRequest) {
         steps: {},
       }
 
-      // If template ID is configured, use it; otherwise define inline steps
+      // If template ID is configured, use it; otherwise accept upload with no processing
       if (templateId) {
         params.template_id = templateId
       } else {
-        // Inline steps: import → serve via CDN
+        // No template: just accept the upload and serve via Transloadit CDN (24h temp URL)
         params.steps = {
           ':original': { robot: '/upload/handle' },
-          exported: {
-            robot: '/s3/store',
-            use: ':original',
-            credentials: 'aws_credentials',
-            path: `nextflow/${userId}/${Date.now()}_${filename || 'upload'}`,
-          },
         }
       }
 
