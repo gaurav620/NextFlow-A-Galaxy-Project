@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { tasks, runs } from '@trigger.dev/sdk/v3'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { z } from 'zod'
@@ -74,9 +73,6 @@ async function geminiDirect(apiKey: string, model: string, systemPrompt: string 
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth()
-    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
     const body = schema.parse(await req.json())
     const triggerKey = process.env.TRIGGER_SECRET_KEY
     const apiKey = process.env.GEMINI_API_KEY

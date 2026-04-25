@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { tasks, runs } from '@trigger.dev/sdk/v3'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
@@ -46,9 +45,6 @@ async function cropDirect(imageUrl: string, x: number, y: number, width: number,
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth()
-    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
     const body = schema.parse(await req.json())
     const triggerKey = process.env.TRIGGER_SECRET_KEY
 
