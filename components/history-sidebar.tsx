@@ -43,29 +43,29 @@ interface HistorySidebarProps {
   className?: string
 }
 
+const NODE_META: Record<string, { label: string; color: string }> = {
+  textNode:        { label: 'Text',          color: 'text-blue-400' },
+  imageUploadNode: { label: 'Upload Image',  color: 'text-green-400' },
+  videoUploadNode: { label: 'Upload Video',  color: 'text-orange-400' },
+  llmNode:         { label: 'Run Any LLM',   color: 'text-purple-400' },
+  cropImageNode:   { label: 'Crop Image',    color: 'text-pink-400' },
+  extractFrameNode:{ label: 'Extract Frame', color: 'text-yellow-400' },
+}
+
+const getNodeLabel = (nodeType: string) =>
+  NODE_META[nodeType]?.label ?? nodeType
+
 const getNodeIcon = (nodeType: string) => {
-  const iconProps = { className: 'w-3 h-3' }
+  const meta = NODE_META[nodeType]
+  const cls = `w-3 h-3 ${meta?.color ?? 'text-gray-400'}`
   switch (nodeType) {
-    case 'textNode':
-    case 'text':
-      return <Type {...iconProps} className="w-3 h-3 text-blue-400" />
-    case 'imageUploadNode':
-    case 'image':
-      return <ImageIcon {...iconProps} className="w-3 h-3 text-green-400" />
-    case 'videoUploadNode':
-    case 'video':
-      return <Video {...iconProps} className="w-3 h-3 text-orange-400" />
-    case 'llmNode':
-    case 'llm':
-      return <BrainCircuit {...iconProps} className="w-3 h-3 text-purple-400" />
-    case 'cropImageNode':
-    case 'crop':
-      return <Scissors {...iconProps} className="w-3 h-3 text-pink-400" />
-    case 'extractFrameNode':
-    case 'frame':
-      return <Film {...iconProps} className="w-3 h-3 text-yellow-400" />
-    default:
-      return <Type {...iconProps} className="w-3 h-3 text-gray-400" />
+    case 'textNode':        return <Type className={cls} />
+    case 'imageUploadNode': return <ImageIcon className={cls} />
+    case 'videoUploadNode': return <Video className={cls} />
+    case 'llmNode':         return <BrainCircuit className={cls} />
+    case 'cropImageNode':   return <Scissors className={cls} />
+    case 'extractFrameNode':return <Film className={cls} />
+    default:                return <Type className={cls} />
   }
 }
 
@@ -232,11 +232,18 @@ export default function HistorySidebar({ className }: HistorySidebarProps) {
                     )}
                   </div>
 
-                  {/* Row 2: Scope and Timestamp */}
+                  {/* Row 2: Scope, Timestamp, Node count */}
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-gray-500">
-                      {getScopeLabel(run.scope)}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-gray-500">
+                        {getScopeLabel(run.scope)}
+                      </span>
+                      {run.nodeRuns.length > 0 && (
+                        <span className="text-[10px] text-gray-700">
+                          · {run.nodeRuns.filter(n => n.status === 'success').length}/{run.nodeRuns.length} nodes
+                        </span>
+                      )}
+                    </div>
                     <span className="text-xs text-gray-600">
                       {formatTime(run.startedAt)}
                     </span>
@@ -268,8 +275,7 @@ export default function HistorySidebar({ className }: HistorySidebarProps) {
                           />
                           {getNodeIcon(nodeRun.nodeType)}
                           <span className="text-xs text-gray-400 flex-1">
-                            {nodeRun.nodeType.charAt(0).toUpperCase() +
-                              nodeRun.nodeType.slice(1)}
+                            {getNodeLabel(nodeRun.nodeType)}
                           </span>
                           <span className="text-xs text-gray-600">
                             {formatDuration(nodeRun.startedAt, nodeRun.endedAt)}
@@ -281,38 +287,48 @@ export default function HistorySidebar({ className }: HistorySidebarProps) {
                           </div>
                         )}
                         {/* Outputs */}
-                        {nodeRun.outputs && Object.keys(nodeRun.outputs).length > 0 && (
-                          <div className="pl-6 mt-1">
-                            {Object.entries(nodeRun.outputs).map(([key, val]) => {
-                              const strVal = String(val || '')
-                              const isImage = strVal.startsWith('data:image') || /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(strVal)
-                              return (
-                                <div key={key} className="mb-1">
-                                  {isImage ? (
-                                    <img src={strVal} alt="output" className="w-full max-w-[200px] rounded-lg border border-gray-700 mt-1" />
-                                  ) : (
-                                    <div className="text-[10px] text-gray-500 leading-relaxed bg-gray-800/40 rounded-md px-2 py-1 break-words">
-                                      <span className="text-gray-600 font-medium">{key}: </span>
-                                      {strVal.length > 120 ? strVal.slice(0, 120) + '…' : strVal}
-                                    </div>
-                                  )}
+                        {nodeRun.outputs && nodeRun.status === 'success' && (() => {
+                          const result = (nodeRun.outputs as any).result
+                          if (!result) return null
+                          const strVal = String(result)
+                          const isImage = strVal.startsWith('data:image') || /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(strVal)
+                          return (
+                            <div className="pl-6 mt-1">
+                              {isImage ? (
+                                <img src={strVal} alt="output" className="w-full max-w-50 rounded-lg border border-gray-700 mt-1" />
+                              ) : (
+                                <div className="text-[10px] text-gray-400 leading-relaxed bg-gray-800/40 rounded-md px-2 py-1.5 wrap-break-word whitespace-pre-wrap">
+                                  {strVal.length > 200 ? strVal.slice(0, 200) + '…' : strVal}
                                 </div>
-                              )
-                            })}
-                          </div>
-                        )}
-                        {/* Inputs summary */}
-                        {nodeRun.inputs && Object.keys(nodeRun.inputs).length > 0 && (
-                          <div className="pl-6 mt-1">
-                            <div className="text-[10px] text-gray-600 bg-gray-800/30 rounded-md px-2 py-1 break-words">
-                              <span className="font-medium text-gray-500">Inputs: </span>
-                              {Object.entries(nodeRun.inputs).map(([k, v]) => {
-                                const s = String(v || '')
-                                return `${k}=${s.length > 40 ? s.slice(0, 40) + '…' : s}`
-                              }).join(', ')}
+                              )}
                             </div>
-                          </div>
-                        )}
+                          )
+                        })()}
+                        {/* Inputs summary — show meaningful fields only */}
+                        {nodeRun.inputs && (() => {
+                          const skipKeys = new Set(['imageUrl', 'videoUrl', 'imageData'])
+                          const entries = Object.entries(nodeRun.inputs).filter(([k, v]) => {
+                            if (skipKeys.has(k)) return false
+                            const s = String(v ?? '').trim()
+                            return s.length > 0 && s !== 'undefined' && s !== 'null'
+                          })
+                          if (entries.length === 0) return null
+                          return (
+                            <div className="pl-6 mt-1">
+                              <div className="text-[10px] text-gray-600 bg-gray-800/30 rounded-md px-2 py-1 wrap-break-word">
+                                {entries.map(([k, v]) => {
+                                  const s = String(v)
+                                  return (
+                                    <span key={k} className="block">
+                                      <span className="text-gray-500">{k}: </span>
+                                      {s.length > 60 ? s.slice(0, 60) + '…' : s}
+                                    </span>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          )
+                        })()}
                         {index < run.nodeRuns.length - 1 && (
                           <div className="border-b border-gray-800/50" />
                         )}
