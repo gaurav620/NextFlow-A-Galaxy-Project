@@ -59,14 +59,15 @@ export default function CropImageNode({ id, data }: any) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageUrl, x: finalX, y: finalY, width: finalW, height: finalH, nodeId: id }),
       });
-      const resData = await res.json();
-      if (resData.success) {
-        setResultUrl(resData.output);
-        syncToStore({ output: resData.output });
-        store.setNodeOutput(id, resData.output);
-      } else {
-        syncToStore({ error: resData.error || 'Crop failed' });
-      }
+      const resData = await (async () => {
+        try { return await res.json(); } catch {
+          throw new Error(res.status === 504 ? 'Gateway timeout — try again' : `Server error ${res.status}`);
+        }
+      })();
+      if (!res.ok || !resData.success) throw new Error(resData?.error || 'Crop failed');
+      setResultUrl(resData.output);
+      syncToStore({ output: resData.output });
+      store.setNodeOutput(id, resData.output);
     } catch (err: any) {
       syncToStore({ error: err.message });
     } finally {

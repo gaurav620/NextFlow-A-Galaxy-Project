@@ -75,15 +75,18 @@ export default function LLMNode({ id, data }: any) {
           nodeId: id
         })
       });
-      const resultData = await res.json();
-      if (resultData.success) {
-        store.updateNodeData(id, { output: resultData.output, error: undefined });
-        store.setNodeOutput(id, resultData.output);
-        setResult(resultData.output);
-      } else {
-        store.updateNodeData(id, { error: resultData.error });
-        setResult(`Error: ${resultData.error}`);
+      // Safe JSON parse — 504/502 return HTML not JSON
+      let resultData: any;
+      try { resultData = await res.json(); } catch {
+        const msg = res.status === 504 ? 'Gateway timeout — try again'
+          : res.status === 502 ? 'Bad gateway — server error'
+          : `Server error ${res.status}`;
+        throw new Error(msg);
       }
+      if (!res.ok || !resultData.success) throw new Error(resultData?.error || `Request failed (${res.status})`);
+      store.updateNodeData(id, { output: resultData.output, error: undefined });
+      store.setNodeOutput(id, resultData.output);
+      setResult(resultData.output);
     } catch (err: any) {
       syncToStore('error', err.message);
       setResult(`Error: ${err.message}`);

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { tasks, runs } from '@trigger.dev/sdk/v3'
 
-export const maxDuration = 60
+export const maxDuration = 300
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import type { extractFrameTask } from '@/trigger/tasks/extract-frame'
@@ -35,12 +35,17 @@ export async function POST(req: NextRequest) {
           workflowRunId: body.workflowRunId,
           nodeId: body.nodeId,
         })
-        const run = await runs.poll(handle.id, { pollIntervalMs: 2000 })
+        const run = await Promise.race([
+          runs.poll(handle.id, { pollIntervalMs: 2000 }),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Trigger.dev poll timed out after 45s')), 45_000)
+          ),
+        ])
 
         if (run.status === 'COMPLETED' && run.output) {
           output = (run.output as any).output
         } else {
-          throw new Error(run.status === 'FAILED' ? 'Trigger.dev extract frame task failed' : 'Trigger.dev extract frame task timed out')
+          throw new Error(run.status === 'FAILED' ? 'Trigger.dev extract frame task failed' : `Unexpected status: ${run.status}`)
         }
       } catch (triggerErr: any) {
         console.warn('Trigger.dev extract-frame failed, falling back to passthrough:', triggerErr.message)

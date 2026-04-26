@@ -50,14 +50,15 @@ export default function ExtractFrameNode({ id, data }: any) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ videoUrl, timestamp: finalTimestamp, nodeId: id }),
       });
-      const resData = await res.json();
-      if (resData.success) {
-        setResultUrl(resData.output);
-        syncToStore({ output: resData.output });
-        store.setNodeOutput(id, resData.output);
-      } else {
-        syncToStore({ error: resData.error || 'Extract failed' });
-      }
+      const resData = await (async () => {
+        try { return await res.json(); } catch {
+          throw new Error(res.status === 504 ? 'Gateway timeout — try again' : `Server error ${res.status}`);
+        }
+      })();
+      if (!res.ok || !resData.success) throw new Error(resData?.error || 'Extract failed');
+      setResultUrl(resData.output);
+      syncToStore({ output: resData.output });
+      store.setNodeOutput(id, resData.output);
     } catch (err: any) {
       syncToStore({ error: err.message });
     } finally {

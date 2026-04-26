@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { tasks, runs } from '@trigger.dev/sdk/v3'
 
-export const maxDuration = 60
+export const maxDuration = 300
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
@@ -97,12 +97,19 @@ export async function POST(req: NextRequest) {
           workflowRunId: body.workflowRunId,
           nodeId: body.nodeId,
         })
-        const run = await runs.poll(handle.id, { pollIntervalMs: 1000 })
+        // Race Trigger.dev poll against a 45s timeout to avoid Vercel 504
+        const TRIGGER_TIMEOUT_MS = 45_000
+        const run = await Promise.race([
+          runs.poll(handle.id, { pollIntervalMs: 1500 }),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Trigger.dev poll timed out after 45s')), TRIGGER_TIMEOUT_MS)
+          ),
+        ])
 
         if (run.status === 'COMPLETED' && run.output) {
           output = (run.output as any).output
         } else {
-          throw new Error(run.status === 'FAILED' ? 'Trigger.dev task failed' : 'Trigger.dev task timed out')
+          throw new Error(run.status === 'FAILED' ? 'Trigger.dev task failed' : `Unexpected status: ${run.status}`)
         }
       } catch (triggerErr: any) {
         console.warn('Trigger.dev execution failed, falling back to direct:', triggerErr.message)
