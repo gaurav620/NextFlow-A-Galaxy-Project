@@ -154,9 +154,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           if (node.type === 'textNode') {
             output = node.data?.content || node.data?.value || ''
           } else if (node.type === 'imageUploadNode') {
-            output = node.data?.imageUrl || node.data?.value || ''
+            // imageUploadNode stores URL in uploadedUrl (primary) or imageUrl (fallback)
+            output = node.data?.uploadedUrl || node.data?.imageUrl || node.data?.value || ''
           } else if (node.type === 'videoUploadNode') {
-            output = node.data?.videoUrl || node.data?.value || ''
+            // videoUploadNode stores URL in uploadedUrl (primary) or videoUrl (fallback)
+            output = node.data?.uploadedUrl || node.data?.videoUrl || node.data?.value || ''
           } else if (node.type === 'llmNode') {
             const systemSrc = getConnectedSource(node.id, 'system_prompt', edges)
             const userSrc = getConnectedSource(node.id, 'user_message', edges)
@@ -178,27 +180,41 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             const wSrc = getConnectedSource(node.id, 'width_percent', edges)
             const hSrc = getConnectedSource(node.id, 'height_percent', edges)
 
-            const { data } = await callNodeApiWithRetry(baseUrl, '/api/execute/crop-image', {
-                imageUrl: imgSrc ? results.get(imgSrc) : node.data?.imageUrl,
-                x: xSrc ? Number(results.get(xSrc)) : (node.data?.x || 0),
-                y: ySrc ? Number(results.get(ySrc)) : (node.data?.y || 0),
-                width: wSrc ? Number(results.get(wSrc)) : (node.data?.width || 100),
-                height: hSrc ? Number(results.get(hSrc)) : (node.data?.height || 100),
+            const imageUrl = imgSrc ? results.get(imgSrc) : (node.data?.uploadedUrl || node.data?.imageUrl)
+
+            // Transloadit /http/import cannot fetch blob: or data: URLs — passthrough
+            if (!imageUrl || imageUrl.startsWith('blob:') || imageUrl.startsWith('data:')) {
+              output = imageUrl || ''
+            } else {
+              const { data } = await callNodeApiWithRetry(baseUrl, '/api/execute/crop-image', {
+                imageUrl,
+                x:      xSrc ? Number(results.get(xSrc)) : (node.data?.x  ?? 0),
+                y:      ySrc ? Number(results.get(ySrc)) : (node.data?.y  ?? 0),
+                width:  wSrc ? Number(results.get(wSrc)) : (node.data?.width  ?? 100),
+                height: hSrc ? Number(results.get(hSrc)) : (node.data?.height ?? 100),
                 workflowRunId: workflowRun.id,
                 nodeId: node.id,
-            })
-            output = data.output
+              })
+              output = data.output
+            }
           } else if (node.type === 'extractFrameNode') {
             const vidSrc = getConnectedSource(node.id, 'video_url', edges)
             const tsSrc = getConnectedSource(node.id, 'timestamp', edges)
 
-            const { data } = await callNodeApiWithRetry(baseUrl, '/api/execute/extract-frame', {
-                videoUrl: vidSrc ? results.get(vidSrc) : node.data?.videoUrl,
-                timestamp: tsSrc ? Number(results.get(tsSrc)) : (node.data?.timestamp || 0),
+            const videoUrl = vidSrc ? results.get(vidSrc) : (node.data?.uploadedUrl || node.data?.videoUrl)
+
+            // Transloadit /http/import cannot fetch blob: or data: URLs — passthrough
+            if (!videoUrl || videoUrl.startsWith('blob:') || videoUrl.startsWith('data:')) {
+              output = videoUrl || ''
+            } else {
+              const { data } = await callNodeApiWithRetry(baseUrl, '/api/execute/extract-frame', {
+                videoUrl,
+                timestamp: tsSrc ? Number(results.get(tsSrc)) : (node.data?.timestamp ?? 0),
                 workflowRunId: workflowRun.id,
                 nodeId: node.id,
-            })
-            output = data.output
+              })
+              output = data.output
+            }
           } else if (node.type === 'imageGenNode') {
             const promptSrc = getConnectedSource(node.id, 'prompt', edges)
             const prompt = promptSrc ? String(results.get(promptSrc) || '') : node.data?.prompt
