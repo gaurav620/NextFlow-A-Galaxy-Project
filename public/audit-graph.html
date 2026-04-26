@@ -74,9 +74,9 @@ h1{text-align:center;padding:32px 0 8px;font-size:22px;font-weight:700;backgroun
 </div>
 
 <div class="legend">
-  <div class="leg"><div class="dot green"></div> Passing</div>
-  <div class="leg"><div class="dot fixed"></div> Fixed (was failing)</div>
-  <div class="leg"><div class="dot yellow"></div> Partial / Acceptable</div>
+  <div class="leg"><div class="dot green"></div> Passing ✓</div>
+  <div class="leg"><div class="dot fixed"></div> Fixed (was failing) ✓</div>
+  <div class="leg" style="opacity:.35;text-decoration:line-through"><div class="dot yellow"></div> Partial — none remaining</div>
 </div>
 
 <div class="phases">
@@ -279,7 +279,113 @@ h1{text-align:center;padding:32px 0 8px;font-size:22px;font-weight:700;backgroun
 
 </div>
 
-<!-- TOOLTIPS -->
+<!-- TOOLTIPS — FOUNDATION -->
+<div class="tooltip" id="tip-nextjs">
+  <h3>⚡ Next.js App Router</h3>
+  <ul>
+    <li><span>Framework:</span> Next.js 15, App directory</li>
+    <li><span>Deploy:</span> Vercel (nextflow-a-galaxy-project.vercel.app)</li>
+    <li><span>Config:</span> TypeScript strict mode</li>
+    <li>Server components + API routes</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-clerk">
+  <h3>🔐 Clerk Auth</h3>
+  <ul>
+    <li><span>Provider:</span> @clerk/nextjs</li>
+    <li>All /workflow routes protected</li>
+    <li>userId injected into DB records</li>
+    <li>Middleware via clerk() wrapper</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-db">
+  <h3>🗄️ Prisma + Neon DB</h3>
+  <ul>
+    <li><span>ORM:</span> Prisma with PostgreSQL</li>
+    <li><span>Host:</span> Neon serverless Postgres</li>
+    <li>Models: Workflow, WorkflowRun, NodeRun</li>
+    <li>Migrations applied to production</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-zustand">
+  <h3>🧠 Zustand Store</h3>
+  <ul>
+    <li>nodes, edges, nodeOutputs state</li>
+    <li>Undo/Redo history stack</li>
+    <li>updateNodeData() for node state sync</li>
+    <li>setNodeOutput() for DAG propagation</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-ts">
+  <h3>📘 TypeScript Strict</h3>
+  <ul>
+    <li>strict: true in tsconfig.json</li>
+    <li><span>Result:</span> 0 errors on tsc --noEmit</li>
+    <li>All API payloads Zod-validated</li>
+    <li>All node props typed via any (React Flow)</li>
+  </ul>
+</div>
+<!-- TOOLTIPS — NODE TYPES -->
+<div class="tooltip" id="tip-text">
+  <h3>✏️ Text Node</h3>
+  <ul>
+    <li>Textarea with live char count</li>
+    <li>Copy to clipboard button</li>
+    <li>Output handle: text → system_prompt / user_message</li>
+    <li><span>Glow:</span> node-executing class applied</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-imgup">
+  <h3>🖼️ Image Upload Node</h3>
+  <ul>
+    <li>Drag-and-drop or click-to-browse</li>
+    <li><span>Primary:</span> Transloadit CDN upload</li>
+    <li><span>Fallback:</span> base64 data URL (local)</li>
+    <li>Shows CDN/Local badge + preview</li>
+    <li><span>Glow:</span> node-executing class applied</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-vidup">
+  <h3>🎬 Video Upload Node</h3>
+  <ul>
+    <li>Drag-and-drop or click-to-browse</li>
+    <li><span>Primary:</span> Transloadit CDN upload</li>
+    <li><span>Fallback:</span> local object URL</li>
+    <li>In-node video preview player</li>
+    <li><span>Glow:</span> node-executing class applied</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-llm">
+  <h3>✨ LLM Node</h3>
+  <ul>
+    <li>6 Gemini model options</li>
+    <li>system_prompt + user_message + images handles</li>
+    <li>Vision support (base64 or URL)</li>
+    <li>Inline run button + output preview</li>
+    <li><span>Glow:</span> node-executing class applied</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-crop">
+  <h3>✂️ Crop Image Node</h3>
+  <ul>
+    <li>5 input handles: image_url, x/y/w/h %</li>
+    <li>Percentage-based crop region</li>
+    <li>Inline cropped image preview</li>
+    <li><span>Engine:</span> Transloadit /image/resize (FFmpeg)</li>
+    <li><span>Glow:</span> node-executing class applied</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-frame">
+  <h3>🎞️ Extract Frame Node</h3>
+  <ul>
+    <li>2 handles: video_url + timestamp(s)</li>
+    <li>Timestamp linkable from other nodes</li>
+    <li><span>Engine:</span> Transloadit /video/thumbs (FFmpeg)</li>
+    <li>Inline frame preview after extraction</li>
+    <li><span>Glow:</span> node-executing class applied</li>
+  </ul>
+</div>
+<!-- TOOLTIPS — FIXED -->
 <div class="tooltip" id="tip-extra">
   <h3>🗑️ Extra Nodes — Fixed</h3>
   <ul>
@@ -338,6 +444,162 @@ h1{text-align:center;padding:32px 0 8px;font-size:22px;font-weight:700;backgroun
     <li>Uses FFmpeg/ImageMagick under the hood</li>
     <li>Normalized 0–1 crop coordinates</li>
     <li>Sharp fully removed from codebase</li>
+  </ul>
+</div>
+<!-- TOOLTIPS — EXECUTION -->
+<div class="tooltip" id="tip-trigger">
+  <h3>⚙️ Trigger.dev Tasks</h3>
+  <ul>
+    <li><span>llm-node:</span> Gemini via @trigger.dev/sdk/v3</li>
+    <li><span>crop-image-node:</span> Transloadit /image/resize</li>
+    <li><span>extract-frame-node:</span> Transloadit /video/thumbs</li>
+    <li>runs.poll() for synchronous wait</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-dag">
+  <h3>🔀 DAG Executor</h3>
+  <ul>
+    <li>lib/workflowExecutor.ts + lib/dag.ts</li>
+    <li>Kahn's algorithm topological sort</li>
+    <li>Parallel batches executed concurrently</li>
+    <li>Node outputs propagated between layers</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-cycle">
+  <h3>🔄 Cycle Detection</h3>
+  <ul>
+    <li>hasCycle() called in isValidConnection</li>
+    <li>DFS-based cycle check on every edge add</li>
+    <li>Blocks self-connections and loops</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-gemini">
+  <h3>🤖 Gemini + Fallback Chain</h3>
+  <ul>
+    <li><span>Primary:</span> Trigger.dev → Gemini API</li>
+    <li><span>Fallback 1:</span> Direct Gemini (no Trigger.dev)</li>
+    <li><span>Fallback 2:</span> Pollinations AI (free, no key)</li>
+    <li>Quota 429 handled with retry + fallback</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-transloadit">
+  <h3>🎥 Transloadit FFmpeg</h3>
+  <ul>
+    <li>HMAC-SHA384 signed assemblies</li>
+    <li>/video/thumbs: frame extraction</li>
+    <li>/image/resize: image cropping</li>
+    <li>Polling loop up to 60s for completion</li>
+  </ul>
+</div>
+<!-- TOOLTIPS — UI/UX -->
+<div class="tooltip" id="tip-minimap">
+  <h3>🗺️ MiniMap</h3>
+  <ul>
+    <li>Bottom-right corner of canvas</li>
+    <li>Toggleable via toolbar button</li>
+    <li>Node colors match type (blue/green/purple)</li>
+    <li>Transparent background, rounded corners</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-undo">
+  <h3>↩️ Undo / Redo</h3>
+  <ul>
+    <li>Keyboard: Cmd+Z / Cmd+Shift+Z</li>
+    <li>Zustand history stack in workflowStore.ts</li>
+    <li>Toolbar buttons with state-based disable</li>
+    <li>Preserves node positions + edge state</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-edges">
+  <h3>〰️ Animated Edges</h3>
+  <ul>
+    <li>Purple dashed stroke with flowDash keyframe</li>
+    <li>Glow on select/hover via drop-shadow filter</li>
+    <li>Arrow marker at target end</li>
+    <li>Animated: true on all preset edges</li>
+  </ul>
+</div>
+<!-- TOOLTIPS — API/VALIDATION -->
+<div class="tooltip" id="tip-zod-llm">
+  <h3>🛡️ Zod: LLM Route</h3>
+  <ul>
+    <li><span>model:</span> string, default gemini-2.0-flash</li>
+    <li><span>userMessage:</span> string (required)</li>
+    <li><span>systemPrompt:</span> string (optional)</li>
+    <li><span>images:</span> string[] (optional)</li>
+    <li>Returns 400 with issues array on fail</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-zod-crop">
+  <h3>🛡️ Zod: Crop Route</h3>
+  <ul>
+    <li><span>imageUrl:</span> string min(1)</li>
+    <li><span>x/y:</span> number 0–100</li>
+    <li><span>width/height:</span> number 1–100</li>
+    <li>Returns 400 with details on schema fail</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-zod-frame">
+  <h3>🛡️ Zod: Extract Frame Route</h3>
+  <ul>
+    <li><span>videoUrl:</span> string (required)</li>
+    <li><span>timestamp:</span> number | string, default 0</li>
+    <li>Normalizes string timestamps to float</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-zod-wf">
+  <h3>🛡️ Zod: Workflow Route</h3>
+  <ul>
+    <li><span>name:</span> string 1–120 chars, trimmed</li>
+    <li><span>data.nodes:</span> array of any</li>
+    <li><span>data.edges:</span> array of any</li>
+    <li><span>workflowId:</span> string (optional, for update)</li>
+  </ul>
+</div>
+<!-- TOOLTIPS — SAMPLE & HISTORY -->
+<div class="tooltip" id="tip-mkg">
+  <h3>🚀 Marketing Kit Workflow</h3>
+  <ul>
+    <li>9 nodes: 3 uploads → 3 processors → 3 LLMs</li>
+    <li>Parallel branches converge at LLM layer</li>
+    <li>Pre-seeded in DB via prisma/seed.ts</li>
+    <li>Loads from Templates panel</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-wfrun">
+  <h3>📊 WorkflowRun DB</h3>
+  <ul>
+    <li>Created per workflow execution</li>
+    <li>Stores: status, startedAt, endedAt</li>
+    <li>Linked to userId + workflowId</li>
+    <li>Auto-refreshed in history sidebar (5s)</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-noderun">
+  <h3>📝 NodeRun DB</h3>
+  <ul>
+    <li>One record per node per execution</li>
+    <li>Stores: inputs JSON, outputs JSON, status</li>
+    <li>Expandable in history sidebar</li>
+    <li>Created by Trigger.dev tasks or API fallback</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-export">
+  <h3>💾 Export / Import JSON</h3>
+  <ul>
+    <li>Export: downloads workflow as .json file</li>
+    <li>Import: file picker reads + loads JSON</li>
+    <li>Format: { name, nodes[], edges[] }</li>
+    <li>Available in top toolbar</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-histpanel">
+  <h3>🕐 History Sidebar</h3>
+  <ul>
+    <li>Right panel, toggleable via toolbar</li>
+    <li>Shows all WorkflowRuns with status</li>
+    <li>Click run to expand NodeRun details</li>
+    <li>Auto-refreshes every 5s during execution</li>
   </ul>
 </div>
 
