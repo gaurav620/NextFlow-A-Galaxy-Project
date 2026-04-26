@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NextFlow — Node Connection Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#070710;font-family:'Inter',sans-serif;color:#fff;overflow:hidden;height:100vh;width:100vw;}
+
+/* TOOLBAR */
+.toolbar{position:fixed;top:0;left:0;right:0;z-index:100;height:52px;background:rgba(10,10,20,.95);border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;padding:0 20px;gap:16px;backdrop-filter:blur(20px);}
+.toolbar h1{font-size:15px;font-weight:700;background:linear-gradient(135deg,#a855f7,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.toolbar .sep{width:1px;height:20px;background:rgba(255,255,255,.08);}
+.btn{height:30px;padding:0 12px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:#aaa;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.btn:hover{border-color:rgba(168,85,247,.5);color:#fff;background:rgba(168,85,247,.1);}
+.btn.active{border-color:#a855f7;color:#a855f7;background:rgba(168,85,247,.12);}
+.badge-pill{display:flex;align-items:center;gap:6px;font-size:11px;color:#555;margin-left:auto;}
+.pill{padding:3px 8px;border-radius:20px;font-size:10px;font-weight:600;}
+
+/* LEGEND */
+.legend{position:fixed;bottom:20px;left:20px;z-index:100;background:rgba(10,10,20,.9);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;backdrop-filter:blur(20px);min-width:200px;}
+.legend h3{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#444;margin-bottom:10px;}
+.leg-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:11px;color:#888;}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+
+/* INFO PANEL */
+.info{position:fixed;right:20px;top:72px;z-index:100;background:rgba(10,10,20,.95);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px;width:260px;backdrop-filter:blur(20px);transition:all .3s;}
+.info h2{font-size:13px;font-weight:700;margin-bottom:4px;}
+.info .sub{font-size:11px;color:#555;margin-bottom:14px;}
+.info-section{margin-bottom:12px;}
+.info-section h4{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#444;margin-bottom:6px;}
+.handle-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:11px;}
+.handle-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.handle-label{color:#aaa;}
+.handle-type{color:#555;font-size:10px;margin-left:auto;}
+.conn-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:11px;color:#888;}
+.arrow{color:#555;font-size:10px;}
+
+/* CANVAS */
+#canvas{position:fixed;inset:52px 0 0 0;cursor:grab;user-select:none;}
+#canvas.grabbing{cursor:grabbing;}
+#svg-layer{position:absolute;inset:0;pointer-events:none;}
+
+/* NODES */
+.node{position:absolute;border-radius:16px;border:1px solid;padding:0;cursor:grab;transition:box-shadow .2s,border-color .2s;min-width:200px;}
+.node:hover{z-index:50;}
+.node.grabbing{cursor:grabbing;z-index:100;}
+.node.selected{z-index:60;}
+.node-header{padding:12px 14px 10px;border-radius:15px 15px 0 0;display:flex;align-items:center;gap:10px;}
+.node-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.node-title{font-size:12px;font-weight:700;letter-spacing:.01em;}
+.node-sub{font-size:10px;opacity:.5;margin-top:1px;}
+.node-body{padding:10px 14px 12px;}
+.handles-section{display:flex;flex-direction:column;gap:4px;}
+.handle-item{display:flex;align-items:center;gap:6px;position:relative;height:22px;}
+.handle-item.output{flex-direction:row-reverse;}
+.handle-port{width:10px;height:10px;border-radius:50%;border:2px solid;cursor:crosshair;transition:all .15s;flex-shrink:0;position:relative;z-index:10;}
+.handle-port:hover{transform:scale(1.5);box-shadow:0 0 10px currentColor;}
+.handle-name{font-size:10px;color:#888;}
+.handle-item.output .handle-name{text-align:right;}
+.divider{height:1px;background:rgba(255,255,255,.05);margin:8px 0;}
+
+/* node colors */
+.node-text{background:rgba(59,130,246,.06);border-color:rgba(59,130,246,.25);}
+.node-text .node-header{background:rgba(59,130,246,.08);}
+.node-text.selected{border-color:rgba(59,130,246,.7);box-shadow:0 0 30px rgba(59,130,246,.2);}
+
+.node-image{background:rgba(34,197,94,.06);border-color:rgba(34,197,94,.25);}
+.node-image .node-header{background:rgba(34,197,94,.08);}
+.node-image.selected{border-color:rgba(34,197,94,.7);box-shadow:0 0 30px rgba(34,197,94,.2);}
+
+.node-video{background:rgba(249,115,22,.06);border-color:rgba(249,115,22,.25);}
+.node-video .node-header{background:rgba(249,115,22,.08);}
+.node-video.selected{border-color:rgba(249,115,22,.7);box-shadow:0 0 30px rgba(249,115,22,.2);}
+
+.node-llm{background:rgba(168,85,247,.06);border-color:rgba(168,85,247,.25);}
+.node-llm .node-header{background:rgba(168,85,247,.08);}
+.node-llm.selected{border-color:rgba(168,85,247,.7);box-shadow:0 0 30px rgba(168,85,247,.2);}
+
+.node-crop{background:rgba(234,179,8,.06);border-color:rgba(234,179,8,.25);}
+.node-crop .node-header{background:rgba(234,179,8,.08);}
+.node-crop.selected{border-color:rgba(234,179,8,.7);box-shadow:0 0 30px rgba(234,179,8,.2);}
+
+.node-frame{background:rgba(236,72,153,.06);border-color:rgba(236,72,153,.25);}
+.node-frame .node-header{background:rgba(236,72,153,.08);}
+.node-frame.selected{border-color:rgba(236,72,153,.7);box-shadow:0 0 30px rgba(236,72,153,.2);}
+
+/* SVG edges */
+.edge{stroke-width:2;fill:none;stroke-dasharray:6 3;}
+@keyframes dash{to{stroke-dashoffset:-100}}
+.edge.animated{animation:dash 2s linear infinite;}
+
+/* tooltip for handle */
+.htip{position:fixed;background:#1a1a2e;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:6px 10px;font-size:11px;color:#ccc;pointer-events:none;z-index:999;display:none;}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span style="font-size:18px;">⚡</span>
+    <h1>NextFlow — Node Connection Guide</h1>
+  </div>
+  <div class="sep"></div>
+  <button class="btn active" id="btn-sample" onclick="loadSample()">📦 Marketing Kit Sample</button>
+  <button class="btn" id="btn-reset" onclick="resetLayout()">↺ Reset Layout</button>
+  <button class="btn" onclick="clearEdges()">🗑 Clear Connections</button>
+  <div class="badge-pill">
+    <span style="color:#22c55e;font-size:11px;">● Drag nodes · Hover handles for info · Click node for details</span>
+  </div>
+</div>
+
+<!-- LEGEND -->
+<div class="legend">
+  <h3>Handle Types</h3>
+  <div class="leg-row"><div class="leg-dot" style="background:#3b82f6"></div>text / prompt</div>
+  <div class="leg-row"><div class="leg-dot" style="background:#22c55e"></div>image_url (CDN or base64)</div>
+  <div class="leg-row"><div class="leg-dot" style="background:#f97316"></div>video_url (CDN or local)</div>
+  <div class="leg-row"><div class="leg-dot" style="background:#a855f7"></div>images[] (array of images)</div>
+  <div class="leg-row"><div class="leg-dot" style="background:#eab308"></div>number (x/y/w/h %)</div>
+  <div style="height:1px;background:rgba(255,255,255,.06);margin:10px 0;"></div>
+  <div style="font-size:10px;color:#444;">Click a node to see its connections</div>
+</div>
+
+<!-- INFO PANEL -->
+<div class="info" id="info-panel">
+  <h2 id="info-title">Select a node</h2>
+  <div class="sub" id="info-sub">Click any node to see connection details</div>
+  <div id="info-body"></div>
+</div>
+
+<div id="canvas">
+  <svg id="svg-layer"></svg>
+</div>
+
+<div class="htip" id="htip"></div>
+
+<script>
+const NODES = [
+  {
+    id:'text1', type:'text', label:'Text Node', sub:'Enter text or prompt',
+    icon:'✏️', cls:'node-text',
+    x:80, y:120,
+    outputs:[
+      {id:'text_out', label:'text output', color:'#3b82f6', type:'text'}
+    ],
+    inputs:[]
+  },
+  {
+    id:'text2', type:'text', label:'Text Node', sub:'System Prompt',
+    icon:'✏️', cls:'node-text',
+    x:80, y:310,
+    outputs:[
+      {id:'text_out', label:'text output', color:'#3b82f6', type:'text'}
+    ],
+    inputs:[]
+  },
+  {
+    id:'img1', type:'image', label:'Image Upload', sub:'Upload jpg/png/webp',
+    icon:'🖼️', cls:'node-image',
+    x:80, y:500,
+    outputs:[
+      {id:'image_url', label:'image_url', color:'#22c55e', type:'image_url'}
+    ],
+    inputs:[]
+  },
+  {
+    id:'vid1', type:'video', label:'Video Upload', sub:'Upload mp4/mov/webm',
+    icon:'🎬', cls:'node-video',
+    x:80, y:660,
+    outputs:[
+      {id:'video_url', label:'video_url', color:'#f97316', type:'video_url'}
+    ],
+    inputs:[]
+  },
+  {
+    id:'crop1', type:'crop', label:'Crop Image', sub:'Crop % region of image',
+    icon:'✂️', cls:'node-crop',
+    x:420, y:480,
+    outputs:[
+      {id:'image_url', label:'image_url (cropped)', color:'#22c55e', type:'image_url'}
+    ],
+    inputs:[
+      {id:'image_url', label:'image_url', color:'#22c55e', type:'image_url'},
+      {id:'x', label:'x % (left)', color:'#eab308', type:'number'},
+      {id:'y', label:'y % (top)', color:'#eab308', type:'number'},
+      {id:'width', label:'width %', color:'#eab308', type:'number'},
+      {id:'height', label:'height %', color:'#eab308', type:'number'},
+    ]
+  },
+  {
+    id:'frame1', type:'frame', label:'Extract Frame', sub:'Extract frame from video',
+    icon:'🎞️', cls:'node-frame',
+    x:420, y:680,
+    outputs:[
+      {id:'image_url', label:'image_url (frame)', color:'#22c55e', type:'image_url'}
+    ],
+    inputs:[
+      {id:'video_url', label:'video_url', color:'#f97316', type:'video_url'},
+      {id:'timestamp', label:'timestamp (s)', color:'#eab308', type:'number'},
+    ]
+  },
+  {
+    id:'llm1', type:'llm', label:'LLM Node (Gemini)', sub:'Multi-modal AI generation',
+    icon:'✨', cls:'node-llm',
+    x:740, y:200,
+    outputs:[
+      {id:'text_out', label:'text output', color:'#3b82f6', type:'text'}
+    ],
+    inputs:[
+      {id:'system_prompt', label:'system_prompt', color:'#3b82f6', type:'text'},
+      {id:'user_message', label:'user_message', color:'#3b82f6', type:'text'},
+      {id:'images', label:'images[ ]', color:'#a855f7', type:'images'},
+    ]
+  }
+];
+
+// Sample connections: [fromNodeId, fromHandleId, toNodeId, toHandleId]
+const SAMPLE_EDGES = [
+  ['text1','text_out','llm1','user_message'],
+  ['text2','text_out','llm1','system_prompt'],
+  ['img1','image_url','crop1','image_url'],
+  ['crop1','image_url','llm1','images'],
+  ['vid1','video_url','frame1','video_url'],
+  ['frame1','image_url','llm1','images'],
+];
+
+const NODE_INFO = {
+  text: {
+    desc: 'Provides text input — prompts, instructions, or numeric values.',
+    connects_to: [
+      {to:'LLM Node → system_prompt', why:'Sets the AI\'s behavior/persona'},
+      {to:'LLM Node → user_message', why:'The main question/instruction to AI'},
+      {to:'Crop Image → x/y/w/h', why:'Pass percentage values as text'},
+    ]
+  },
+  image: {
+    desc: 'Uploads an image to Transloadit CDN. Outputs a public image URL.',
+    connects_to: [
+      {to:'LLM Node → images[ ]', why:'Feed image to Gemini vision model'},
+      {to:'Crop Image → image_url', why:'Crop a specific region'},
+    ]
+  },
+  video: {
+    desc: 'Uploads a video. Outputs a CDN URL for downstream nodes.',
+    connects_to: [
+      {to:'Extract Frame → video_url', why:'Extract a still frame at a timestamp'},
+    ]
+  },
+  llm: {
+    desc: 'Runs Gemini AI. Accepts text prompts and images. Outputs generated text.',
+    connects_to: [
+      {to:'Another LLM → user_message', why:'Chain AI responses'},
+      {to:'Any text input downstream', why:'Pass AI output forward'},
+    ]
+  },
+  crop: {
+    desc: 'Crops an image using FFmpeg/Transloadit. Needs image URL + x/y/w/h in %.',
+    connects_to: [
+      {to:'LLM Node → images[ ]', why:'Feed cropped region to AI'},
+      {to:'Another Crop Image', why:'Crop again (nested regions)'},
+    ]
+  },
+  frame: {
+    desc: 'Extracts a video frame at a given timestamp using FFmpeg/Transloadit.',
+    connects_to: [
+      {to:'LLM Node → images[ ]', why:'Analyze a specific video moment with AI'},
+      {to:'Crop Image → image_url', why:'Crop the extracted frame'},
+    ]
+  }
+};
+
+let edges = [];
+let nodeEls = {};
+let nodePositions = {};
+let dragging = null;
+let offsetX = 0, offsetY = 0;
+let canvasPan = {x:0, y:0};
+let panStart = null;
+let selectedNode = null;
+
+const canvas = document.getElementById('canvas');
+const svg = document.getElementById('svg-layer');
+const htip = document.getElementById('htip');
+
+function buildNodes() {
+  canvas.querySelectorAll('.node').forEach(n => n.remove());
+  nodeEls = {};
+  nodePositions = {};
+
+  NODES.forEach(n => {
+    nodePositions[n.id] = {x: n.x, y: n.y};
+    const el = document.createElement('div');
+    el.className = `node ${n.cls}`;
+    el.id = `node-${n.id}`;
+    el.dataset.nid = n.id;
+    el.style.left = n.x + 'px';
+    el.style.top = n.y + 'px';
+
+    let inputsHtml = '';
+    if (n.inputs.length) {
+      n.inputs.forEach(h => {
+        inputsHtml += `<div class="handle-item input" data-nid="${n.id}" data-hid="${h.id}" data-htype="${h.type}">
+          <div class="handle-port" style="background:${h.color};border-color:${h.color};box-shadow:0 0 6px ${h.color}55;" data-nid="${n.id}" data-hid="${h.id}" data-side="input" data-htype="${h.type}"></div>
+          <span class="handle-name">${h.label}</span>
+        </div>`;
+      });
+    }
+
+    let outputsHtml = '';
+    if (n.outputs.length) {
+      n.outputs.forEach(h => {
+        outputsHtml += `<div class="handle-item output" data-nid="${n.id}" data-hid="${h.id}" data-htype="${h.type}">
+          <div class="handle-port" style="background:${h.color};border-color:${h.color};box-shadow:0 0 6px ${h.color}55;" data-nid="${n.id}" data-hid="${h.id}" data-side="output" data-htype="${h.type}"></div>
+          <span class="handle-name">${h.label}</span>
+        </div>`;
+      });
+    }
+
+    el.innerHTML = `
+      <div class="node-header">
+        <div class="node-icon">${n.icon}</div>
+        <div>
+          <div class="node-title">${n.label}</div>
+          <div class="node-sub">${n.sub}</div>
+        </div>
+      </div>
+      <div class="node-body">
+        ${inputsHtml ? `<div class="handles-section">${inputsHtml}</div>` : ''}
+        ${inputsHtml && outputsHtml ? '<div class="divider"></div>' : ''}
+        ${outputsHtml ? `<div class="handles-section">${outputsHtml}</div>` : ''}
+      </div>`;
+
+    canvas.appendChild(el);
+    nodeEls[n.id] = el;
+
+    // Drag
+    el.addEventListener('mousedown', onNodeMouseDown);
+    el.addEventListener('click', () => selectNode(n.id));
+  });
+
+  // Handle tooltips
+  document.querySelectorAll('.handle-port').forEach(port => {
+    port.addEventListener('mouseenter', e => {
+      const side = port.dataset.side;
+      const htype = port.dataset.htype;
+      const nid = port.dataset.nid;
+      const nd = NODES.find(n => n.id === nid);
+      const handles = side === 'input' ? nd.inputs : nd.outputs;
+      const h = handles.find(h => h.id === port.dataset.hid);
+      htip.style.display = 'block';
+      htip.innerHTML = `<b>${h.label}</b><br><span style="color:#666">${side.toUpperCase()} · type: <span style="color:${h.color}">${h.type}</span></span>`;
+    });
+    port.addEventListener('mousemove', e => {
+      htip.style.left = (e.clientX + 14) + 'px';
+      htip.style.top = (e.clientY - 10) + 'px';
+    });
+    port.addEventListener('mouseleave', () => { htip.style.display = 'none'; });
+  });
+}
+
+function onNodeMouseDown(e) {
+  if (e.target.classList.contains('handle-port')) return;
+  e.stopPropagation();
+  const el = e.currentTarget;
+  const nid = el.dataset.nid;
+  dragging = nid;
+  el.classList.add('grabbing');
+  const pos = nodePositions[nid];
+  offsetX = e.clientX - pos.x;
+  offsetY = e.clientY - pos.y;
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
+}
+
+function onMouseMove(e) {
+  if (!dragging) return;
+  const x = e.clientX - offsetX;
+  const y = e.clientY - offsetY;
+  nodePositions[dragging].x = x;
+  nodePositions[dragging].y = y;
+  nodeEls[dragging].style.left = x + 'px';
+  nodeEls[dragging].style.top = y + 'px';
+  renderEdges();
+}
+
+function onMouseUp() {
+  if (dragging) {
+    nodeEls[dragging]?.classList.remove('grabbing');
+    dragging = null;
+  }
+  document.removeEventListener('mousemove', onMouseMove);
+  document.removeEventListener('mouseup', onMouseUp);
+}
+
+function getHandlePos(nodeId, handleId, side) {
+  const el = nodeEls[nodeId];
+  if (!el) return {x:0, y:0};
+  const ports = el.querySelectorAll(`.handle-port`);
+  for (const port of ports) {
+    if (port.dataset.hid === handleId && port.dataset.side === side) {
+      const r = port.getBoundingClientRect();
+      const cr = canvas.getBoundingClientRect();
+      return { x: r.left + r.width/2 - cr.left, y: r.top + r.height/2 - cr.top };
+    }
+  }
+  return {x:0, y:0};
+}
+
+function getEdgeColor(fromNodeId, fromHandleId) {
+  const nd = NODES.find(n => n.id === fromNodeId);
+  const h = nd?.outputs.find(h => h.id === fromHandleId);
+  return h?.color || '#a855f7';
+}
+
+function renderEdges() {
+  svg.innerHTML = '';
+  // Defs for glow
+  svg.innerHTML = `<defs>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+
+  edges.forEach((edge, i) => {
+    const [fn, fh, tn, th] = edge;
+    const from = getHandlePos(fn, fh, 'output');
+    const to = getHandlePos(tn, th, 'input');
+    const color = getEdgeColor(fn, fh);
+    const cx = (from.x + to.x) / 2;
+    const d = `M ${from.x} ${from.y} C ${from.x+80} ${from.y}, ${to.x-80} ${to.y}, ${to.x} ${to.y}`;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', d);
+    path.setAttribute('class', 'edge animated');
+    path.setAttribute('stroke', color);
+    path.setAttribute('filter', 'url(#glow)');
+    path.style.animationDelay = `${i * -0.4}s`;
+    svg.appendChild(path);
+
+    // Animated dot
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('r', '4');
+    circle.setAttribute('fill', color);
+    circle.setAttribute('filter', 'url(#glow)');
+    const anim = document.createElementNS('http://www.w3.org/2000/svg','animateMotion');
+    anim.setAttribute('dur', `${1.5 + i * 0.3}s`);
+    anim.setAttribute('repeatCount', 'indefinite');
+    const mp = document.createElementNS('http://www.w3.org/2000/svg','mpath');
+    // Instead use the path directly
+    anim.setAttribute('path', d);
+    circle.appendChild(anim);
+    svg.appendChild(circle);
+  });
+}
+
+function loadSample() {
+  edges = [...SAMPLE_EDGES];
+  renderEdges();
+  document.getElementById('btn-sample').classList.add('active');
+}
+
+function clearEdges() {
+  edges = [];
+  renderEdges();
+  document.getElementById('btn-sample').classList.remove('active');
+}
+
+function resetLayout() {
+  NODES.forEach(n => {
+    nodePositions[n.id] = {x: n.x, y: n.y};
+    nodeEls[n.id].style.left = n.x + 'px';
+    nodeEls[n.id].style.top = n.y + 'px';
+  });
+  renderEdges();
+}
+
+function selectNode(nid) {
+  // Deselect all
+  document.querySelectorAll('.node').forEach(n => n.classList.remove('selected'));
+  selectedNode = nid;
+  nodeEls[nid].classList.add('selected');
+
+  const nd = NODES.find(n => n.id === nid);
+  const info = NODE_INFO[nd.type];
+  document.getElementById('info-title').textContent = nd.label;
+  document.getElementById('info-sub').textContent = info.desc;
+
+  let html = '';
+
+  if (nd.inputs.length) {
+    html += `<div class="info-section"><h4>Input Handles</h4>`;
+    nd.inputs.forEach(h => {
+      html += `<div class="handle-row"><div class="handle-dot" style="background:${h.color}"></div><span class="handle-label">${h.label}</span><span class="handle-type">${h.type}</span></div>`;
+    });
+    html += `</div>`;
+  }
+
+  if (nd.outputs.length) {
+    html += `<div class="info-section"><h4>Output Handles</h4>`;
+    nd.outputs.forEach(h => {
+      html += `<div class="handle-row"><div class="handle-dot" style="background:${h.color}"></div><span class="handle-label">${h.label}</span><span class="handle-type">${h.type}</span></div>`;
+    });
+    html += `</div>`;
+  }
+
+  html += `<div class="info-section"><h4>Connects To</h4>`;
+  info.connects_to.forEach(c => {
+    html += `<div class="conn-row">→ <span style="color:#ccc">${c.to}</span></div><div style="font-size:10px;color:#444;margin-bottom:6px;padding-left:14px;">${c.why}</div>`;
+  });
+  html += `</div>`;
+
+  document.getElementById('info-body').innerHTML = html;
+}
+
+// Init
+buildNodes();
+loadSample();
+setTimeout(renderEdges, 100);
+window.addEventListener('resize', renderEdges);
+</script>
+</body>
+</html>
