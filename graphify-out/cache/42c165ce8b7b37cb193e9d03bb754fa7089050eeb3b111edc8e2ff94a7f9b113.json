@@ -1,0 +1,1 @@
+{"nodes": [{"id": "trigger_config_ts", "label": "trigger.config.ts", "file_type": "code", "source_file": "trigger.config.ts", "source_location": "L1"}], "edges": [{"source": "trigger_config_ts", "target": "v3", "relation": "imports_from", "confidence": "EXTRACTED", "source_file": "trigger.config.ts", "source_location": "L1", "weight": 1.0}], "raw_calls": []}

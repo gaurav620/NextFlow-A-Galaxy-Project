@@ -25,10 +25,6 @@ import VideoUploadNode from '@/components/nodes/video-upload-node'
 import LLMNode from '@/components/nodes/llm-node'
 import CropImageNode from '@/components/nodes/crop-image-node'
 import ExtractFrameNode from '@/components/nodes/extract-frame-node'
-import ImageGenNode from '@/components/nodes/image-gen-node'
-import VideoGenNode from '@/components/nodes/video-gen-node'
-import EnhanceNode from '@/components/nodes/enhance-node'
-import OutputNode from '@/components/nodes/output-node'
 import HistorySidebar from '@/components/history-sidebar'
 import { useWorkflowStore } from '@/store/workflowStore'
 import { useTheme } from 'next-themes'
@@ -36,7 +32,7 @@ import { useTheme } from 'next-themes'
 import {
   Undo2, Redo2, Search, Plus, MousePointer2, Hand, Scissors, Link2,
   Wand2, Share, Moon, Sun, ChevronDown, ChevronUp, X, Keyboard, Play, BoxSelect,
-  Image as ImageIcon, Video, Sparkles, Maximize, Bot,
+  Image as ImageIcon, Video, Sparkles, Maximize, Bot, Film,
   ArrowLeft, Download, Upload, Users, PanelRightOpen, PanelRightClose,
 } from 'lucide-react'
 
@@ -61,7 +57,7 @@ interface RunApiResponse {
   error?: string
 }
 
-// ── NODE TYPES ──
+// ── NODE TYPES (exactly 6 per spec) ──
 const nodeTypes = {
   textNode: TextNode,
   imageUploadNode: ImageUploadNode,
@@ -69,47 +65,19 @@ const nodeTypes = {
   llmNode: LLMNode,
   cropImageNode: CropImageNode,
   extractFrameNode: ExtractFrameNode,
-  imageGenNode: ImageGenNode,
-  videoGenNode: VideoGenNode,
-  enhanceNode: EnhanceNode,
-  outputNode: OutputNode,
 }
 
-// ── NODE MENU (Krea-exact categories with sub-items + models) ──
-const nodeMenuCategories = [
-  {
-    label: 'Text',
-    icon: <Sparkles className="w-3.5 h-3.5" />,
-    items: [
-      { label: 'Text / Prompt', type: 'textNode', desc: 'Enter text or prompt' },
-    ]
-  },
-  {
-    label: 'Image',
-    icon: <ImageIcon className="w-3.5 h-3.5" />,
-    items: [
-      { label: 'Upload Image', type: 'imageUploadNode', desc: 'Upload jpg/png/webp/gif' },
-      { label: 'Crop Image', type: 'cropImageNode', desc: 'Crop & transform image' },
-    ]
-  },
-  {
-    label: 'Video',
-    icon: <Video className="w-3.5 h-3.5" />,
-    items: [
-      { label: 'Upload Video', type: 'videoUploadNode', desc: 'Upload mp4/mov/webm' },
-      { label: 'Extract Frame', type: 'extractFrameNode', desc: 'Extract frame from video' },
-    ]
-  },
-  {
-    label: 'LLM',
-    icon: <Bot className="w-3.5 h-3.5" />,
-    items: [
-      { label: 'Run Any LLM', type: 'llmNode', desc: 'Run Gemini with vision' },
-    ]
-  },
+// ── QUICK ACCESS (spec: exactly 6 buttons under Quick Access) ──
+const quickAccessNodes = [
+  { label: 'Text',                 type: 'textNode',         icon: <Sparkles className="w-3.5 h-3.5" />,  desc: 'Enter text or prompt',          color: 'text-blue-400' },
+  { label: 'Upload Image',         type: 'imageUploadNode',  icon: <ImageIcon className="w-3.5 h-3.5" />, desc: 'Upload jpg/png/webp/gif',        color: 'text-green-400' },
+  { label: 'Upload Video',         type: 'videoUploadNode',  icon: <Video className="w-3.5 h-3.5" />,     desc: 'Upload mp4/mov/webm',           color: 'text-orange-400' },
+  { label: 'Run Any LLM',          type: 'llmNode',          icon: <Bot className="w-3.5 h-3.5" />,       desc: 'Run Gemini with vision',        color: 'text-purple-400' },
+  { label: 'Crop Image',           type: 'cropImageNode',    icon: <Scissors className="w-3.5 h-3.5" />, desc: 'Crop & transform image',        color: 'text-pink-400' },
+  { label: 'Extract Frame',        type: 'extractFrameNode', icon: <Film className="w-3.5 h-3.5" />,      desc: 'Extract frame from video',      color: 'text-yellow-400' },
 ]
 
-// ── PRESET TEMPLATES (Krea-exact) ──
+// ── PRESET TEMPLATES (spec: only Empty + Marketing Kit) ──
 const presetTemplates = [
   {
     id: 'empty',
@@ -117,66 +85,6 @@ const presetTemplates = [
     description: 'Start from scratch',
     icon: <Plus className="w-8 h-8 text-white" />,
     nodes: [],
-    edges: [],
-  },
-  {
-    id: 'image-gen',
-    name: 'Image Generator',
-    description: 'Simple text to Image Generation with NextFlow',
-    thumbnail: '/placeholder-img-gen.jpg',
-    nodes: [
-      { id: 'text-1', type: 'textNode', position: { x: 100, y: 200 }, data: { content: 'A beautiful mountain landscape at sunset, ultra realistic, 8k' } },
-      { id: 'img-1', type: 'imageGenNode', position: { x: 500, y: 150 }, data: { prompt: '' } },
-    ],
-    edges: [
-      { id: 'e-text-img', source: 'text-1', sourceHandle: 'output', target: 'img-1', targetHandle: 'prompt', animated: true, style: { stroke: '#a855f7', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' } },
-    ],
-  },
-  {
-    id: 'video-gen',
-    name: 'Video Generator',
-    description: 'Simple Video Generation with Wan 2.1',
-    thumbnail: '/placeholder-vid-gen.jpg',
-    nodes: [
-      { id: 'text-v1', type: 'textNode', position: { x: 100, y: 200 }, data: { content: 'A cinematic drone shot over a tropical island' } },
-      { id: 'vid-1', type: 'videoUploadNode', position: { x: 500, y: 150 }, data: {} },
-    ],
-    edges: [],
-  },
-  {
-    id: 'upscale',
-    name: '8K Upscaling & Enhancer',
-    description: 'Upscaling a low resolution image to 8K',
-    thumbnail: '/placeholder-upscale.jpg',
-    nodes: [
-      { id: 'img-up-1', type: 'imageUploadNode', position: { x: 100, y: 200 }, data: {} },
-      { id: 'crop-1', type: 'cropImageNode', position: { x: 500, y: 150 }, data: {} },
-    ],
-    edges: [
-      { id: 'e-up', source: 'img-up-1', sourceHandle: 'output', target: 'crop-1', targetHandle: 'image_url', animated: true, style: { stroke: '#a855f7', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' } },
-    ],
-  },
-  {
-    id: 'llm-caption',
-    name: 'LLM Image Captioning',
-    description: 'Generate a prompt from an image with Gemini',
-    thumbnail: '/placeholder-llm.jpg',
-    nodes: [
-      { id: 'img-c1', type: 'imageUploadNode', position: { x: 100, y: 200 }, data: {} },
-      { id: 'llm-c1', type: 'llmNode', position: { x: 500, y: 150 }, data: { systemPrompt: 'You are an expert image captioning AI. Describe the uploaded image in vivid detail suitable for image generation prompts.' } },
-    ],
-    edges: [
-      { id: 'e-cap', source: 'img-c1', sourceHandle: 'output', target: 'llm-c1', targetHandle: 'images', animated: true, style: { stroke: '#a855f7', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' } },
-    ],
-  },
-  {
-    id: 'agent',
-    name: 'Agent',
-    description: 'Build a workflow with the Nodes Agent.',
-    icon: <Bot className="w-8 h-8 text-white/60" />,
-    nodes: [
-      { id: 'llm-a1', type: 'llmNode', position: { x: 300, y: 200 }, data: { systemPrompt: 'You are an AI agent that helps users build workflows.' } },
-    ],
     edges: [],
   },
   {
@@ -454,7 +362,7 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
     })
   }, [selectedTool, setEdges, updateNodeData])
 
-  // ── Type-safe connection validation ──
+  // ── Type-safe connection validation (full handle-type matrix per spec) ──
   const isValidConnection = useCallback((connection: Edge | Connection) => {
     const src = 'source' in connection ? connection.source : undefined
     const tgt = 'target' in connection ? connection.target : undefined
@@ -463,14 +371,29 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
     // Prevent cycles
     if (hasCycle(src, tgt, safeEdges)) return false
 
-    // Handle-type compatibility rules
     const sourceNode = safeNodes.find(n => n.id === src)
     const targetHandle = ('targetHandle' in connection ? connection.targetHandle : '') || ''
+    const srcType = sourceNode?.type || ''
 
-    // Video handles should only accept video sources
-    if (targetHandle === 'video_url' && sourceNode?.type !== 'videoUploadNode') return false
-    // Image handles should only accept image-producing sources
-    if (targetHandle === 'image_url' && sourceNode?.type === 'videoUploadNode') return false
+    // image_url: only imageUploadNode or cropImageNode or extractFrameNode can feed this
+    if (targetHandle === 'image_url') {
+      const imageProducers = ['imageUploadNode', 'cropImageNode', 'extractFrameNode']
+      if (!imageProducers.includes(srcType)) return false
+    }
+    // video_url: only videoUploadNode can feed this
+    if (targetHandle === 'video_url') {
+      if (srcType !== 'videoUploadNode') return false
+    }
+    // images handle on LLM: only image-producing nodes
+    if (targetHandle === 'images') {
+      const imageProducers = ['imageUploadNode', 'cropImageNode', 'extractFrameNode']
+      if (!imageProducers.includes(srcType)) return false
+    }
+    // system_prompt / user_message: only text-producing nodes (textNode or llmNode output)
+    if (targetHandle === 'system_prompt' || targetHandle === 'user_message') {
+      const textProducers = ['textNode', 'llmNode']
+      if (!textProducers.includes(srcType)) return false
+    }
 
     return true
   }, [safeNodes, safeEdges])
@@ -940,29 +863,27 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
                 </div>
               </div>
               <div className="p-1.5 max-h-[380px] overflow-y-auto scrollbar-none">
-                {nodeMenuCategories.map(cat => {
-                  const items = cat.items.filter(i => i.label.toLowerCase().includes(nodeSearch.toLowerCase()) || (i.desc && i.desc.toLowerCase().includes(nodeSearch.toLowerCase())))
-                  if (!items.length) return null
-                  return (
-                    <div key={cat.label} className="mb-1">
-                      <div className={`flex items-center gap-1.5 text-[10px] font-semibold uppercase px-2.5 py-1.5 ${dark ? 'text-[#555]' : 'text-gray-400'}`}>
-                        {cat.icon} {cat.label}
+                <div className={`flex items-center gap-1.5 text-[10px] font-semibold uppercase px-2.5 py-1.5 ${dark ? 'text-[#555]' : 'text-gray-400'}`}>
+                  Quick Access
+                </div>
+                {quickAccessNodes
+                  .filter(n => n.label.toLowerCase().includes(nodeSearch.toLowerCase()) || n.desc.toLowerCase().includes(nodeSearch.toLowerCase()))
+                  .map(item => (
+                    <button key={item.type}
+                      onClick={() => addNode(item.type)}
+                      className={`w-full text-left flex items-center justify-between px-3 py-2.5 text-[13px] rounded-lg transition-colors ${dark ? 'text-[#e0e0e0] hover:bg-[#2A2A2A] hover:text-white' : 'text-gray-700 hover:bg-gray-100 hover:text-black'}`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className={item.color}>{item.icon}</span>
+                        <div>
+                          <div className="font-medium">{item.label}</div>
+                          <div className={`text-[10px] mt-0.5 ${dark ? 'text-[#555]' : 'text-gray-400'}`}>{item.desc}</div>
+                        </div>
                       </div>
-                      {items.map(item => (
-                        <button key={item.label}
-                          onClick={() => addNode(item.type)}
-                          className={`w-full text-left flex items-center justify-between px-3 py-2.5 text-[13px] rounded-lg transition-colors ${dark ? 'text-[#e0e0e0] hover:bg-[#2A2A2A] hover:text-white' : 'text-gray-700 hover:bg-gray-100 hover:text-black'}`}
-                        >
-                          <div>
-                            <div className="font-medium">{item.label}</div>
-                            {item.desc && <div className={`text-[10px] mt-0.5 ${dark ? 'text-[#555]' : 'text-gray-400'}`}>{item.desc}</div>}
-                          </div>
-                          <Plus className={`w-3.5 h-3.5 opacity-0 group-hover:opacity-100 ${dark ? 'text-[#555]' : 'text-gray-400'}`} />
-                        </button>
-                      ))}
-                    </div>
-                  )
-                })}
+                      <Plus className={`w-3.5 h-3.5 ${dark ? 'text-[#555]' : 'text-gray-400'}`} />
+                    </button>
+                  ))
+                }
               </div>
             </div>
           </>
