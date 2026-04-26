@@ -30,80 +30,61 @@ export default function ImageUploadNode({ id, data }: any) {
     setError(null);
     setUploading(true);
 
-    // Show local preview immediately
-    const localUrl = URL.createObjectURL(file);
-    setPreview(localUrl);
+    // Show local preview immediately via object URL
+    const localPreview = URL.createObjectURL(file);
+    setPreview(localPreview);
 
     try {
-      // Try Transloadit upload first
-      const signRes = await fetch('/api/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: file.name, type: 'image' }),
-      });
-      const signData = await signRes.json();
+      // Upload via server-side route (avoids CORS / Transloadit client-side timeouts)
+      const form = new FormData();
+      form.append('file', file);
 
-      if (signData.provider === 'transloadit' && signData.assembly) {
-        // Upload directly to Transloadit via tus
-        const formData = new FormData();
-        formData.append('params', signData.assembly.params);
-        formData.append('signature', signData.assembly.signature);
-        formData.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: form });
+      const data = await res.json();
 
-        const assemblyRes = await fetch('https://api2.transloadit.com/assemblies', {
-          method: 'POST',
-          body: formData,
-        });
-        const assemblyData = await assemblyRes.json();
-
-        // Poll assembly for completion
-        if (assemblyData.assembly_ssl_url) {
-          let result = assemblyData;
-          while (result.ok !== 'ASSEMBLY_COMPLETED' && result.ok !== 'ASSEMBLY_EXECUTING') {
-            if (result.error) throw new Error(result.error);
-            await new Promise(r => setTimeout(r, 1500));
-            const pollRes = await fetch(result.assembly_ssl_url);
-            result = await pollRes.json();
-          }
-
-          const cdnUrl = result.results?.[':original']?.[0]?.ssl_url ||
-                         result.results?.exported?.[0]?.ssl_url ||
-                         result.uploads?.[0]?.ssl_url;
-
-          if (cdnUrl) {
-            setPreview(cdnUrl);
-            setUploadProvider('transloadit');
-            syncToStore({ imageUrl: cdnUrl, value: cdnUrl, filename: file.name, uploadProvider: 'transloadit' });
-            setUploading(false);
-            return;
-          }
+      if (data.success && data.url) {
+        // If Transloadit CDN URL, update preview to CDN URL
+        if (data.provider === 'transloadit') {
+          setPreview(data.url);
+          setUploadProvider('transloadit');
+        } else {
+          setUploadProvider('local');
         }
+        // Store in both fields — workflow runner reads uploadedUrl
+        syncToStore({
+          imageUrl: data.url,
+          uploadedUrl: data.url,
+          value: data.url,
+          filename: file.name,
+          preview: data.url,
+          uploadProvider: data.provider,
+        });
+      } else {
+        throw new Error(data.error || 'Upload failed');
       }
-
-      // Fallback: use base64 data URL
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result as string;
-        setPreview(dataUrl);
-        setUploadProvider('local');
-        syncToStore({ imageUrl: dataUrl, value: dataUrl, filename: file.name, uploadProvider: 'local' });
-        setUploading(false);
-      };
-      reader.readAsDataURL(file);
     } catch (err: any) {
       console.warn('Upload failed, using local data URL:', err.message);
-      // Fallback: use base64 data URL
+      // Fallback: base64 data URL
       const reader = new FileReader();
       reader.onload = () => {
         const dataUrl = reader.result as string;
         setPreview(dataUrl);
         setUploadProvider('local');
-        syncToStore({ imageUrl: dataUrl, value: dataUrl, filename: file.name, uploadProvider: 'local' });
-        setUploading(false);
+        syncToStore({
+          imageUrl: dataUrl,
+          uploadedUrl: dataUrl,
+          value: dataUrl,
+          filename: file.name,
+          preview: dataUrl,
+          uploadProvider: 'local',
+        });
       };
       reader.readAsDataURL(file);
+    } finally {
+      setUploading(false);
     }
   };
+
 
   const handleDelete = () => {
     import('@/store/workflowStore').then(({ useWorkflowStore }) => {

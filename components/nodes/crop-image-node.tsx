@@ -167,34 +167,50 @@ export default function CropImageNode({ id, data }: any) {
         )}
       </div>
 
-      {/* Input Handles — All 5 per spec */}
+      {/* ── INPUT HANDLES ──
+          Header = ~44px, so image_url handle at ~44
+          Crop inputs start at ~90px (after "Crop Region" label)
+          X row at ~112, Y row at ~148, W row at ~184, H row at ~220 */}
+
+      {/* Image URL */}
       <Handle type="target" position={Position.Left} id="image_url"
         className="!w-3 !h-3 !border-2 !border-green-500/50 !bg-green-500 !rounded-full"
-        style={{ left: -6, top: 80 }} />
+        style={{ left: -6, top: 44 }} />
+      <span className={`absolute text-[7px] font-bold pointer-events-none select-none ${dark ? 'text-green-400' : 'text-green-600'}`}
+        style={{ left: -34, top: 39 }}>IMG</span>
+
+      {/* X percent */}
       <Handle type="target" position={Position.Left} id="x_percent"
         className="!w-2.5 !h-2.5 !border-2 !border-pink-500/40 !bg-pink-500 !rounded-full"
-        style={{ left: -5, top: 130 }} />
+        style={{ left: -5, top: 117 }} />
+      <span className={`absolute text-[7px] font-bold pointer-events-none select-none ${dark ? 'text-pink-400' : 'text-pink-600'}`}
+        style={{ left: -14, top: 113 }}>X</span>
+
+      {/* Y percent */}
       <Handle type="target" position={Position.Left} id="y_percent"
         className="!w-2.5 !h-2.5 !border-2 !border-pink-500/40 !bg-pink-500 !rounded-full"
-        style={{ left: -5, top: 160 }} />
+        style={{ left: -5, top: 153 }} />
+      <span className={`absolute text-[7px] font-bold pointer-events-none select-none ${dark ? 'text-pink-400' : 'text-pink-600'}`}
+        style={{ left: -14, top: 149 }}>Y</span>
+
+      {/* Width percent */}
       <Handle type="target" position={Position.Left} id="width_percent"
         className="!w-2.5 !h-2.5 !border-2 !border-pink-500/40 !bg-pink-500 !rounded-full"
-        style={{ left: -5, top: 190 }} />
+        style={{ left: -5, top: 189 }} />
+      <span className={`absolute text-[7px] font-bold pointer-events-none select-none ${dark ? 'text-pink-400' : 'text-pink-600'}`}
+        style={{ left: -14, top: 185 }}>W</span>
+
+      {/* Height percent */}
       <Handle type="target" position={Position.Left} id="height_percent"
         className="!w-2.5 !h-2.5 !border-2 !border-pink-500/40 !bg-pink-500 !rounded-full"
-        style={{ left: -5, top: 220 }} />
+        style={{ left: -5, top: 225 }} />
+      <span className={`absolute text-[7px] font-bold pointer-events-none select-none ${dark ? 'text-pink-400' : 'text-pink-600'}`}
+        style={{ left: -14, top: 221 }}>H</span>
 
-      {/* Handle Labels */}
-      <span className={`absolute text-[7px] font-medium pointer-events-none ${dark ? 'text-green-500/60' : 'text-green-500/60'}`} style={{ left: -32, top: 76 }}>IMG</span>
-      <span className={`absolute text-[7px] font-medium pointer-events-none ${dark ? 'text-pink-500/50' : 'text-pink-500/50'}`} style={{ left: -16, top: 126 }}>X</span>
-      <span className={`absolute text-[7px] font-medium pointer-events-none ${dark ? 'text-pink-500/50' : 'text-pink-500/50'}`} style={{ left: -16, top: 156 }}>Y</span>
-      <span className={`absolute text-[7px] font-medium pointer-events-none ${dark ? 'text-pink-500/50' : 'text-pink-500/50'}`} style={{ left: -16, top: 186 }}>W</span>
-      <span className={`absolute text-[7px] font-medium pointer-events-none ${dark ? 'text-pink-500/50' : 'text-pink-500/50'}`} style={{ left: -16, top: 216 }}>H</span>
-
-      {/* Output Handle */}
+      {/* ── OUTPUT HANDLE — centered vertically ── */}
       <Handle type="source" position={Position.Right} id="output"
         className="!w-3 !h-3 !border-2 !border-pink-500/50 !bg-pink-500 !rounded-full"
-        style={{ right: -6, bottom: 25 }} />
+        style={{ right: -6, top: '50%', transform: 'translateY(-50%)' }} />
     </div>
   );
 }
