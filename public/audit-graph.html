@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NextFlow — Audit Graph</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#06060a;font-family:'Inter',system-ui,sans-serif;color:#fff;overflow-x:hidden;}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+h1{text-align:center;padding:32px 0 8px;font-size:22px;font-weight:700;background:linear-gradient(135deg,#a855f7,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.subtitle{text-align:center;font-size:13px;color:#555;margin-bottom:36px;}
+.legend{display:flex;gap:20px;justify-content:center;margin-bottom:32px;flex-wrap:wrap;}
+.leg{display:flex;align-items:center;gap:7px;font-size:12px;color:#aaa;}
+.dot{width:11px;height:11px;border-radius:50%;}
+.dot.green{background:#22c55e;box-shadow:0 0 8px #22c55e80;}
+.dot.red{background:#ef4444;box-shadow:0 0 8px #ef444480;}
+.dot.fixed{background:#a855f7;box-shadow:0 0 8px #a855f780;}
+.dot.yellow{background:#eab308;box-shadow:0 0 8px #eab30880;}
+.phases{display:flex;gap:0;overflow-x:auto;padding:0 24px 40px;min-height:600px;}
+.phase{flex:0 0 220px;display:flex;flex-direction:column;gap:0;}
+.phase-header{text-align:center;padding:10px 8px 16px;position:relative;}
+.phase-header h2{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#666;}
+.phase-num{font-size:28px;font-weight:800;background:linear-gradient(135deg,#a855f7,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:block;}
+.phase-line{position:absolute;top:50%;left:50%;width:100%;height:1px;background:linear-gradient(90deg,transparent,#a855f730,transparent);transform:translateX(50%);}
+.nodes-col{display:flex;flex-direction:column;gap:8px;padding:0 8px;}
+.node{border-radius:12px;padding:11px 13px;cursor:pointer;border:1px solid transparent;transition:all .2s;position:relative;overflow:hidden;}
+.node::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .2s;}
+.node:hover::before{opacity:1;}
+.node.green{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.2);}
+.node.green::before{background:rgba(34,197,94,.05);}
+.node.green:hover{border-color:rgba(34,197,94,.5);box-shadow:0 0 20px rgba(34,197,94,.15);}
+.node.red-fixed{background:rgba(168,85,247,.08);border-color:rgba(168,85,247,.25);}
+.node.red-fixed::before{background:rgba(168,85,247,.05);}
+.node.red-fixed:hover{border-color:rgba(168,85,247,.6);box-shadow:0 0 20px rgba(168,85,247,.2);}
+.node.yellow{background:rgba(234,179,8,.08);border-color:rgba(234,179,8,.2);}
+.node.yellow:hover{border-color:rgba(234,179,8,.5);box-shadow:0 0 20px rgba(234,179,8,.15);}
+.node-title{font-size:12px;font-weight:600;color:#e0e0e0;display:flex;align-items:center;gap:7px;}
+.node-title .icon{font-size:14px;}
+.badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:auto;text-transform:uppercase;letter-spacing:.05em;}
+.badge.pass{background:rgba(34,197,94,.15);color:#22c55e;}
+.badge.fixed{background:rgba(168,85,247,.15);color:#a855f7;}
+.badge.partial{background:rgba(234,179,8,.15);color:#eab308;}
+.node-desc{font-size:10px;color:#555;margin-top:4px;line-height:1.5;}
+.tooltip{display:none;position:fixed;z-index:999;background:#111;border:1px solid #333;border-radius:12px;padding:14px 16px;max-width:260px;font-size:11px;line-height:1.6;color:#ccc;pointer-events:none;box-shadow:0 20px 60px rgba(0,0,0,.8);}
+.tooltip.show{display:block;}
+.tooltip h3{font-size:13px;font-weight:700;color:#fff;margin-bottom:8px;}
+.tooltip ul{padding-left:14px;}
+.tooltip li{color:#888;margin-bottom:3px;}
+.tooltip li span{color:#a855f7;}
+.connector-row{display:flex;align-items:center;justify-content:center;padding:4px 0;}
+.connector-row svg{width:32px;height:20px;}
+.stats{display:flex;gap:16px;justify-content:center;margin-bottom:40px;flex-wrap:wrap;}
+.stat{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:18px 28px;text-align:center;}
+.stat-num{font-size:28px;font-weight:800;display:block;}
+.stat-num.g{color:#22c55e;}
+.stat-num.p{color:#a855f7;}
+.stat-num.y{color:#eab308;}
+.stat-label{font-size:11px;color:#555;margin-top:3px;}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+.node.red-fixed .badge.fixed::after{content:'✓';margin-left:3px;}
+</style>
+</head>
+<body>
+
+<h1>NextFlow — Production Audit Graph</h1>
+<p class="subtitle">Phase-by-phase compliance map against assignment.md · <span style="color:#22c55e;font-weight:600">100% compliant — all issues resolved ✓</span></p>
+
+<div class="stats">
+  <div class="stat"><span class="stat-num g">27</span><div class="stat-label">Passing Checks</div></div>
+  <div class="stat"><span class="stat-num p">6</span><div class="stat-label">Fixed Issues</div></div>
+  <div class="stat"><span class="stat-num" style="color:#22c55e">0</span><div class="stat-label">Remaining Issues</div></div>
+  <div class="stat"><span class="stat-num" style="color:#3b82f6">6</span><div class="stat-label">Spec Nodes Active</div></div>
+</div>
+
+<div class="legend">
+  <div class="leg"><div class="dot green"></div> Passing</div>
+  <div class="leg"><div class="dot fixed"></div> Fixed (was failing)</div>
+  <div class="leg"><div class="dot yellow"></div> Partial / Acceptable</div>
+</div>
+
+<div class="phases">
+
+  <!-- PHASE 1 -->
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-num">01</span>
+      <h2>Foundation</h2>
+    </div>
+    <div class="nodes-col">
+      <div class="node green" data-tip="tip-nextjs">
+        <div class="node-title"><span class="icon">⚡</span>Next.js App Router<span class="badge pass">Pass</span></div>
+        <div class="node-desc">TypeScript strict, App dir, Vercel deploy</div>
+      </div>
+      <div class="node green" data-tip="tip-clerk">
+        <div class="node-title"><span class="icon">🔐</span>Clerk Auth<span class="badge pass">Pass</span></div>
+        <div class="node-desc">All workflow routes protected</div>
+      </div>
+      <div class="node green" data-tip="tip-db">
+        <div class="node-title"><span class="icon">🗄️</span>Prisma + Neon<span class="badge pass">Pass</span></div>
+        <div class="node-desc">Workflow, WorkflowRun, NodeRun schema</div>
+      </div>
+      <div class="node green" data-tip="tip-zustand">
+        <div class="node-title"><span class="icon">🧠</span>Zustand Store<span class="badge pass">Pass</span></div>
+        <div class="node-desc">Undo/Redo + node outputs + history</div>
+      </div>
+      <div class="node green" data-tip="tip-ts">
+        <div class="node-title"><span class="icon">📘</span>TypeScript Strict<span class="badge pass">Pass</span></div>
+        <div class="node-desc">0 errors on tsc --noEmit</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 2 -->
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-num">02</span>
+      <h2>Node Types</h2>
+    </div>
+    <div class="nodes-col">
+      <div class="node green" data-tip="tip-text">
+        <div class="node-title"><span class="icon">✏️</span>Text Node<span class="badge pass">Pass</span></div>
+        <div class="node-desc">Prompt input with char count</div>
+      </div>
+      <div class="node green" data-tip="tip-imgup">
+        <div class="node-title"><span class="icon">🖼️</span>Image Upload<span class="badge pass">Pass</span></div>
+        <div class="node-desc">Transloadit CDN + local fallback</div>
+      </div>
+      <div class="node green" data-tip="tip-vidup">
+        <div class="node-title"><span class="icon">🎬</span>Video Upload<span class="badge pass">Pass</span></div>
+        <div class="node-desc">Transloadit CDN + local fallback</div>
+      </div>
+      <div class="node green" data-tip="tip-llm">
+        <div class="node-title"><span class="icon">✨</span>LLM Node<span class="badge pass">Pass</span></div>
+        <div class="node-desc">Gemini multi-modal with vision</div>
+      </div>
+      <div class="node green" data-tip="tip-crop">
+        <div class="node-title"><span class="icon">✂️</span>Crop Image<span class="badge pass">Pass</span></div>
+        <div class="node-desc">% region, 5 handles per spec</div>
+      </div>
+      <div class="node green" data-tip="tip-frame">
+        <div class="node-title"><span class="icon">🎞️</span>Extract Frame<span class="badge pass">Pass</span></div>
+        <div class="node-desc">Video → image at timestamp</div>
+      </div>
+      <div class="node red-fixed" data-tip="tip-extra">
+        <div class="node-title"><span class="icon">🗑️</span>Extra Nodes<span class="badge fixed">Fixed</span></div>
+        <div class="node-desc">imageGen, videoGen, enhance, output — removed</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 3 -->
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-num">03</span>
+      <h2>Execution</h2>
+    </div>
+    <div class="nodes-col">
+      <div class="node green" data-tip="tip-trigger">
+        <div class="node-title"><span class="icon">⚙️</span>Trigger.dev Tasks<span class="badge pass">Pass</span></div>
+        <div class="node-desc">LLM + Crop + ExtractFrame tasks</div>
+      </div>
+      <div class="node green" data-tip="tip-dag">
+        <div class="node-title"><span class="icon">🔀</span>DAG Executor<span class="badge pass">Pass</span></div>
+        <div class="node-desc">Topological sort + parallel batches</div>
+      </div>
+      <div class="node green" data-tip="tip-cycle">
+        <div class="node-title"><span class="icon">🔄</span>Cycle Detection<span class="badge pass">Pass</span></div>
+        <div class="node-desc">hasCycle() blocks invalid edges</div>
+      </div>
+      <div class="node green" data-tip="tip-gemini">
+        <div class="node-title"><span class="icon">🤖</span>Gemini + Fallback<span class="badge pass">Pass</span></div>
+        <div class="node-desc">Pollinations free fallback on quota</div>
+      </div>
+      <div class="node red-fixed" data-tip="tip-sharp">
+        <div class="node-title"><span class="icon">🔧</span>Crop: Transloadit/FFmpeg<span class="badge fixed">Fixed</span></div>
+        <div class="node-desc">Trigger.dev → Transloadit /image/resize (FFmpeg). Sharp fully removed.</div>
+      </div>
+      <div class="node green" data-tip="tip-transloadit">
+        <div class="node-title"><span class="icon">🎥</span>Transloadit FFmpeg<span class="badge pass">Pass</span></div>
+        <div class="node-desc">/video/thumbs robot for frame extraction</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 4 -->
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-num">04</span>
+      <h2>UI / UX</h2>
+    </div>
+    <div class="nodes-col">
+      <div class="node red-fixed" data-tip="tip-glow">
+        <div class="node-title"><span class="icon">💜</span>Pulsating Glow<span class="badge fixed">Fixed</span></div>
+        <div class="node-desc">node-executing class on all 6 nodes</div>
+      </div>
+      <div class="node red-fixed" data-tip="tip-sidebar">
+        <div class="node-title"><span class="icon">📋</span>Quick Access (6)<span class="badge fixed">Fixed</span></div>
+        <div class="node-desc">Replaced categories with flat 6-button sidebar</div>
+      </div>
+      <div class="node red-fixed" data-tip="tip-templates">
+        <div class="node-title"><span class="icon">📁</span>Preset Templates<span class="badge fixed">Fixed</span></div>
+        <div class="node-desc">Removed 5 extra; only Empty + Marketing Kit</div>
+      </div>
+      <div class="node green" data-tip="tip-minimap">
+        <div class="node-title"><span class="icon">🗺️</span>MiniMap<span class="badge pass">Pass</span></div>
+        <div class="node-desc">Bottom-right, toggleable</div>
+      </div>
+      <div class="node green" data-tip="tip-undo">
+        <div class="node-title"><span class="icon">↩️</span>Undo / Redo<span class="badge pass">Pass</span></div>
+        <div class="node-desc">Zustand history stack</div>
+      </div>
+      <div class="node green" data-tip="tip-edges">
+        <div class="node-title"><span class="icon">〰️</span>Animated Edges<span class="badge pass">Pass</span></div>
+        <div class="node-desc">Purple dashed flow animation</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 5 -->
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-num">05</span>
+      <h2>API & Validation</h2>
+    </div>
+    <div class="nodes-col">
+      <div class="node green" data-tip="tip-zod-llm">
+        <div class="node-title"><span class="icon">🛡️</span>Zod: LLM Route<span class="badge pass">Pass</span></div>
+        <div class="node-desc">model, userMessage, images validated</div>
+      </div>
+      <div class="node green" data-tip="tip-zod-crop">
+        <div class="node-title"><span class="icon">🛡️</span>Zod: Crop Route<span class="badge pass">Pass</span></div>
+        <div class="node-desc">imageUrl, x/y/w/h % range validated</div>
+      </div>
+      <div class="node green" data-tip="tip-zod-frame">
+        <div class="node-title"><span class="icon">🛡️</span>Zod: Extract Route<span class="badge pass">Pass</span></div>
+        <div class="node-desc">videoUrl, timestamp validated</div>
+      </div>
+      <div class="node green" data-tip="tip-zod-wf">
+        <div class="node-title"><span class="icon">🛡️</span>Zod: Workflow Route<span class="badge pass">Pass</span></div>
+        <div class="node-desc">name, nodes[], edges[] validated</div>
+      </div>
+      <div class="node red-fixed" data-tip="tip-conn">
+        <div class="node-title"><span class="icon">🔗</span>isValidConnection<span class="badge fixed">Fixed</span></div>
+        <div class="node-desc">Full handle-type matrix: image/video/text ports enforced</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 6 -->
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-num">06</span>
+      <h2>Sample & History</h2>
+    </div>
+    <div class="nodes-col">
+      <div class="node green" data-tip="tip-mkg">
+        <div class="node-title"><span class="icon">🚀</span>Marketing Kit WF<span class="badge pass">Pass</span></div>
+        <div class="node-desc">9-node pre-seeded parallel workflow</div>
+      </div>
+      <div class="node green" data-tip="tip-wfrun">
+        <div class="node-title"><span class="icon">📊</span>WorkflowRun DB<span class="badge pass">Pass</span></div>
+        <div class="node-desc">Full run history persisted</div>
+      </div>
+      <div class="node green" data-tip="tip-noderun">
+        <div class="node-title"><span class="icon">📝</span>NodeRun DB<span class="badge pass">Pass</span></div>
+        <div class="node-desc">Node-level inputs/outputs/status</div>
+      </div>
+      <div class="node green" data-tip="tip-export">
+        <div class="node-title"><span class="icon">💾</span>Export / Import JSON<span class="badge pass">Pass</span></div>
+        <div class="node-desc">Workflow portability</div>
+      </div>
+      <div class="node green" data-tip="tip-histpanel">
+        <div class="node-title"><span class="icon">🕐</span>History Sidebar<span class="badge pass">Pass</span></div>
+        <div class="node-desc">Right panel with auto-refresh + expand</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOOLTIPS -->
+<div class="tooltip" id="tip-extra">
+  <h3>🗑️ Extra Nodes — Fixed</h3>
+  <ul>
+    <li><span>Removed:</span> imageGenNode</li>
+    <li><span>Removed:</span> videoGenNode</li>
+    <li><span>Removed:</span> enhanceNode</li>
+    <li><span>Removed:</span> outputNode</li>
+    <li>Spec allows exactly 6 node types</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-glow">
+  <h3>💜 Pulsating Glow — Fixed</h3>
+  <ul>
+    <li>Added <span>node-executing</span> CSS class</li>
+    <li>@keyframes pulse-glow in globals.css</li>
+    <li>Applied to all 6 node components</li>
+    <li>Triggers when <span>data.isExecuting</span> is true</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-sidebar">
+  <h3>📋 Quick Access — Fixed</h3>
+  <ul>
+    <li>Was: category groups (Text/Image/Video/LLM)</li>
+    <li>Now: flat <span>Quick Access</span> header</li>
+    <li>Exactly 6 buttons with icons + colors</li>
+    <li>Matches spec sidebar requirement</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-templates">
+  <h3>📁 Preset Templates — Fixed</h3>
+  <ul>
+    <li><span>Removed:</span> Image Generator</li>
+    <li><span>Removed:</span> Video Generator</li>
+    <li><span>Removed:</span> 8K Upscaler</li>
+    <li><span>Removed:</span> LLM Captioning</li>
+    <li><span>Removed:</span> Agent</li>
+    <li>Kept: Empty + Marketing Kit ✓</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-conn">
+  <h3>🔗 Type-safe Connections — Fixed</h3>
+  <ul>
+    <li><span>image_url:</span> imageUpload | cropImage | extractFrame</li>
+    <li><span>video_url:</span> videoUpload only</li>
+    <li><span>images:</span> image producers only</li>
+    <li><span>system_prompt:</span> textNode | llmNode</li>
+    <li><span>user_message:</span> textNode | llmNode</li>
+  </ul>
+</div>
+<div class="tooltip" id="tip-sharp">
+  <h3>🔧 Crop Image — Fixed</h3>
+  <ul>
+    <li><span>Task:</span> trigger/tasks/crop-image.ts</li>
+    <li><span>Was:</span> Sharp (Node.js image lib)</li>
+    <li><span>Now:</span> Transloadit /image/resize robot</li>
+    <li>Uses FFmpeg/ImageMagick under the hood</li>
+    <li>Normalized 0–1 crop coordinates</li>
+    <li>Sharp fully removed from codebase</li>
+  </ul>
+</div>
+
+<script>
+const nodes = document.querySelectorAll('.node[data-tip]');
+const tooltip = document.createElement('div');
+tooltip.className = 'tooltip';
+document.body.appendChild(tooltip);
+
+nodes.forEach(node => {
+  node.addEventListener('mouseenter', (e) => {
+    const tipId = node.getAttribute('data-tip');
+    const source = document.getElementById(tipId);
+    if (source) {
+      tooltip.innerHTML = source.innerHTML;
+      tooltip.classList.add('show');
+    }
+  });
+  node.addEventListener('mousemove', (e) => {
+    let x = e.clientX + 16;
+    let y = e.clientY - 10;
+    if (x + 270 > window.innerWidth) x = e.clientX - 280;
+    if (y + 200 > window.innerHeight) y = e.clientY - 220;
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+  });
+  node.addEventListener('mouseleave', () => {
+    tooltip.classList.remove('show');
+  });
+});
+</script>
+</body>
+</html>

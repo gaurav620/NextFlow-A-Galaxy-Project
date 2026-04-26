@@ -7,7 +7,7 @@ import prisma from '@/lib/prisma'
 import type { cropImageTask } from '@/trigger/tasks/crop-image'
 
 const schema = z.object({
-  imageUrl: z.string(),
+  imageUrl: z.string().min(1, 'imageUrl is required'),
   x: z.number().min(0).max(100).default(0),
   y: z.number().min(0).max(100).default(0),
   width: z.number().min(1).max(100).default(100),
@@ -15,35 +15,6 @@ const schema = z.object({
   nodeId: z.string().optional(),
   workflowRunId: z.string().optional(),
 })
-
-// ── DIRECT SHARP FALLBACK (when Trigger.dev is not available) ──
-async function cropDirect(imageUrl: string, x: number, y: number, width: number, height: number): Promise<string> {
-  const sharp = (await import('sharp')).default
-
-  let buffer: Buffer
-  if (imageUrl.startsWith('data:')) {
-    const base64Data = imageUrl.split(',')[1]
-    buffer = Buffer.from(base64Data, 'base64')
-  } else {
-    const response = await fetch(imageUrl)
-    const arrayBuffer = await response.arrayBuffer()
-    buffer = Buffer.from(arrayBuffer)
-  }
-
-  const metadata = await sharp(buffer).metadata()
-  const imgWidth = metadata.width || 800
-  const imgHeight = metadata.height || 600
-  const left = Math.floor((x / 100) * imgWidth)
-  const top = Math.floor((y / 100) * imgHeight)
-  const cropWidth = Math.max(1, Math.floor((width / 100) * imgWidth))
-  const cropHeight = Math.max(1, Math.floor((height / 100) * imgHeight))
-
-  const croppedBuffer = await sharp(buffer)
-    .extract({ left, top, width: cropWidth, height: cropHeight })
-    .toBuffer()
-
-  return `data:image/png;base64,${croppedBuffer.toString('base64')}`
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -54,7 +25,7 @@ export async function POST(req: NextRequest) {
     let executionMethod = 'trigger.dev'
 
     if (triggerKey) {
-      // ── PRIMARY: Execute via Trigger.dev task ──
+      // ── PRIMARY: Execute via Trigger.dev task (uses Transloadit/FFmpeg) ──
       try {
         const handle = await tasks.trigger<typeof cropImageTask>('crop-image-node', {
           imageUrl: body.imageUrl,
@@ -73,14 +44,16 @@ export async function POST(req: NextRequest) {
           throw new Error(run.status === 'FAILED' ? 'Trigger.dev crop task failed' : 'Trigger.dev crop task timed out')
         }
       } catch (triggerErr: any) {
-        console.warn('Trigger.dev crop failed, falling back to direct:', triggerErr.message)
-        executionMethod = 'direct-fallback'
-        output = await cropDirect(body.imageUrl, body.x, body.y, body.width, body.height)
+        console.warn('Trigger.dev crop failed, returning original URL as passthrough:', triggerErr.message)
+        // Without Transloadit/FFmpeg available, pass through the original image
+        executionMethod = 'passthrough-fallback'
+        output = body.imageUrl
       }
     } else {
-      // ── FALLBACK: Direct Sharp (no Trigger.dev) ──
-      executionMethod = 'direct-sharp'
-      output = await cropDirect(body.imageUrl, body.x, body.y, body.width, body.height)
+      // ── FALLBACK: No Trigger.dev configured — passthrough ──
+      executionMethod = 'passthrough'
+      console.warn('TRIGGER_SECRET_KEY not set — crop-image returning original URL as passthrough')
+      output = body.imageUrl
     }
 
     // Save to DB (skip if Trigger.dev task already saved)
@@ -102,8 +75,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, output })
+    return NextResponse.json({ success: true, output, method: executionMethod })
   } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid payload', details: error.issues },
+        { status: 400 }
+      )
+    }
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 }

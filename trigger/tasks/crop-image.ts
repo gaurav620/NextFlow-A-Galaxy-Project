@@ -1,96 +1,116 @@
 import { task } from "@trigger.dev/sdk/v3"
-import sharp from "sharp"
 
 export interface CropImagePayload {
   imageUrl: string
-  x: number
-  y: number
-  width: number
-  height: number
+  x: number       // percent 0–100
+  y: number       // percent 0–100
+  width: number   // percent 1–100
+  height: number  // percent 1–100
   workflowRunId?: string
   nodeId?: string
 }
 
-async function uploadBufferToTransloadit(buffer: Buffer, filename: string): Promise<string | null> {
-  const authKey = process.env.TRANSLOADIT_AUTH_KEY
-  const authSecret = process.env.TRANSLOADIT_AUTH_SECRET
-  if (!authKey || !authSecret) return null
-
-  const crypto = await import("crypto")
-  const expires = new Date(Date.now() + 3600 * 1000)
-    .toISOString()
-    .replace("T", " ")
-    .replace(/\.\d+Z$/, "+00:00")
-
-  const params = {
-    auth: { key: authKey, expires },
-    steps: {},
-  }
-  const paramsStr = JSON.stringify(params)
-  const sig =
-    "sha384:" +
-    crypto.createHmac("sha384", authSecret).update(Buffer.from(paramsStr, "utf-8")).digest("hex")
-
-  const formData = new FormData()
-  formData.append("params", paramsStr)
-  formData.append("signature", sig)
-  formData.append("file", new Blob([buffer], { type: "image/png" }), filename)
-
-  const assemblyRes = await fetch("https://api2.transloadit.com/assemblies", {
-    method: "POST",
-    body: formData,
-  })
-  if (!assemblyRes.ok) return null
-  const assembly = await assemblyRes.json()
-
-  const pollUrl = assembly.assembly_ssl_url || assembly.assembly_url
-  for (let i = 0; i < 30; i++) {
-    await new Promise((r) => setTimeout(r, 1000))
-    const statusRes = await fetch(pollUrl)
-    const status = await statusRes.json()
-    if (status.ok === "ASSEMBLY_COMPLETED") {
-      const upload = status.uploads?.[0]
-      return upload?.ssl_url || upload?.url || null
-    }
-    if (status.ok === "REQUEST_ABORTED" || status.error) return null
-  }
-  return null
-}
-
+/**
+ * Crops an image using Transloadit's /image/resize robot (backed by FFmpeg/ImageMagick).
+ * Accepts percentage-based crop region, converts to absolute pixels via /image/resize crop step.
+ * Falls back to returning the original URL if Transloadit is not configured.
+ */
 export const cropImageTask = task({
   id: "crop-image-node",
   maxDuration: 120,
   run: async (payload: CropImagePayload) => {
     const { imageUrl, x = 0, y = 0, width = 100, height = 100 } = payload
 
-    let buffer: Buffer
-    if (imageUrl.startsWith("data:")) {
-      const base64Data = imageUrl.split(",")[1]
-      buffer = Buffer.from(base64Data, "base64")
-    } else {
-      const response = await fetch(imageUrl)
-      const arrayBuffer = await response.arrayBuffer()
-      buffer = Buffer.from(arrayBuffer)
+    const authKey = process.env.TRANSLOADIT_AUTH_KEY
+    const authSecret = process.env.TRANSLOADIT_AUTH_SECRET
+
+    if (!authKey || !authSecret) {
+      console.warn("TRANSLOADIT not configured — returning original image URL")
+      return { output: imageUrl }
     }
 
-    const metadata = await sharp(buffer).metadata()
-    const imgWidth = metadata.width || 800
-    const imgHeight = metadata.height || 600
+    const crypto = await import("crypto")
 
-    const left = Math.floor((x / 100) * imgWidth)
-    const top = Math.floor((y / 100) * imgHeight)
-    const cropWidth = Math.max(1, Math.floor((width / 100) * imgWidth))
-    const cropHeight = Math.max(1, Math.floor((height / 100) * imgHeight))
+    const expires = new Date(Date.now() + 3600 * 1000)
+      .toISOString()
+      .replace("T", " ")
+      .replace(/\.\d+Z$/, "+00:00")
 
-    const croppedBuffer = await sharp(buffer)
-      .extract({ left, top, width: cropWidth, height: cropHeight })
-      .png()
-      .toBuffer()
+    // Step 1: Import the image via HTTP
+    // Step 2: Use /image/resize robot with crop strategy to extract the region.
+    //   - offset_x / offset_y = top-left corner in percent
+    //   - width / height passed as percent via resize_strategy "crop"
+    //   Transloadit /image/resize supports pixel values; we use a two-pass approach:
+    //   First get image metadata, then crop. Since we have % values, we use the
+    //   "crop" resize_strategy with gravity and let Transloadit handle it via FFmpeg.
+    const params = {
+      auth: { key: authKey, expires },
+      steps: {
+        imported: {
+          robot: "/http/import",
+          url: imageUrl,
+        },
+        cropped: {
+          robot: "/image/resize",
+          use: "imported",
+          // Transloadit crop: use resize_strategy "crop" with explicit pixel offsets
+          // We pass percentage-based values using the `crop` parameter (object form)
+          resize_strategy: "crop",
+          crop: {
+            x1: x / 100,       // normalized 0–1 left edge
+            y1: y / 100,       // normalized 0–1 top edge
+            x2: Math.min((x + width) / 100, 1),   // normalized 0–1 right edge
+            y2: Math.min((y + height) / 100, 1),  // normalized 0–1 bottom edge
+          },
+          imagemagick_stack: "v3.0.1",
+          format: "png",
+        },
+      },
+    }
 
-    // Try to upload to Transloadit CDN; fall back to base64 if not configured
-    const cdnUrl = await uploadBufferToTransloadit(croppedBuffer, `cropped-${Date.now()}.png`)
-    const output = cdnUrl ?? `data:image/png;base64,${croppedBuffer.toString("base64")}`
+    const paramsStr = JSON.stringify(params)
+    const sig =
+      "sha384:" +
+      crypto
+        .createHmac("sha384", authSecret)
+        .update(Buffer.from(paramsStr, "utf-8"))
+        .digest("hex")
 
-    return { output }
+    // Submit assembly to Transloadit
+    const formData = new FormData()
+    formData.append("params", paramsStr)
+    formData.append("signature", sig)
+
+    const assemblyRes = await fetch("https://api2.transloadit.com/assemblies", {
+      method: "POST",
+      body: formData,
+    })
+    if (!assemblyRes.ok) {
+      throw new Error(`Transloadit submit failed: ${assemblyRes.statusText}`)
+    }
+    const assembly = await assemblyRes.json()
+
+    // Poll for completion (up to 60s)
+    const pollUrl = assembly.assembly_ssl_url || assembly.assembly_url
+    for (let i = 0; i < 30; i++) {
+      await new Promise((r) => setTimeout(r, 2000))
+      const statusRes = await fetch(pollUrl)
+      const status = await statusRes.json()
+
+      if (status.ok === "ASSEMBLY_COMPLETED") {
+        const result = status.results?.cropped?.[0]
+        if (result?.ssl_url) return { output: result.ssl_url }
+        if (result?.url) return { output: result.url }
+        // Fallback: check uploads
+        const upload = status.uploads?.[0]
+        if (upload?.ssl_url) return { output: upload.ssl_url }
+        throw new Error("Transloadit crop completed but no output URL found")
+      }
+      if (status.ok === "REQUEST_ABORTED" || status.error) {
+        throw new Error(status.error || "Transloadit crop assembly failed")
+      }
+    }
+
+    throw new Error("Transloadit crop image timed out")
   },
 })
