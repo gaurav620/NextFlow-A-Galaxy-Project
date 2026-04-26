@@ -8,10 +8,11 @@ import type { cropImageTask } from '@/trigger/tasks/crop-image'
 
 const schema = z.object({
   imageUrl: z.string().min(1, 'imageUrl is required'),
-  x: z.number().min(0).max(100).default(0),
-  y: z.number().min(0).max(100).default(0),
-  width: z.number().min(1).max(100).default(100),
-  height: z.number().min(1).max(100).default(100),
+  // coerce handles string numbers like "100" or "0" from DAG executor
+  x: z.coerce.number().min(0).max(100).default(0),
+  y: z.coerce.number().min(0).max(100).default(0),
+  width:  z.coerce.number().min(0).max(100).default(100),
+  height: z.coerce.number().min(0).max(100).default(100),
   nodeId: z.string().optional(),
   workflowRunId: z.string().optional(),
 })
