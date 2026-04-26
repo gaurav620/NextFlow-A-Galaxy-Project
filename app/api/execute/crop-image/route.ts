@@ -16,6 +16,11 @@ const schema = z.object({
   workflowRunId: z.string().optional(),
 })
 
+/** Transloadit /http/import cannot fetch blob: or data: URLs — passthrough only */
+function isUnfetchableUrl(url: string): boolean {
+  return url.startsWith('blob:') || url.startsWith('data:')
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = schema.parse(await req.json())
@@ -23,6 +28,12 @@ export async function POST(req: NextRequest) {
 
     let output: string
     let executionMethod = 'trigger.dev'
+
+    // ── EARLY PASSTHROUGH: blob/data URLs cannot be fetched by Transloadit ──
+    if (isUnfetchableUrl(body.imageUrl)) {
+      console.warn('crop-image: imageUrl is a blob/data URL — cannot process server-side, returning as-is')
+      return NextResponse.json({ success: true, output: body.imageUrl, method: 'blob-passthrough' })
+    }
 
     if (triggerKey) {
       // ── PRIMARY: Execute via Trigger.dev task (uses Transloadit/FFmpeg) ──

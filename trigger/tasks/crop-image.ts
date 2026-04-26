@@ -29,6 +29,12 @@ export const cropImageTask = task({
   run: async (payload: CropImagePayload) => {
     const { imageUrl, x = 0, y = 0, width = 100, height = 100 } = payload
 
+    // Transloadit /http/import cannot fetch blob: or data: URLs
+    if (imageUrl.startsWith('blob:') || imageUrl.startsWith('data:')) {
+      console.warn('crop-image task: blob/data URL received — returning as passthrough (client-side only)')
+      return { output: imageUrl }
+    }
+
     const authKey = process.env.TRANSLOADIT_AUTH_KEY
     const authSecret = process.env.TRANSLOADIT_AUTH_SECRET
 

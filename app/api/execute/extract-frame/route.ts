@@ -26,6 +26,12 @@ export async function POST(req: NextRequest) {
       ? (body.timestamp.includes('%') ? 0 : parseFloat(body.timestamp) || 0)
       : body.timestamp
 
+    // ── EARLY PASSTHROUGH: blob/data videoUrls can't be fetched by Transloadit ──
+    if (body.videoUrl.startsWith('blob:') || body.videoUrl.startsWith('data:')) {
+      console.warn('extract-frame: videoUrl is a blob/data URL — cannot process server-side, returning as-is')
+      return NextResponse.json({ success: true, output: body.videoUrl, method: 'blob-passthrough' })
+    }
+
     if (triggerKey) {
       // ── PRIMARY: Execute via Trigger.dev task (uses FFmpeg/Transloadit) ──
       try {
