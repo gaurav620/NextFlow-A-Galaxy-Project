@@ -267,13 +267,13 @@ export function Navbar({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-1.5 sm:gap-2">
             <Link
-              href="/pricing"
+              href="/sign-up"
               className={`px-3 py-1.5 sm:px-4 sm:py-2 text-[12px] sm:text-[13px] font-bold rounded-full transition-colors whitespace-nowrap ${isLight ? 'text-black bg-zinc-100 hover:bg-zinc-200' : 'text-black bg-white hover:bg-zinc-200'}`}
             >
               Sign up <span className="hidden min-[380px]:inline">for free</span>
             </Link>
             <Link
-              href="/dashboard"
+              href="/sign-in"
               className={`hidden sm:block px-3 py-1.5 sm:px-4 sm:py-2 text-[12px] sm:text-[13px] font-bold rounded-full transition-colors whitespace-nowrap border ${isLight ? 'text-black border-zinc-200 hover:bg-zinc-50' : 'text-white border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800'}`}
             >
               Log in
@@ -313,14 +313,14 @@ export function Navbar({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
 
             <div className="flex items-center gap-2">
               <Link
-                href="/pricing"
+                href="/sign-up"
                 onClick={() => setMobileOpen(false)}
                 className="px-3.5 py-2 bg-white text-black text-[13px] font-bold rounded-full leading-none"
               >
                 Sign up for free
               </Link>
               <Link
-                href="/dashboard"
+                href="/sign-in"
                 onClick={() => setMobileOpen(false)}
                 className="px-3.5 py-2 bg-zinc-900 border border-zinc-700 text-white text-[13px] font-bold rounded-full leading-none"
               >

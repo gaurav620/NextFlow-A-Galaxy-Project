@@ -18,7 +18,7 @@ export function PowersMillion() {
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row items-center gap-3 mb-20">
           <Link
-            href="/pricing"
+            href="/sign-up"
             className="px-7 py-3 bg-white text-black text-[14px] font-bold rounded-full hover:bg-zinc-100 transition-colors"
           >
             Sign up for free

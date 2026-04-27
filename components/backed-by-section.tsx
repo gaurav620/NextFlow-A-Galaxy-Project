@@ -28,7 +28,7 @@ export function BackedBySection() {
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row items-center gap-3">
           <Link
-            href="/pricing"
+            href="/sign-up"
             className="px-7 py-3.5 bg-white text-black text-[15px] font-bold rounded-full hover:bg-zinc-100 transition-colors"
           >
             Sign up for free
