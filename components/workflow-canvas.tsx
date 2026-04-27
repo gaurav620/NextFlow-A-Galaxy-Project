@@ -237,15 +237,27 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
 
   // ── AUTO-SAVE (1s debounce) ──
   useEffect(() => {
-    if (!safeNodes.length || !currentWorkflowId) return
+    if (!currentWorkflowId) return
+    // Allow name-only saves (no nodes required)
+    if (!safeNodes.length && !workflowName) return
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
     autoSaveTimer.current = setTimeout(async () => {
       try {
-        await fetch('/api/workflow', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: workflowName || 'Untitled', data: { nodes: safeNodes, edges: safeEdges }, workflowId: currentWorkflowId }),
-        })
+        if (safeNodes.length > 0) {
+          // Full save — nodes + edges + name
+          await fetch('/api/workflow', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: workflowName || 'Untitled', data: { nodes: safeNodes, edges: safeEdges }, workflowId: currentWorkflowId }),
+          })
+        } else {
+          // Name-only save via PUT
+          await fetch(`/api/workflow/${currentWorkflowId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: workflowName || 'Untitled' }),
+          })
+        }
       } catch {}
     }, 1000)
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current) }
@@ -557,16 +569,35 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
   }
 
   async function handleSave(): Promise<string | null> {
-    if (!safeNodes.length) return null
     setSaveStatus('saving')
     try {
-      const res = await fetch('/api/workflow', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: workflowName || 'Untitled', data: { nodes: safeNodes, edges: safeEdges }, workflowId: currentWorkflowId }) })
-      const data = await res.json()
-      if (data.success) {
-        setCurrentWorkflowId(data.workflow.id)
-        setSaveStatus('saved')
-        setTimeout(() => setSaveStatus('idle'), 2000)
-        return data.workflow.id as string
+      // If we have an existing workflow, always save (even name-only)
+      if (currentWorkflowId) {
+        if (safeNodes.length > 0) {
+          const res = await fetch('/api/workflow', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: workflowName || 'Untitled', data: { nodes: safeNodes, edges: safeEdges }, workflowId: currentWorkflowId }) })
+          const data = await res.json()
+          if (data.success) {
+            setSaveStatus('saved')
+            setTimeout(() => setSaveStatus('idle'), 2000)
+            return data.workflow.id as string
+          }
+        } else {
+          // Name-only save for existing workflow
+          await fetch(`/api/workflow/${currentWorkflowId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: workflowName || 'Untitled' }) })
+          setSaveStatus('saved')
+          setTimeout(() => setSaveStatus('idle'), 2000)
+          return currentWorkflowId
+        }
+      } else if (safeNodes.length > 0) {
+        // Create new workflow (need nodes)
+        const res = await fetch('/api/workflow', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: workflowName || 'Untitled', data: { nodes: safeNodes, edges: safeEdges } }) })
+        const data = await res.json()
+        if (data.success) {
+          setCurrentWorkflowId(data.workflow.id)
+          setSaveStatus('saved')
+          setTimeout(() => setSaveStatus('idle'), 2000)
+          return data.workflow.id as string
+        }
       }
       setSaveStatus('idle')
       return null
