@@ -20,7 +20,7 @@ const heroImages = [
   {
     label: 'Topaz Upscaler',
     prompt: 'Upscale image 512px → 8K',
-    img: 'https://images.unsplash.com/photo-1634153037059-d88d266d71b3?q=80&w=1600&auto=format&fit=crop',
+    img: 'https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?q=80&w=1600&auto=format&fit=crop',
     btn: 'Upscale image',
     href: '/dashboard/enhancer',
   },

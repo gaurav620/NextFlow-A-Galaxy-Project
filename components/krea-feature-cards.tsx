@@ -22,7 +22,7 @@ export function KreaFeatureCards() {
       icon: "✨",
       prompt: "Upscale image 512px → 8K",
       buttonText: "",
-      image: "https://images.unsplash.com/photo-1634153037059-d88d266d71b3?q=80&w=800&auto=format&fit=crop"
+      image: "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?q=80&w=800&auto=format&fit=crop"
     },
     {
       title: "Hailuo",
