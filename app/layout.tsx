@@ -60,7 +60,7 @@ export default function RootLayout({
           >
             <ThemeApplier />
             {children}
-            <Toaster theme="dark" position="bottom-right" richColors closeButton />
+            <Toaster theme="system" position="bottom-right" richColors closeButton />
             <Analytics />
           </ClerkProvider>
         </ThemeProvider>

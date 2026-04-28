@@ -1,5 +1,22 @@
 import type { WorkflowNode, WorkflowEdge } from '@/types/workflow'
 
+/** Convert a browser blob: URL to a base64 data: URL so it can be used server-side */
+async function blobToDataUrl(blobUrl: string): Promise<string> {
+  try {
+    const res = await fetch(blobUrl)
+    const blob = await res.blob()
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
+  } catch {
+    console.warn('blobToDataUrl failed for:', blobUrl.substring(0, 60))
+    return blobUrl // return original as fallback
+  }
+}
+
 function getConnectedSourceNode(
   nodeId: string,
   targetHandle: string,
@@ -90,9 +107,14 @@ export async function executeWorkflow(
           if (node.type === 'textNode') {
             output = node.data.content || ''
           } else if (node.type === 'imageUploadNode') {
-            output = node.data.imageUrl || node.data.value || ''
+            let imgUrl = node.data.imageUrl || node.data.value || ''
+            // Convert blob: to data: so downstream server-side nodes can use it
+            if (imgUrl.startsWith('blob:')) imgUrl = await blobToDataUrl(imgUrl)
+            output = imgUrl
           } else if (node.type === 'videoUploadNode') {
-            output = node.data.videoUrl || node.data.value || ''
+            let vidUrl = node.data.videoUrl || node.data.value || ''
+            if (vidUrl.startsWith('blob:')) vidUrl = await blobToDataUrl(vidUrl)
+            output = vidUrl
           } else if (node.type === 'llmNode') {
             const systemSourceId = getConnectedSourceNode(node.id, 'system_prompt', edges)
             const userSourceId = getConnectedSourceNode(node.id, 'user_message', edges)

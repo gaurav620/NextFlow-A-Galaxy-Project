@@ -34,6 +34,10 @@ Thumbs.db
 test.js
 test-icons.txt
 
+# Dev tooling — dependency graph visualization
+graphify-out/
+public/audit-graph.html
+
 # v0 sandbox internal files
 __v0_runtime_loader.js
 __v0_devtools.tsx

@@ -58,19 +58,25 @@ export const llmTask = task({
         if (payload.images?.length) {
           for (const imgUrl of payload.images) {
             try {
+              // blob: URLs are browser-only object URLs — cannot be fetched server-side
+              if (imgUrl.startsWith("blob:")) {
+                console.warn("[LLM Task] Skipping blob: URL — not accessible server-side. Upload the image to get a persistent URL.", imgUrl.substring(0, 80))
+                continue
+              }
               if (imgUrl.startsWith("data:")) {
                 const [header, base64Data] = imgUrl.split(",")
                 const mimeType = header.split(":")[1].split(";")[0]
                 parts.push({ inlineData: { data: base64Data, mimeType } })
               } else {
                 const res = await fetch(imgUrl)
+                if (!res.ok) throw new Error(`HTTP ${res.status} fetching image`)
                 const buffer = await res.arrayBuffer()
                 const base64 = Buffer.from(buffer).toString("base64")
                 const mimeType = res.headers.get("content-type") || "image/jpeg"
                 parts.push({ inlineData: { data: base64, mimeType } })
               }
             } catch (err) {
-              console.error("Failed to parse image for LLM:", err)
+              console.error("Failed to load image for LLM (skipping):", err)
             }
           }
         }

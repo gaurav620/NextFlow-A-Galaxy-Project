@@ -5,6 +5,7 @@ import { Loader2, Film, Play, Trash2 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useTheme } from 'next-themes';
 import { useWorkflowStore } from '@/store/workflowStore';
+import { trackSingleRun } from '@/lib/trackSingleRun';
 
 export default function ExtractFrameNode({ id, data }: any) {
   const { theme } = useTheme();
@@ -30,12 +31,17 @@ export default function ExtractFrameNode({ id, data }: any) {
     });
   };
 
+  /**
+   * handleRun — Extracts a frame from the connected video at the specified timestamp.
+   * Uses trackSingleRun() to persist a single-node history entry in the database.
+   */
   const handleRun = async () => {
     setIsExecuting(true);
     syncToStore({ isExecuting: true, error: undefined });
 
     try {
       const store = await import('@/store/workflowStore').then(m => m.useWorkflowStore.getState());
+      const workflowId = store.currentWorkflowId;
       const edges = store.edges;
       const vidSourceId = edges.find((e: any) => e.target === id && e.targetHandle === 'video_url')?.source;
       const tsSourceId = edges.find((e: any) => e.target === id && e.targetHandle === 'timestamp')?.source;
@@ -45,20 +51,37 @@ export default function ExtractFrameNode({ id, data }: any) {
 
       if (!videoUrl) throw new Error('No video connected');
 
-      const res = await fetch('/api/execute/extract-frame', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoUrl, timestamp: finalTimestamp, nodeId: id }),
-      });
-      const resData = await (async () => {
-        try { return await res.json(); } catch {
-          throw new Error(res.status === 504 ? 'Gateway timeout — try again' : `Server error ${res.status}`);
-        }
-      })();
-      if (!res.ok || !resData.success) throw new Error(resData?.error || 'Extract failed');
-      setResultUrl(resData.output);
-      syncToStore({ output: resData.output });
-      store.setNodeOutput(id, resData.output);
+      const payload = { videoUrl, timestamp: finalTimestamp, nodeId: id };
+
+      const executeFn = async () => {
+        const res = await fetch('/api/execute/extract-frame', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const resData = await (async () => {
+          try { return await res.json(); } catch {
+            throw new Error(res.status === 504 ? 'Gateway timeout — try again' : `Server error ${res.status}`);
+          }
+        })();
+        if (!res.ok || !resData.success) throw new Error(resData?.error || 'Extract failed');
+        return { success: true, output: resData.output };
+      };
+
+      let result: { success: boolean; output?: any; error?: string };
+      if (workflowId) {
+        result = await trackSingleRun(workflowId, id, 'extractFrameNode', payload, executeFn);
+      } else {
+        result = await executeFn();
+      }
+
+      if (result.success && result.output) {
+        setResultUrl(result.output);
+        syncToStore({ output: result.output });
+        store.setNodeOutput(id, result.output);
+      } else if (result.error) {
+        throw new Error(result.error);
+      }
     } catch (err: any) {
       syncToStore({ error: err.message });
     } finally {

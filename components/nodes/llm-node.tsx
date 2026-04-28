@@ -5,6 +5,7 @@ import { Copy, Check, Loader2, Sparkles, Play, Trash2, ChevronDown } from 'lucid
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTheme } from 'next-themes';
 import { useWorkflowStore } from '@/store/workflowStore';
+import { trackSingleRun } from '@/lib/trackSingleRun';
 
 const LLM_MODELS = [
   { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
@@ -48,6 +49,11 @@ export default function LLMNode({ id, data }: any) {
     });
   };
 
+  /**
+   * handleRun — Executes this LLM node and persists a single-node history entry.
+   * Resolves upstream connections for system_prompt, user_message, and images,
+   * then calls /api/execute/llm. Uses trackSingleRun() to create WorkflowRun + NodeRun.
+   */
   const handleRun = async () => {
     setIsExecuting(true);
     syncToStore('isExecuting', true);
@@ -55,6 +61,7 @@ export default function LLMNode({ id, data }: any) {
     
     try {
       const store = await import('@/store/workflowStore').then(m => m.useWorkflowStore.getState());
+      const workflowId = store.currentWorkflowId;
       const edges = store.edges;
       const sysSourceId = edges.find((e: any) => e.target === id && e.targetHandle === 'system_prompt')?.source;
       const userSourceId = edges.find((e: any) => e.target === id && e.targetHandle === 'user_message')?.source;
@@ -64,29 +71,47 @@ export default function LLMNode({ id, data }: any) {
       const finalUserMessage = userSourceId ? String(store.nodeOutputs[userSourceId] || '') : (userMessage || 'Hello');
       const images = imgSourceIds.map((sid: string) => store.nodeOutputs[sid]).filter(Boolean);
 
-      const res = await fetch('/api/execute/llm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model,
-          systemPrompt: finalSystemPrompt,
-          userMessage: finalUserMessage,
-          images: images.length ? images : undefined,
-          nodeId: id
-        })
-      });
-      // Safe JSON parse — 504/502 return HTML not JSON
-      let resultData: any;
-      try { resultData = await res.json(); } catch {
-        const msg = res.status === 504 ? 'Gateway timeout — try again'
-          : res.status === 502 ? 'Bad gateway — server error'
-          : `Server error ${res.status}`;
-        throw new Error(msg);
+      const payload = {
+        model,
+        systemPrompt: finalSystemPrompt,
+        userMessage: finalUserMessage,
+        images: images.length ? images : undefined,
+        nodeId: id,
+      };
+
+      /** Core execution logic — called by trackSingleRun or directly */
+      const executeFn = async () => {
+        const res = await fetch('/api/execute/llm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        let resultData: any;
+        try { resultData = await res.json(); } catch {
+          const msg = res.status === 504 ? 'Gateway timeout — try again'
+            : res.status === 502 ? 'Bad gateway — server error'
+            : `Server error ${res.status}`;
+          throw new Error(msg);
+        }
+        if (!res.ok || !resultData.success) throw new Error(resultData?.error || `Request failed (${res.status})`);
+        return { success: true, output: resultData.output };
+      };
+
+      // Run with history tracking if workflow is saved
+      let execResult: { success: boolean; output?: any; error?: string };
+      if (workflowId) {
+        execResult = await trackSingleRun(workflowId, id, 'llmNode', payload, executeFn);
+      } else {
+        execResult = await executeFn();
       }
-      if (!res.ok || !resultData.success) throw new Error(resultData?.error || `Request failed (${res.status})`);
-      store.updateNodeData(id, { output: resultData.output, error: undefined });
-      store.setNodeOutput(id, resultData.output);
-      setResult(resultData.output);
+
+      if (execResult.success && execResult.output) {
+        store.updateNodeData(id, { output: execResult.output, error: undefined });
+        store.setNodeOutput(id, execResult.output);
+        setResult(execResult.output);
+      } else if (execResult.error) {
+        throw new Error(execResult.error);
+      }
     } catch (err: any) {
       syncToStore('error', err.message);
       setResult(`Error: ${err.message}`);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
+import { auth, currentUser } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
 import { z } from 'zod'
 
@@ -18,6 +18,18 @@ export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    // Ensure user exists in DB (handles fresh database after migration)
+    const clerkUser = await currentUser()
+    await prisma.user.upsert({
+      where: { clerkId: userId },
+      update: {},
+      create: {
+        clerkId: userId,
+        email: clerkUser?.emailAddresses?.[0]?.emailAddress ?? null,
+        name: clerkUser?.fullName ?? null,
+      },
+    })
 
     const { name, data, workflowId } = upsertWorkflowSchema.parse(await req.json())
 
@@ -57,6 +69,19 @@ export async function GET(req: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    // Ensure user exists in DB (handles fresh database after migration)
+    const clerkUser = await currentUser()
+    await prisma.user.upsert({
+      where: { clerkId: userId },
+      update: {},
+      create: {
+        clerkId: userId,
+        email: clerkUser?.emailAddresses?.[0]?.emailAddress ?? null,
+        name: clerkUser?.fullName ?? null,
+      },
+    })
+
     const workflows = await prisma.workflow.findMany({
       where: { userId },
       orderBy: { updatedAt: 'desc' },

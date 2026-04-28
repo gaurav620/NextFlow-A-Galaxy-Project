@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { formatDistanceToNow, format, differenceInMilliseconds } from 'date-fns'
 import { useWorkflowStore } from '@/store/workflowStore'
+import { useTheme } from 'next-themes'
 
 interface NodeRunEntry {
   id: string
@@ -104,6 +105,9 @@ const getScopeLabel = (scope: string): string => {
 
 export default function HistorySidebar({ className }: HistorySidebarProps) {
   const { currentWorkflowId: workflowId } = useWorkflowStore()
+  const { theme } = useTheme()
+  const dark = theme === 'dark'
+
   const [runs, setRuns] = useState<WorkflowRunEntry[]>([])
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -155,16 +159,16 @@ export default function HistorySidebar({ className }: HistorySidebarProps) {
   }
 
   return (
-    <div className={`h-full flex flex-col bg-gray-950 border-l border-gray-800 ${className || ''}`}>
+    <div className={`h-full flex flex-col border-l transition-colors ${dark ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'} ${className || ''}`}>
       {/* Header */}
-      <div className="sticky top-0 p-4 border-b border-gray-800 flex items-center justify-between">
+      <div className={`sticky top-0 p-4 border-b flex items-center justify-between ${dark ? 'border-gray-800' : 'border-gray-200'}`}>
         <div className="flex items-center gap-2">
-          <History className="w-4 h-4 text-gray-500" />
-          <span className="text-sm font-semibold text-gray-200">Workflow History</span>
+          <History className={`w-4 h-4 ${dark ? 'text-gray-500' : 'text-gray-400'}`} />
+          <span className={`text-sm font-semibold ${dark ? 'text-gray-200' : 'text-gray-800'}`}>Workflow History</span>
         </div>
         <button
           onClick={handleManualRefresh}
-          className="p-1 hover:text-white text-gray-600 transition-colors"
+          className={`p-1 transition-colors ${dark ? 'hover:text-white text-gray-600' : 'hover:text-black text-gray-400'}`}
           title="Refresh history"
         >
           <RotateCcw className="w-4 h-4" />
@@ -179,16 +183,16 @@ export default function HistorySidebar({ className }: HistorySidebarProps) {
             {[...Array(3)].map((_, i) => (
               <div
                 key={i}
-                className="bg-gray-800/50 rounded-xl mx-3 h-16 animate-pulse"
+                className={`rounded-xl mx-3 h-16 animate-pulse ${dark ? 'bg-gray-800/50' : 'bg-gray-100'}`}
               />
             ))}
           </div>
         ) : runs.length === 0 ? (
           // Empty State
           <div className="flex flex-col items-center justify-center h-full p-4 text-center">
-            <Brain className="w-10 h-10 text-gray-800 mb-3" />
-            <p className="text-gray-500 font-medium">No runs yet</p>
-            <p className="text-gray-600 text-xs mt-1">Run a workflow to see history</p>
+            <Brain className={`w-10 h-10 mb-3 ${dark ? 'text-gray-800' : 'text-gray-300'}`} />
+            <p className={`font-medium ${dark ? 'text-gray-500' : 'text-gray-400'}`}>No runs yet</p>
+            <p className={`text-xs mt-1 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>Run a workflow to see history</p>
           </div>
         ) : (
           // Run List
@@ -198,7 +202,11 @@ export default function HistorySidebar({ className }: HistorySidebarProps) {
                 {/* Run Card */}
                 <div
                   onClick={() => toggleExpanded(run.id)}
-                  className="bg-gray-800/40 hover:bg-gray-800/70 rounded-xl p-3 cursor-pointer border border-transparent hover:border-gray-700 transition-all"
+                  className={`rounded-xl p-3 cursor-pointer border transition-all ${
+                    dark
+                      ? 'bg-gray-800/40 hover:bg-gray-800/70 border-transparent hover:border-gray-700'
+                      : 'bg-gray-50 hover:bg-gray-100 border-transparent hover:border-gray-200'
+                  }`}
                 >
                   {/* Row 1: Status, Badge, Chevron */}
                   <div className="flex items-center gap-2 mb-2">
@@ -226,33 +234,33 @@ export default function HistorySidebar({ className }: HistorySidebarProps) {
                     </span>
                     <div className="flex-1" />
                     {expandedRunId === run.id ? (
-                      <ChevronDown className="w-4 h-4 text-gray-500" />
+                      <ChevronDown className={`w-4 h-4 ${dark ? 'text-gray-500' : 'text-gray-400'}`} />
                     ) : (
-                      <ChevronRight className="w-4 h-4 text-gray-500" />
+                      <ChevronRight className={`w-4 h-4 ${dark ? 'text-gray-500' : 'text-gray-400'}`} />
                     )}
                   </div>
 
                   {/* Row 2: Scope, Timestamp, Node count */}
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-gray-500">
+                      <span className={`text-xs ${dark ? 'text-gray-500' : 'text-gray-500'}`}>
                         {getScopeLabel(run.scope)}
                       </span>
                       {run.nodeRuns.length > 0 && (
-                        <span className="text-[10px] text-gray-700">
+                        <span className={`text-[10px] ${dark ? 'text-gray-700' : 'text-gray-400'}`}>
                           · {run.nodeRuns.filter(n => n.status === 'success').length}/{run.nodeRuns.length} nodes
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-gray-600">
+                    <span className={`text-xs ${dark ? 'text-gray-600' : 'text-gray-400'}`}>
                       {formatTime(run.startedAt)}
                     </span>
                   </div>
 
                   {/* Row 3: Duration */}
                   <div className="flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-gray-600" />
-                    <span className="text-xs text-gray-600">
+                    <Clock className={`w-3 h-3 ${dark ? 'text-gray-600' : 'text-gray-400'}`} />
+                    <span className={`text-xs ${dark ? 'text-gray-600' : 'text-gray-400'}`}>
                       {formatDuration(run.startedAt, run.endedAt)}
                     </span>
                   </div>
@@ -260,7 +268,7 @@ export default function HistorySidebar({ className }: HistorySidebarProps) {
 
                 {/* Expanded Node Runs */}
                 {expandedRunId === run.id && (
-                  <div className="bg-gray-900/50 rounded-b-xl border-t border-gray-800 p-3 space-y-2">
+                  <div className={`rounded-b-xl border-t p-3 space-y-2 ${dark ? 'bg-gray-900/50 border-gray-800' : 'bg-gray-50/50 border-gray-200'}`}>
                     {run.nodeRuns.map((nodeRun, index) => (
                       <div key={nodeRun.id}>
                         <div className="flex items-center gap-2 py-1.5">
@@ -274,10 +282,10 @@ export default function HistorySidebar({ className }: HistorySidebarProps) {
                             }`}
                           />
                           {getNodeIcon(nodeRun.nodeType)}
-                          <span className="text-xs text-gray-400 flex-1">
+                          <span className={`text-xs flex-1 ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
                             {getNodeLabel(nodeRun.nodeType)}
                           </span>
-                          <span className="text-xs text-gray-600">
+                          <span className={`text-xs ${dark ? 'text-gray-600' : 'text-gray-400'}`}>
                             {formatDuration(nodeRun.startedAt, nodeRun.endedAt)}
                           </span>
                         </div>
@@ -295,9 +303,9 @@ export default function HistorySidebar({ className }: HistorySidebarProps) {
                           return (
                             <div className="pl-6 mt-1">
                               {isImage ? (
-                                <img src={strVal} alt="output" className="w-full max-w-50 rounded-lg border border-gray-700 mt-1" />
+                                <img src={strVal} alt="output" className={`w-full max-w-50 rounded-lg border mt-1 ${dark ? 'border-gray-700' : 'border-gray-200'}`} />
                               ) : (
-                                <div className="text-[10px] text-gray-400 leading-relaxed bg-gray-800/40 rounded-md px-2 py-1.5 wrap-break-word whitespace-pre-wrap">
+                                <div className={`text-[10px] leading-relaxed rounded-md px-2 py-1.5 wrap-break-word whitespace-pre-wrap ${dark ? 'text-gray-400 bg-gray-800/40' : 'text-gray-600 bg-gray-100'}`}>
                                   {strVal.length > 200 ? strVal.slice(0, 200) + '…' : strVal}
                                 </div>
                               )}
@@ -315,12 +323,12 @@ export default function HistorySidebar({ className }: HistorySidebarProps) {
                           if (entries.length === 0) return null
                           return (
                             <div className="pl-6 mt-1">
-                              <div className="text-[10px] text-gray-600 bg-gray-800/30 rounded-md px-2 py-1 wrap-break-word">
+                              <div className={`text-[10px] rounded-md px-2 py-1 wrap-break-word ${dark ? 'text-gray-600 bg-gray-800/30' : 'text-gray-500 bg-gray-100/50'}`}>
                                 {entries.map(([k, v]) => {
                                   const s = String(v)
                                   return (
                                     <span key={k} className="block">
-                                      <span className="text-gray-500">{k}: </span>
+                                      <span className={dark ? 'text-gray-500' : 'text-gray-400'}>{k}: </span>
                                       {s.length > 60 ? s.slice(0, 60) + '…' : s}
                                     </span>
                                   )
@@ -330,7 +338,7 @@ export default function HistorySidebar({ className }: HistorySidebarProps) {
                           )
                         })()}
                         {index < run.nodeRuns.length - 1 && (
-                          <div className="border-b border-gray-800/50" />
+                          <div className={`border-b ${dark ? 'border-gray-800/50' : 'border-gray-200/50'}`} />
                         )}
                       </div>
                     ))}

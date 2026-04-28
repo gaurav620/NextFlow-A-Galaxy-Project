@@ -208,11 +208,18 @@ html.light * {
 .react-flow__background {
   background-color: #0A0A0A;
 }
+html.light .react-flow__background {
+  background-color: #f5f5f7;
+}
 .react-flow__edge-path {
   stroke-width: 2 !important;
   stroke: rgba(255, 255, 255, 0.4) !important;
   filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.3));
   transition: stroke 0.3s ease;
+}
+html.light .react-flow__edge-path {
+  stroke: rgba(0, 0, 0, 0.3) !important;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.1));
 }
 .react-flow__edge.selected .react-flow__edge-path,
 .react-flow__edge:hover .react-flow__edge-path {
@@ -239,6 +246,9 @@ html.light * {
 }
 .react-flow__minimap-mask {
   fill: rgba(0, 0, 0, 0.85) !important;
+}
+html.light .react-flow__minimap-mask {
+  fill: rgba(200, 200, 200, 0.7) !important;
 }
 .react-flow__minimap-node {
   fill: #3b82f6 !important;
@@ -272,3 +282,64 @@ html.light * {
 /* Scrollbar styling for history sidebar */
 .scrollbar-none::-webkit-scrollbar { display: none; }
 .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Responsive Design — Workflow Canvas ──
+   Spec: "Full responsiveness with proper overflow handling"
+   Workflow builders are desktop-first, but we gracefully adapt on smaller screens. */
+
+/* Tablet (≤1024px): compact toolbars, reduce spacing */
+@media (max-width: 1024px) {
+  /* Reduce top bar button padding */
+  .absolute.top-0 button {
+    font-size: 11px;
+  }
+  /* History sidebar: narrower on tablet */
+  .history-sidebar-container {
+    max-width: 280px;
+  }
+}
+
+/* Mobile (≤768px): stack toolbar, overlay history, scale nodes */
+@media (max-width: 768px) {
+  /* History sidebar becomes full-width overlay */
+  .history-sidebar-container {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    max-width: 100% !important;
+    z-index: 60;
+    border-left: none !important;
+    border-top: 1px solid rgba(128,128,128,0.2);
+    height: 50vh !important;
+    bottom: 0;
+    top: auto !important;
+  }
+  /* React Flow nodes: scale down slightly for touch */
+  .react-flow__node {
+    transform-origin: top left;
+  }
+  /* Floating toolbar: horizontal scroll if needed */
+  .absolute.bottom-4.left-4 {
+    left: 8px !important;
+    bottom: 8px !important;
+  }
+  /* Prevent horizontal overflow on the canvas wrapper */
+  .react-flow {
+    touch-action: pan-x pan-y;
+  }
+  /* Node menu: full width on mobile */
+  .absolute.z-50.w-\\[280px\\] {
+    width: calc(100vw - 32px) !important;
+    left: 16px !important;
+    right: 16px !important;
+  }
+}
+
+/* Small mobile (≤480px): hide non-essential UI */
+@media (max-width: 480px) {
+  /* Hide share button and minimap toggle */
+  .react-flow__minimap {
+    display: none !important;
+  }
+}
+

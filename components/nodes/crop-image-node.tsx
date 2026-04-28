@@ -5,6 +5,7 @@ import { Loader2, Crop, Play, Trash2 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useTheme } from 'next-themes';
 import { useWorkflowStore } from '@/store/workflowStore';
+import { trackSingleRun } from '@/lib/trackSingleRun';
 
 export default function CropImageNode({ id, data }: any) {
   const { theme } = useTheme();
@@ -33,12 +34,17 @@ export default function CropImageNode({ id, data }: any) {
     });
   };
 
+  /**
+   * handleRun — Crops an image using the connected image URL and percentage params.
+   * Uses trackSingleRun() to persist a single-node history entry in the database.
+   */
   const handleRun = async () => {
     setIsExecuting(true);
     syncToStore({ isExecuting: true, error: undefined });
 
     try {
       const store = await import('@/store/workflowStore').then(m => m.useWorkflowStore.getState());
+      const workflowId = store.currentWorkflowId;
       const edges = store.edges;
       const imgSourceId = edges.find((e: any) => e.target === id && e.targetHandle === 'image_url')?.source;
       const xSourceId = edges.find((e: any) => e.target === id && e.targetHandle === 'x_percent')?.source;
@@ -54,20 +60,37 @@ export default function CropImageNode({ id, data }: any) {
 
       if (!imageUrl) throw new Error('No image connected');
 
-      const res = await fetch('/api/execute/crop-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl, x: finalX, y: finalY, width: finalW, height: finalH, nodeId: id }),
-      });
-      const resData = await (async () => {
-        try { return await res.json(); } catch {
-          throw new Error(res.status === 504 ? 'Gateway timeout — try again' : `Server error ${res.status}`);
-        }
-      })();
-      if (!res.ok || !resData.success) throw new Error(resData?.error || 'Crop failed');
-      setResultUrl(resData.output);
-      syncToStore({ output: resData.output });
-      store.setNodeOutput(id, resData.output);
+      const payload = { imageUrl, x: finalX, y: finalY, width: finalW, height: finalH, nodeId: id };
+
+      const executeFn = async () => {
+        const res = await fetch('/api/execute/crop-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const resData = await (async () => {
+          try { return await res.json(); } catch {
+            throw new Error(res.status === 504 ? 'Gateway timeout — try again' : `Server error ${res.status}`);
+          }
+        })();
+        if (!res.ok || !resData.success) throw new Error(resData?.error || 'Crop failed');
+        return { success: true, output: resData.output };
+      };
+
+      let result: { success: boolean; output?: any; error?: string };
+      if (workflowId) {
+        result = await trackSingleRun(workflowId, id, 'cropImageNode', payload, executeFn);
+      } else {
+        result = await executeFn();
+      }
+
+      if (result.success && result.output) {
+        setResultUrl(result.output);
+        syncToStore({ output: result.output });
+        store.setNodeOutput(id, result.output);
+      } else if (result.error) {
+        throw new Error(result.error);
+      }
     } catch (err: any) {
       syncToStore({ error: err.message });
     } finally {

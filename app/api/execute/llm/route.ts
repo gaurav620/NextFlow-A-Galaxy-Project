@@ -52,12 +52,18 @@ async function geminiDirect(apiKey: string, model: string, systemPrompt: string 
   if (images?.length) {
     for (const imgUrl of images) {
       try {
+        // blob: URLs are browser-only — cannot be fetched server-side
+        if (imgUrl.startsWith('blob:')) {
+          console.warn('geminiDirect: Skipping blob: URL — not accessible server-side')
+          continue
+        }
         if (imgUrl.startsWith('data:')) {
           const [header, base64Data] = imgUrl.split(',')
           const mimeType = header.split(':')[1].split(';')[0]
           parts.push({ inlineData: { data: base64Data, mimeType } })
         } else {
           const res = await fetch(imgUrl)
+          if (!res.ok) throw new Error(`HTTP ${res.status}`)
           const buffer = await res.arrayBuffer()
           const base64 = Buffer.from(buffer).toString('base64')
           const mimeType = res.headers.get('content-type') || 'image/jpeg'
@@ -79,6 +85,9 @@ export async function POST(req: NextRequest) {
     const triggerKey = process.env.TRIGGER_SECRET_KEY
     const apiKey = process.env.GEMINI_API_KEY
 
+    // Strip browser-only blob: URLs — cannot be fetched server-side by Trigger.dev
+    const sanitizedImages = body.images?.filter(img => !img.startsWith('blob:'))
+
     let output: string
     let executionMethod = 'trigger.dev'
 
@@ -93,7 +102,7 @@ export async function POST(req: NextRequest) {
           model: body.model,
           systemPrompt: body.systemPrompt,
           userMessage: body.userMessage,
-          images: body.images,
+          images: sanitizedImages,
           workflowRunId: body.workflowRunId,
           nodeId: body.nodeId,
         })
@@ -107,7 +116,17 @@ export async function POST(req: NextRequest) {
         ])
 
         if (run.status === 'COMPLETED' && run.output) {
-          output = (run.output as any).output
+          output = (run.output as any).output || ''
+          // If Trigger.dev returned empty (e.g. all images were blob URLs), fall back to text-only
+          if (!output.trim()) {
+            console.warn('Trigger.dev returned empty output, retrying text-only via direct Gemini')
+            if (apiKey) {
+              output = await geminiDirect(apiKey, body.model, body.systemPrompt, body.userMessage, undefined)
+            } else {
+              output = await pollinationsFallback(body.systemPrompt || '', body.userMessage)
+              executionMethod = 'pollinations-fallback'
+            }
+          }
         } else {
           throw new Error(run.status === 'FAILED' ? 'Trigger.dev task failed' : `Unexpected status: ${run.status}`)
         }
@@ -118,7 +137,7 @@ export async function POST(req: NextRequest) {
         // Fall through to direct execution
         if (apiKey) {
           try {
-            output = await geminiDirect(apiKey, body.model, body.systemPrompt, body.userMessage, body.images)
+            output = await geminiDirect(apiKey, body.model, body.systemPrompt, body.userMessage, sanitizedImages)
           } catch (geminiErr: any) {
             const isQuota = geminiErr.message?.includes('429') || geminiErr.message?.includes('quota')
             if (isQuota) {
@@ -137,13 +156,13 @@ export async function POST(req: NextRequest) {
       // ── FALLBACK: Direct Gemini (no Trigger.dev configured) ──
       executionMethod = 'direct-gemini'
       try {
-        output = await geminiDirect(apiKey, body.model, body.systemPrompt, body.userMessage, body.images)
+        output = await geminiDirect(apiKey, body.model, body.systemPrompt, body.userMessage, sanitizedImages)
       } catch (geminiErr: any) {
         const isQuota = geminiErr.message?.includes('429') || geminiErr.message?.includes('quota')
         if (isQuota) {
           await new Promise(r => setTimeout(r, 3000))
           try {
-            output = await geminiDirect(apiKey, body.model, body.systemPrompt, body.userMessage, body.images)
+            output = await geminiDirect(apiKey, body.model, body.systemPrompt, body.userMessage, sanitizedImages)
           } catch {
             output = await pollinationsFallback(body.systemPrompt || '', body.userMessage)
             executionMethod = 'pollinations-fallback'

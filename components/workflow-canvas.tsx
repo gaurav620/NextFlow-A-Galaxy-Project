@@ -374,7 +374,19 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
     })
   }, [selectedTool, setEdges, updateNodeData])
 
-  // ── Type-safe connection validation (full handle-type matrix per spec) ──
+  /**
+   * isValidConnection — Type-safe connection validation per spec.
+   *
+   * Enforces the following handle compatibility matrix:
+   * - `image_url`:       only imageUploadNode | cropImageNode | extractFrameNode
+   * - `video_url`:       only videoUploadNode
+   * - `images` (LLM):    only image-producing nodes
+   * - `system_prompt`:   only textNode | llmNode
+   * - `user_message`:    only textNode | llmNode
+   * - `x/y/w/h_percent`: any node (typically textNode with numeric content)
+   *
+   * Also prevents self-connections and DAG cycles via hasCycle().
+   */
   const isValidConnection = useCallback((connection: Edge | Connection) => {
     const src = 'source' in connection ? connection.source : undefined
     const tgt = 'target' in connection ? connection.target : undefined
@@ -435,6 +447,17 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
     setTimeout(() => reactFlowInstance?.fitView({ padding: 0.3, duration: 400 }), 100)
   }
 
+  /**
+   * handleRun — Executes the full workflow via the server-side DAG engine.
+   *
+   * Flow:
+   * 1. Auto-saves the workflow (creates if new)
+   * 2. Marks all nodes as executing (triggers pulse-glow animation)
+   * 3. POST /api/workflow/{id}/run → server topologically sorts the DAG
+   * 4. Server executes nodes in parallel per-level via Trigger.dev tasks
+   * 5. Results are streamed back and applied to each node's data
+   * 6. History entry (WorkflowRun + NodeRuns) is created server-side
+   */
   async function handleRun() {
     if (!safeNodes.length) return
 
@@ -512,6 +535,13 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
   }
 
   // ── Run Selected nodes via server-side engine ──
+  /**
+   * handleRunSelected — Runs only the user-selected subset of nodes.
+   *
+   * Filters nodes by `n.selected`, then calls the same server-side engine
+   * with a `selectedNodeIds` array. The server resolves upstream dependencies
+   * from the saved workflow data and executes only the relevant subgraph.
+   */
   async function handleRunSelected() {
     const selectedIds = safeNodes.filter(n => n.selected).map(n => n.id)
     if (!selectedIds.length) return
@@ -568,6 +598,16 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
     setIsRunning(false)
   }
 
+  /**
+   * handleSave — Persists the current workflow state to PostgreSQL via Prisma.
+   *
+   * Supports three modes:
+   * - Create new: POST /api/workflow with nodes + edges (no workflowId yet)
+   * - Update existing: POST /api/workflow with workflowId in body
+   * - Name-only update: PUT /api/workflow/{id} when canvas is empty
+   *
+   * @returns The workflow ID on success, null on failure
+   */
   async function handleSave(): Promise<string | null> {
     setSaveStatus('saving')
     try {
@@ -607,18 +647,37 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
     }
   }
 
-  // Drag and drop media files onto canvas
+  // Allow drag-over for both file and node-type drops
   const onDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
-    e.dataTransfer.dropEffect = 'copy'
+    e.dataTransfer.dropEffect = e.dataTransfer.types.includes('application/reactflow-nodetype') ? 'move' : 'copy'
   }, [])
 
+  /**
+   * onDrop — Handles both file drops (image/video) and node-type drops from the
+   * Quick Access menu. Spec: "Drag & Drop Nodes from sidebar".
+   */
   const onDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     if (!reactFlowInstance) return
-    const files = Array.from(e.dataTransfer.files)
     const position = reactFlowInstance.screenToFlowPosition({ x: e.clientX, y: e.clientY })
-    
+
+    // Handle node-type drag from Quick Access menu
+    const nodeType = e.dataTransfer.getData('application/reactflow-nodetype')
+    if (nodeType) {
+      const newNode: Node = {
+        id: crypto.randomUUID(),
+        type: nodeType,
+        position,
+        data: { label: nodeType },
+      }
+      setNodes((prevNodes) => ([...(Array.isArray(prevNodes) ? prevNodes : []), newNode]))
+      setShowPresets(false)
+      return
+    }
+
+    // Handle file drops (image/video)
+    const files = Array.from(e.dataTransfer.files)
     files.forEach((file, idx) => {
       const isVideo = file.type.startsWith('video/')
       const isImage = file.type.startsWith('image/')
@@ -902,7 +961,12 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
                   .map(item => (
                     <button key={item.type}
                       onClick={() => addNode(item.type)}
-                      className={`w-full text-left flex items-center justify-between px-3 py-2.5 text-[13px] rounded-lg transition-colors ${dark ? 'text-[#e0e0e0] hover:bg-[#2A2A2A] hover:text-white' : 'text-gray-700 hover:bg-gray-100 hover:text-black'}`}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('application/reactflow-nodetype', item.type)
+                        e.dataTransfer.effectAllowed = 'move'
+                      }}
+                      className={`w-full text-left flex items-center justify-between px-3 py-2.5 text-[13px] rounded-lg transition-colors cursor-grab active:cursor-grabbing ${dark ? 'text-[#e0e0e0] hover:bg-[#2A2A2A] hover:text-white' : 'text-gray-700 hover:bg-gray-100 hover:text-black'}`}
                     >
                       <div className="flex items-center gap-2.5">
                         <span className={item.color}>{item.icon}</span>
@@ -951,15 +1015,12 @@ export default function WorkflowCanvas({ id, router }: { id: string, router: any
             <Background variant={BackgroundVariant.Dots} color={dark ? '#222' : '#ccc'} gap={20} size={1} />
             <MiniMap
               nodeColor={(n) => {
-                if (n.type === 'llmNode') return '#a855f7'
-                if (n.type === 'imageGenNode') return '#3b82f6'
-                if (n.type === 'cropImageNode') return '#ec4899'
-                if (n.type === 'enhanceNode') return '#ec4899'
-                if (n.type === 'extractFrameNode') return '#eab308'
+                if (n.type === 'textNode') return '#3b82f6'
                 if (n.type === 'imageUploadNode') return '#22c55e'
                 if (n.type === 'videoUploadNode') return '#f97316'
-                if (n.type === 'videoGenNode') return '#f97316'
-                if (n.type === 'outputNode') return '#22c55e'
+                if (n.type === 'llmNode') return '#a855f7'
+                if (n.type === 'cropImageNode') return '#ec4899'
+                if (n.type === 'extractFrameNode') return '#eab308'
                 return '#666'
               }}
               maskColor={dark ? 'rgba(0,0,0,0.7)' : 'rgba(200,200,200,0.7)'}
