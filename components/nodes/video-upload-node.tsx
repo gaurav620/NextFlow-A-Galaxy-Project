@@ -46,7 +46,9 @@ export default function VideoUploadNode({ id, data }: any) {
       if (signData.provider === 'transloadit' && signData.assembly) {
         const formData = new FormData();
         formData.append('params', signData.assembly.params);
-        formData.append('signature', signData.assembly.signature);
+        if (signData.assembly.signature) {
+          formData.append('signature', signData.assembly.signature);
+        }
         formData.append('file', file);
 
         const assemblyRes = await fetch('https://api2.transloadit.com/assemblies', {
@@ -55,25 +57,32 @@ export default function VideoUploadNode({ id, data }: any) {
         });
         const assemblyData = await assemblyRes.json();
 
-        if (assemblyData.assembly_ssl_url) {
-          let result = assemblyData;
-          while (result.ok !== 'ASSEMBLY_COMPLETED' && result.ok !== 'ASSEMBLY_EXECUTING') {
-            if (result.error) throw new Error(result.error);
+        if (assemblyData.assembly_ssl_url || assemblyData.assembly_url) {
+          const pollUrl = assemblyData.assembly_ssl_url || assemblyData.assembly_url;
+
+          // Poll until assembly completes (max 25 attempts = 50s)
+          for (let i = 0; i < 25; i++) {
             await new Promise(r => setTimeout(r, 2000));
-            const pollRes = await fetch(result.assembly_ssl_url);
-            result = await pollRes.json();
-          }
+            const pollRes = await fetch(pollUrl);
+            const result = await pollRes.json();
 
-          const cdnUrl = result.results?.[':original']?.[0]?.ssl_url ||
-                         result.results?.exported?.[0]?.ssl_url ||
-                         result.uploads?.[0]?.ssl_url;
+            if (result.ok === 'ASSEMBLY_COMPLETED') {
+              const cdnUrl = result.results?.[':original']?.[0]?.ssl_url ||
+                             result.results?.exported?.[0]?.ssl_url ||
+                             result.uploads?.[0]?.ssl_url;
 
-          if (cdnUrl) {
-            setPreview(cdnUrl);
-            setUploadProvider('transloadit');
-            syncToStore({ videoUrl: cdnUrl, value: cdnUrl, filename: file.name, uploadProvider: 'transloadit' });
-            setUploading(false);
-            return;
+              if (cdnUrl) {
+                setPreview(cdnUrl);
+                setUploadProvider('transloadit');
+                syncToStore({ videoUrl: cdnUrl, value: cdnUrl, filename: file.name, uploadProvider: 'transloadit' });
+                setUploading(false);
+                return;
+              }
+              break;
+            }
+            if (result.ok === 'REQUEST_ABORTED' || result.error) {
+              throw new Error(result.error || 'Assembly aborted');
+            }
           }
         }
       }

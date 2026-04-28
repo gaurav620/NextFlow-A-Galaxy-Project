@@ -27,8 +27,13 @@ export async function POST(req: NextRequest) {
       const authKey = process.env.TRANSLOADIT_AUTH_KEY
       const authSecret = process.env.TRANSLOADIT_AUTH_SECRET
 
-      if (authKey && authSecret) {
-        try {
+      if (authKey) {
+        /**
+         * uploadToTransloadit — Sends file to Transloadit with optional signature.
+         * If the secret is stale/wrong, the assembly returns INVALID_SIGNATURE,
+         * so we retry without a signature (works when account doesn't enforce it).
+         */
+        const uploadToTransloadit = async (withSignature: boolean) => {
           const expires = new Date(Date.now() + 3600 * 1000)
             .toISOString()
             .replace('T', ' ')
@@ -36,20 +41,21 @@ export async function POST(req: NextRequest) {
 
           const params = {
             auth: { key: authKey, expires },
-            steps: {
-              ':original': { robot: '/upload/handle' },
-            },
+            steps: { ':original': { robot: '/upload/handle' } },
           }
 
           const paramsStr = JSON.stringify(params)
-          const sig =
-            'sha384:' +
-            crypto.createHmac('sha384', authSecret).update(paramsStr).digest('hex')
 
-          // Build form to send to Transloadit
           const tForm = new FormData()
           tForm.append('params', paramsStr)
-          tForm.append('signature', sig)
+
+          if (withSignature && authSecret) {
+            const sig =
+              'sha384:' +
+              crypto.createHmac('sha384', authSecret).update(paramsStr).digest('hex')
+            tForm.append('signature', sig)
+          }
+
           tForm.append('file', file)
 
           const assemblyRes = await fetch('https://api2.transloadit.com/assemblies', {
@@ -57,32 +63,57 @@ export async function POST(req: NextRequest) {
             body: tForm,
           })
 
-          if (assemblyRes.ok) {
-            const assembly = await assemblyRes.json()
-            const pollUrl = assembly.assembly_ssl_url || assembly.assembly_url
+          const assembly = await assemblyRes.json()
 
-            // Poll up to 20 times (40s)
-            for (let i = 0; i < 20; i++) {
-              await new Promise((r) => setTimeout(r, 2000))
-              const statusRes = await fetch(pollUrl)
-              const status = await statusRes.json()
+          // Check for signature error — caller will retry without
+          if (assembly.error === 'INVALID_SIGNATURE') {
+            return { signatureError: true }
+          }
 
-              if (status.ok === 'ASSEMBLY_COMPLETED') {
-                const result =
-                  status.results?.[':original']?.[0] ||
-                  status.results?.exported?.[0] ||
-                  status.uploads?.[0]
-                const url = result?.ssl_url || result?.url
-                if (url) {
-                  return NextResponse.json({ success: true, provider: 'transloadit', url })
-                }
-                break
-              }
-              if (status.ok === 'REQUEST_ABORTED' || status.error) {
-                console.warn('Transloadit upload failed:', status.error)
-                break
-              }
+          if (!assemblyRes.ok || assembly.error) {
+            return { error: assembly.error || assembly.message || 'Assembly creation failed' }
+          }
+
+          const pollUrl = assembly.assembly_ssl_url || assembly.assembly_url
+
+          // Poll up to 25 times (50s)
+          for (let i = 0; i < 25; i++) {
+            await new Promise((r) => setTimeout(r, 2000))
+            const statusRes = await fetch(pollUrl)
+            const status = await statusRes.json()
+
+            if (status.ok === 'ASSEMBLY_COMPLETED') {
+              const result =
+                status.results?.[':original']?.[0] ||
+                status.results?.exported?.[0] ||
+                status.uploads?.[0]
+              const url = result?.ssl_url || result?.url
+              if (url) return { url }
+              break
             }
+            if (status.ok === 'REQUEST_ABORTED' || status.error) {
+              return { error: status.error || 'Assembly aborted' }
+            }
+          }
+          return { error: 'Assembly timed out' }
+        }
+
+        try {
+          // Try with signature first
+          let result = authSecret ? await uploadToTransloadit(true) : await uploadToTransloadit(false)
+
+          // If signature is invalid/stale, retry without it
+          if ('signatureError' in result && result.signatureError) {
+            console.warn('Transloadit: signature invalid, retrying without signature')
+            result = await uploadToTransloadit(false)
+          }
+
+          if ('url' in result && result.url) {
+            return NextResponse.json({ success: true, provider: 'transloadit', url: result.url })
+          }
+
+          if ('error' in result) {
+            console.warn('Transloadit upload failed:', result.error)
           }
         } catch (tErr: any) {
           console.warn('Transloadit server-side upload failed:', tErr.message)
@@ -103,7 +134,7 @@ export async function POST(req: NextRequest) {
     const authKey = process.env.TRANSLOADIT_AUTH_KEY
     const authSecret = process.env.TRANSLOADIT_AUTH_SECRET
 
-    if (authKey && authSecret) {
+    if (authKey) {
       const expires = new Date(Date.now() + 30 * 60 * 1000)
         .toISOString()
         .replace('T', ' ')
@@ -115,15 +146,19 @@ export async function POST(req: NextRequest) {
       }
 
       const paramsJson = JSON.stringify(params)
-      const signature = crypto.createHmac('sha384', authSecret).update(paramsJson).digest('hex')
+
+      const assembly: any = { params: paramsJson }
+
+      // Only include signature if we have a secret
+      if (authSecret) {
+        const signature = crypto.createHmac('sha384', authSecret).update(paramsJson).digest('hex')
+        assembly.signature = `sha384:${signature}`
+      }
 
       return NextResponse.json({
         success: true,
         provider: 'transloadit',
-        assembly: {
-          params: paramsJson,
-          signature: `sha384:${signature}`,
-        },
+        assembly,
       })
     }
 
